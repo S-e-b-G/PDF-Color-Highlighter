@@ -27,6 +27,22 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private val store = RecentDocumentsStore(
         File(application.filesDir, "reader-recents-v1.bin")
     )
+    private val selectionWorker=Executors.newSingleThreadExecutor()
+    private val selectionQueue=SelectionPreviewQueue()
+    var textSnapshot by mutableStateOf<PageTextSnapshot?>(null)
+        private set
+    var textLoading by mutableStateOf(false)
+        private set
+    var textFailed by mutableStateOf(false)
+        private set
+    var previewSlot by mutableStateOf<Int?>(null)
+        private set
+    var previewSpan by mutableStateOf<SelectionSpan?>(null)
+        private set
+    var previewCommitted by mutableStateOf(false)
+        private set
+    var previewRejection by mutableStateOf<SelectionRejection?>(null)
+        private set
     private var cleared = false
     private var writesAllowed = false
     private var dirty = false
@@ -123,6 +139,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun open(uri: String, index: Int, state: PageViewportState) {
         if (uri == activeUri && bitmap != null && !loading) return
+        resetPageText()
         stopRefinement()
         checkpoint()
         activeUri = uri
@@ -147,6 +164,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     fun navigate(index: Int, navigationState: PageViewportState) {
         if (loading || bitmap == null || index !in 0 until pageCount || index == page) return
+        resetPageText()
         stopRefinement()
         checkpoint()
         pendingViewport = navigationState
@@ -194,6 +212,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 markDirty()
                 flushLocation()
                 scheduleRefinement()
+                loadPageText()
             },
             onFailure = { error ->
                 errorRes = when (error) {
@@ -280,6 +299,67 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+
+    private fun resetPageText() {
+        stopPreview()
+        textSnapshot=null;textLoading=false;textFailed=false
+    }
+    private fun loadPageText() {
+        textLoading=true;textFailed=false
+        val serial=frameSerial;val uri=activeUri;val index=page
+        session.extractText(index) { result ->
+            if (cleared || loading || serial!=frameSerial || uri!=activeUri || index!=page) return@extractText
+            textLoading=false
+            result.fold(onSuccess={ textSnapshot=it },onFailure={ textFailed=true;textSnapshot=null })
+        }
+    }
+    fun choosePreviewSlot(slot: Int) {
+        require(slot in 0..5)
+        val snapshot=textSnapshot ?: return
+        if (loading || snapshot.status!=PageTextStatus.READY) return
+        if (previewSlot==slot) stopPreview() else previewSlot=slot
+    }
+    fun cancelPreviewSelection() {
+        selectionQueue.cancel()
+        previewSpan=null;previewCommitted=false;previewRejection=null
+    }
+    fun stopPreview() { previewSlot=null;cancelPreviewSelection() }
+    fun previewSelection(first: TextPoint, last: TextPoint, finished: Boolean) {
+        if (cleared || loading || previewSlot==null) return
+        val snapshot=textSnapshot ?: return
+        if (previewCommitted) { previewSpan=null;previewCommitted=false }
+        selectionQueue.offer(snapshot,first,last,finished)?.let { dispatchPreview(it) }
+    }
+    private fun dispatchPreview(request: PreviewSelectionRequest) {
+        selectionWorker.execute {
+            val result: Result<TextSelectionAttempt> =try { Result.success(PageTextSelector.select(request.snapshot,request.first,request.last)) }
+                catch(error:Exception) { Result.failure(error) }
+                catch(error:OutOfMemoryError) { Result.failure(error) }
+            main.post {
+                if (cleared) return@post
+                if (!loading && previewSlot!=null && request.snapshot===textSnapshot && selectionQueue.accepts(request)) {
+                    result.fold(onSuccess={ selection ->
+                        when(selection) {
+                            is TextSelectionAttempt.Selected -> {
+                                if(SelectionPreviewQueue.allows(selection.span)) {
+                                    previewSpan=selection.span;previewCommitted=request.finished;previewRejection=null
+                                } else {
+                                    previewSpan=null;previewCommitted=false;previewRejection=SelectionRejection.TOO_COMPLEX
+                                }
+                            }
+                            is TextSelectionAttempt.Rejected -> {
+                                previewSpan=null;previewCommitted=false;previewRejection=selection.reason
+                            }
+                        }
+                    },onFailure={
+                        cancelPreviewSelection();previewRejection=SelectionRejection.TOO_COMPLEX
+                    })
+                }
+                selectionQueue.complete(request)?.let { dispatchPreview(it) }
+            }
+        }
+    }
+
     fun removeRecent(uri: String) {
         if (!ready || loading) return
         recents = RecentDocuments.remove(recents, uri)
@@ -331,6 +411,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     override fun onCleared() {
+        stopPreview()
+        selectionWorker.shutdown()
         stopRefinement()
         flushLocation()
         cleared = true

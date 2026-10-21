@@ -82,12 +82,17 @@ object TextGeometryPolicy {
         return runs.map { it.toList() }
     }
 
-    fun sameFlow(previous: PageTextLine, next: PageTextLine): Boolean {
-        if (previous.block != next.block || previous.run != next.run) return false
-        val a = previous.bounds; val b = next.bounds
-        val height = max(1f, max(a.height, b.height))
-        if (b.top <= a.top + min(a.height, b.height) * 0.4f || b.top - a.bottom > 2.5f * height) return false
+    /** Native IDs are hints, not paragraph boundaries. Crossing IDs uses a tighter gap. */
+    fun sameFlow(previous: PageTextLine, next: PageTextLine,
+                 a: TextBounds = previous.bounds, b: TextBounds = next.bounds): Boolean {
+        if (!a.width.isFinite() || !b.width.isFinite() || a.width <= 0f || b.width <= 0f || a.height <= 0f || b.height <= 0f) return false
+        val height = max(a.height, b.height); val small = min(a.height, b.height)
+        if (!height.isFinite() || height / small > 1.75f) return false
+        if (b.top <= a.top + small * 0.35f) return false
+        val sameNativeRun = previous.block == next.block && previous.run == next.run
+        val gapLimit = height * if (sameNativeRun) 2.5f else 0.9f
+        if (b.top - a.bottom > gapLimit) return false
         val overlap = min(a.right, b.right) - max(a.left, b.left)
-        return overlap >= min(a.width, b.width) * 0.15f || abs(a.left - b.left) <= height * 1.5f
+        return overlap >= min(a.width, b.width) * 0.2f || abs(a.left - b.left) <= height * 1.5f
     }
 }

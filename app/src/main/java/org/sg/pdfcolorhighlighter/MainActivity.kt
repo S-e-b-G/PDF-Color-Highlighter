@@ -58,6 +58,12 @@ class MainActivity : ComponentActivity() {
                     ?: if (reader.renderWarning) getString(R.string.reader_render_warning) else null,
                 grantWarning = reader.grantWarning,
                 viewportState = reader.viewportState,
+                textSnapshot=reader.textSnapshot,textLoading=reader.textLoading,textFailed=reader.textFailed,
+                previewSlot=reader.previewSlot,previewSpan=reader.previewSpan,previewCommitted=reader.previewCommitted,
+                previewRejection=reader.previewRejection,
+                onChoosePreviewSlot={ reader.choosePreviewSlot(it) },
+                onPreviewDrag={ first,last,finished -> reader.previewSelection(first,last,finished) },
+                onPreviewCancel={ reader.cancelPreviewSelection() },
                 pageWidth = reader.pageWidth, pageHeight = reader.pageHeight, frameSerial = reader.frameSerial,
                 onRenderViewport = { width, height, zoom -> reader.renderViewport(width, height, zoom) },
                 onRenderGesture = { reader.renderGesture(it) },
@@ -72,7 +78,7 @@ class MainActivity : ComponentActivity() {
                 onFit = { viewportView?.fitPage() },
                 onFitWidth = { viewportView?.fitWidth() },
                 onJumpToPage = { navigate(it) },
-                onHand = { viewportView?.activateNavigation() },
+                onHand = { reader.stopPreview();viewportView?.activateNavigation() },
                 onViewportReady = { viewportView = it },
                 onViewportReleased = {
                     if (viewportView === it) {
@@ -105,6 +111,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        reader.stopPreview()
         reader.releaseRenderViewport()
         reader.checkpoint()
         super.onStop()
@@ -131,6 +138,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         viewportView?.onViewportChanged = null
+        viewportView?.onPreviewDrag=null;viewportView?.onPreviewCancel=null
         viewportView?.onRenderViewport = null
         viewportView?.onRenderGesture = null
         viewportView = null

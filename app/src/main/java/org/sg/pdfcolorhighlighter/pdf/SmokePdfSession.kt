@@ -134,6 +134,28 @@ class SmokePdfSession(context: Context) {
         }
     }
 
+
+    /** Copy-only snapshot on the same native worker. Does not change navigation/refinement generations. */
+    fun extractText(index: Int, callback: (Result<org.sg.pdfcolorhighlighter.domain.PageTextSnapshot>) -> Unit) {
+        if (closed.get()) return
+        val contentRequest=generation.get()
+        worker.execute {
+            if (closed.get() || contentRequest!=generation.get()) return@execute
+            val result: Result<org.sg.pdfcolorhighlighter.domain.PageTextSnapshot> =try {
+                val doc=checkNotNull(document)
+                require(index in 0 until doc.countPages())
+                val nativePage=doc.loadPage(index)
+                try { Result.success(MuPdfTextSnapshot.extract(nativePage,doc.hasPermission(Document.PERMISSION_COPY))) }
+                finally { nativePage.destroy() }
+            } catch(error:Exception) { Result.failure(error) }
+              catch(error:LinkageError) { Result.failure(error) }
+              catch(error:OutOfMemoryError) { Result.failure(error) }
+            main.post {
+                if (!closed.get() && contentRequest==generation.get()) callback(result)
+            }
+        }
+    }
+
     private fun render(requestedPage: Int): SmokeFrame {
         val doc = checkNotNull(document)
         val count = doc.countPages()

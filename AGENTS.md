@@ -87,3 +87,24 @@ quads; it does not infer cross-column/paragraph or complex-cluster text and does
 invent quotations from blank space. The proof is not wired to production touch. Keep
 manual highlight Contents unchanged and separate from Text notes. No PDF writes,
 production annotations, editing/history/save/recovery completion, or M3b work is claimed.
+
+
+## M3b continuity
+M3a accepted: 161 JVM tests and five instrumentation PASS labels, user report. M3b source
+expected 182 tests; author runtime execution pending. Read docs/M3b-ACCEPTANCE.md.
+Six left colors now control explicit read-only previews, not real highlights. Preserve
+all tool slots/order/48dp targets. Snapshot extraction stays on native owner worker,
+pure selection uses latest-only background queue. Reject stale page/tool/cancel results.
+Map native origin and overlay actual quads using the same placement as pixels. Never
+write PDFs or mark recovery/save/history complete. Page/background/rotation discard
+preview/tool state. Preserve M3a Unicode/column/manual-Contents and M2c.3/4 safeguards.
+
+
+## M3b.1 continuity
+M3b automated checks passed (182 tests, six native labels), but manual multiline and
+margin endpoints FAILED. M3b is not fully accepted. M3b.1 expected 206 tests and seven
+native labels; author runtime execution pending. Read docs/M3b-1-ACCEPTANCE.md.
+Selection endpoints can resolve to actual glyphs within text-line bands on the sheet;
+raw hit stays strict. Native block IDs are not hard selection boundaries; geometric
+path/column/ambiguity/gap guards govern continuation. No new UI, rendering, annotation,
+PDF write, history/save/recovery claims. Require failed-passage regression acceptance.

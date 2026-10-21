@@ -5,7 +5,14 @@ import android.graphics.Bitmap
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -37,7 +44,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.sg.pdfcolorhighlighter.R
 import org.sg.pdfcolorhighlighter.domain.PageJumpInput
-import org.sg.pdfcolorhighlighter.domain.PageViewportState
+import org.sg.pdfcolorhighlighter.domain.*
 import org.sg.pdfcolorhighlighter.domain.RecentDocument
 
 private val palette = listOf(Color(0xFFFFAD5B), Color(0xFF00FF00), Color(0xFFFC3636),
@@ -53,6 +60,11 @@ fun ReaderScreen(
     onOpen: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit, onFit: () -> Unit,
     onFitWidth: () -> Unit, onJumpToPage: (Int) -> Unit, onHand: () -> Unit,
     onViewportReady: (PdfViewportView) -> Unit,
+    textSnapshot: PageTextSnapshot?, textLoading: Boolean, textFailed: Boolean,
+    previewSlot: Int?, previewSpan: SelectionSpan?, previewCommitted: Boolean,
+    previewRejection: SelectionRejection?,
+    onChoosePreviewSlot: (Int)->Unit,
+    onPreviewDrag: (TextPoint,TextPoint,Boolean)->Unit, onPreviewCancel: ()->Unit,
     pageWidth: Float, pageHeight: Float, frameSerial: Long,
     onRenderViewport: (Int, Int, Float) -> Unit,
     onRenderGesture: (Boolean) -> Unit,
@@ -61,8 +73,12 @@ fun ReaderScreen(
     onRecent: (String) -> Unit, onRemoveRecent: (String) -> Unit,
     onViewportChanged: (PageViewportState) -> Unit,
 ) {
+    var quotationOpen by remember { mutableStateOf(false) }
+    val previewEnabled=!loading && textSnapshot?.status==PageTextStatus.READY &&
+        textSnapshot.lines.any { it.selectable && it.glyphs.any { glyph -> !glyph.whitespace } }
     var jumpOpen by rememberSaveable { mutableStateOf(false) }
     var pageDraft by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(previewSpan) { if(previewSpan==null) quotationOpen=false }
     var propertiesOpen by rememberSaveable { mutableStateOf(false) }
     var openMenu by rememberSaveable { mutableStateOf(false) }
     MaterialTheme(colorScheme = lightColorScheme()) {
@@ -73,12 +89,12 @@ fun ReaderScreen(
                     val tablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
                     when {
                         maxWidth >= 768.dp -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            ColorTools(notes = false)
+                            PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot)
                             Spacer(Modifier.weight(1f)); Actions(); Spacer(Modifier.weight(1f))
                             ColorTools(notes = true)
                         }
                         !tablet -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row { ColorTools(notes = false) }; Row { Actions() }; Row { ColorTools(notes = true) }
+                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot) }; Row { Actions() }; Row { ColorTools(notes = true) }
                         }
                         else -> Text(stringResource(R.string.reader_width_blocked),
                             Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
@@ -100,19 +116,23 @@ fun ReaderScreen(
                             factory = { context -> PdfViewportView(context).also {
                                 it.contentDescription = description
                                 it.onViewportChanged = onViewportChanged
+                                it.onPreviewDrag=onPreviewDrag;it.onPreviewCancel=onPreviewCancel
                                 it.onRenderViewport = onRenderViewport
                                 it.onRenderGesture = onRenderGesture
                                 onViewportReady(it)
                             } },
                             update = { view ->
                                 view.onViewportChanged = onViewportChanged
+                                view.onPreviewDrag=onPreviewDrag;view.onPreviewCancel=onPreviewCancel
                                 view.onRenderViewport = onRenderViewport
                                 view.onRenderGesture = onRenderGesture
                                 view.setInteractionEnabled(!loading)
                                 view.show(bitmap, viewportState, pageWidth, pageHeight, frameSerial)
+                                view.setSelectionPreview(textSnapshot,previewSlot,previewSpan)
                             },
                             onRelease = { view ->
                                 view.onViewportChanged = null
+                                view.onPreviewDrag=null;view.onPreviewCancel=null
                                 view.onRenderViewport = null
                                 view.onRenderGesture = null
                                 onViewportReleased(view)
@@ -122,14 +142,34 @@ fun ReaderScreen(
                     } else if (loading) Text(stringResource(R.string.loading))
                     else RecentDocumentsPanel(recentDocuments, unavailableUri, onOpen, onRecent,
                         onRemoveRecent, Modifier.fillMaxSize().padding(12.dp))
+                    if (previewCommitted && previewSpan!=null) {
+                        Surface(Modifier.align(Alignment.TopEnd).padding(8.dp).zIndex(1f),
+                            shape=RoundedCornerShape(8.dp),shadowElevation=2.dp) {
+                            TextButton(onClick={ quotationOpen=true }) { Text(stringResource(R.string.selection_preview_quotation)) }
+                        }
+                    }
                 }
-                Text(stringResource(R.string.reader_readonly),
-                    Modifier.fillMaxWidth().background(barColor).zIndex(1f).padding(horizontal = 8.dp, vertical = 2.dp),
-                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.fillMaxWidth().background(barColor).zIndex(1f).padding(horizontal=8.dp),
+                    verticalAlignment=Alignment.CenterVertically) {
+                    val status=when {
+                        previewSlot!=null && previewRejection!=null -> R.string.selection_preview_rejected
+                        previewSlot!=null -> R.string.selection_preview_active
+                        textLoading -> R.string.selection_preview_loading
+                        textFailed -> R.string.selection_preview_unavailable
+                        textSnapshot?.status==PageTextStatus.COPY_RESTRICTED -> R.string.selection_preview_restricted
+                        textSnapshot?.status==PageTextStatus.TOO_COMPLEX -> R.string.selection_preview_complex
+                        textSnapshot?.status==PageTextStatus.EMPTY -> R.string.selection_preview_empty
+                        textSnapshot!=null && !previewEnabled -> R.string.selection_preview_unsupported
+                        else -> R.string.selection_preview_readonly
+                    }
+                    Text(stringResource(status),Modifier.weight(1f).padding(vertical=2.dp),
+                        style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines=1,overflow=TextOverflow.Ellipsis)
+                }
                 HorizontalDivider()
                 ReaderFooter(documentName, page, pageCount, loading, bitmap != null,
                     { openMenu = true }, onPrevious, onNext, onFit, onFitWidth, onHand,
-                    onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true })
+                    onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = previewSlot==null)
             }
         }
         if (openMenu) {
@@ -156,6 +196,16 @@ fun ReaderScreen(
                     }
                 },
             )
+        }
+        if (quotationOpen && previewSpan!=null) {
+            AlertDialog(onDismissRequest={ quotationOpen=false },
+                title={ Text(stringResource(R.string.selection_preview_quotation_title)) },
+                text={ SelectionContainer {
+                    Text(previewSpan.quotation,Modifier.heightIn(max=360.dp).verticalScroll(rememberScrollState()))
+                } },
+                confirmButton={ TextButton(onClick={ quotationOpen=false }) {
+                    Text(stringResource(R.string.reader_recents_close))
+                } })
         }
         if (propertiesOpen && documentProperties != null) {
             DocumentPropertiesDialog(documentProperties, onDismiss = { propertiesOpen = false })
@@ -201,6 +251,7 @@ private fun ReaderFooter(
     documentName: String?, page: Int, pageCount: Int, loading: Boolean, hasPage: Boolean,
     onOpen: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit, onFit: () -> Unit,
     onFitWidth: () -> Unit, onHand: () -> Unit, onPageNumber: () -> Unit, onProperties: () -> Unit,
+    navigationActive: Boolean,
 ) {
     val barColor = MaterialTheme.colorScheme.surface.copy(alpha = 1f)
     BoxWithConstraints(Modifier.fillMaxWidth().background(barColor).zIndex(1f)) {
@@ -215,7 +266,7 @@ private fun ReaderFooter(
                 }
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End) {
-                    NavigationButton(loading, hasPage, onHand)
+                    NavigationButton(loading, hasPage, onHand, navigationActive)
                     UnavailableIcon(R.drawable.reader_settings, stringResource(R.string.reader_settings))
                 }
             }
@@ -223,7 +274,7 @@ private fun ReaderFooter(
             Column(Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Open(loading, onOpen); DocumentLabel(documentName, !loading && hasPage, onProperties)
-                    NavigationButton(loading, hasPage, onHand)
+                    NavigationButton(loading, hasPage, onHand, navigationActive)
                     UnavailableIcon(R.drawable.reader_settings, stringResource(R.string.reader_settings))
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
@@ -265,8 +316,8 @@ private fun RowScope.DocumentLabel(name: String?, enabled: Boolean, action: () -
     }
 }
 @Composable
-private fun NavigationButton(loading: Boolean, hasPage: Boolean, action: () -> Unit) {
-    PulseIcon(R.drawable.reader_hand, stringResource(R.string.reader_navigation_active), !loading && hasPage, action, isSelected = true)
+private fun NavigationButton(loading: Boolean, hasPage: Boolean, action: () -> Unit, active: Boolean) {
+    PulseIcon(R.drawable.reader_hand, stringResource(if(active) R.string.reader_navigation_active else R.string.selection_preview_hand), !loading && hasPage, action, isSelected = active)
 }
 @Composable
 private fun PulseIcon(icon: Int, label: String, enabled: Boolean, action: () -> Unit, isSelected: Boolean = false) {
@@ -297,6 +348,25 @@ private fun PulseAction(enabled: Boolean, action: () -> Unit, modifier: Modifier
                 }
                 action()
             }, enabled = enabled, modifier = Modifier.fillMaxSize()) { content() }
+        }
+    }
+}
+
+
+@Composable
+private fun RowScope.PreviewColorTools(active: Int?, enabled: Boolean, choose: (Int)->Unit) {
+    palette.forEachIndexed { index,color ->
+        val description=stringResource(R.string.selection_preview_tool,stringResource(slotNames[index]))
+        PulseAction(enabled,{ choose(index) },Modifier.size(48.dp),description,isSelected=active==index) {
+            Box(Modifier.size(26.dp).background(color,CircleShape).border(1.dp,Color.DarkGray,CircleShape)) {
+                if(active==index) Canvas(Modifier.fillMaxSize()) {
+                    val ink=if(color.luminance()>0.179f) Color.Black else Color.White
+                    drawLine(ink,Offset(size.width*0.2f,size.height*0.53f),Offset(size.width*0.43f,size.height*0.75f),
+                        strokeWidth=2.dp.toPx(),cap=StrokeCap.Round)
+                    drawLine(ink,Offset(size.width*0.43f,size.height*0.75f),Offset(size.width*0.82f,size.height*0.25f),
+                        strokeWidth=2.dp.toPx(),cap=StrokeCap.Round)
+                }
+            }
         }
     }
 }

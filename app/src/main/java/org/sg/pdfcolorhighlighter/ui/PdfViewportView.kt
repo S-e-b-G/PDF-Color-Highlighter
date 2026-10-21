@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.os.SystemClock
 import android.util.Log
@@ -14,7 +15,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewConfiguration
-import org.sg.pdfcolorhighlighter.domain.PageViewportState
+import org.sg.pdfcolorhighlighter.domain.*
 import org.sg.pdfcolorhighlighter.domain.PanGestureTracker
 import org.sg.pdfcolorhighlighter.domain.ViewportGeometry
 
@@ -24,6 +25,19 @@ class PdfViewportView(context: Context) : View(context) {
     private var logicalPageWidth = 1f
     private var logicalPageHeight = 1f
     private var logicalKey = 0L
+    private var previewText: PageTextSnapshot?=null
+    private var previewSlot: Int?=null
+    private var previewSpan: SelectionSpan?=null
+    private var previewQuads: List<GlyphQuad> = emptyList()
+    private var selectionAnchor: TextPoint?=null
+    private var selectionActive=false
+    private var selectionPinchCancelled=false
+    private val selectionPath=Path()
+    private val selectionPaint=Paint(Paint.ANTI_ALIAS_FLAG)
+    private val previewPalette=intArrayOf(0xFFFFAD5B.toInt(),0xFF00FF00.toInt(),0xFFFC3636.toInt(),
+        0xFFFFFF00.toInt(),0xFFD1DFEB.toInt(),0xFFFCD7FB.toInt())
+    var onPreviewDrag: ((TextPoint,TextPoint,Boolean)->Unit)?=null
+    var onPreviewCancel: (()->Unit)?=null
     private var gestureReported = false
     var onRenderViewport: ((Int, Int, Float) -> Unit)? = null
     var onRenderGesture: ((Boolean) -> Unit)? = null
@@ -61,6 +75,7 @@ class PdfViewportView(context: Context) : View(context) {
         if (debug) Log.d("PdfViewport", "M2a.1 view=$traceId $message enabled=$isEnabled size=${width}x$height zoom=${geometry.state.zoom}")
     }
     private fun resetInput(reason: String, cancelScale: Boolean = true) {
+        cancelSelectionGesture()
         if (cancelScale) {
             val now = SystemClock.uptimeMillis()
             val cancel = MotionEvent.obtain(now, now, MotionEvent.ACTION_CANCEL, 0f, 0f, 0)
@@ -111,6 +126,42 @@ class PdfViewportView(context: Context) : View(context) {
         geometry.configure(logicalPageWidth, logicalPageHeight, width.toFloat(), height.toFloat(), pendingState)
         changed()
     }
+
+    fun setSelectionPreview(snapshot: PageTextSnapshot?, slot: Int?, span: SelectionSpan?) {
+        require(slot==null || slot in 0..5)
+        if (snapshot!==previewText || (slot==null)!=(previewSlot==null)) resetInput("preview-mode")
+        if (span!==previewSpan) previewQuads=span?.quads.orEmpty()
+        previewText=snapshot;previewSlot=slot;previewSpan=span
+        invalidate()
+    }
+    private fun cancelSelectionGesture() {
+        if (selectionActive) onPreviewCancel?.invoke()
+        selectionActive=false;selectionAnchor=null
+    }
+    private fun coordinateMap(): PageCoordinateMap? {
+        val snapshot=previewText ?: return null
+        val p=geometry.placement;val b=snapshot.pageBounds
+        if (p.width<=0f || p.height<=0f || b.width<=0f || b.height<=0f) return null
+        return PageCoordinateMap(b,p.left,p.top,p.width,p.height)
+    }
+    private fun nativeAt(x: Float,y: Float): TextPoint? {
+        if (!x.isFinite() || !y.isFinite()) return null
+        return coordinateMap()?.toPage(TextPoint(x,y))
+    }
+    private fun drawSelectionPreview(canvas: Canvas) {
+        val slot=previewSlot ?: return
+        if(previewSpan==null) return
+        val mapping=coordinateMap() ?: return
+        selectionPaint.color=previewPalette[slot];selectionPaint.alpha=85
+        for (q in previewQuads) {
+            val a=mapping.toView(q.ul);val b=mapping.toView(q.ur)
+            val c=mapping.toView(q.lr);val d=mapping.toView(q.ll)
+            selectionPath.reset();selectionPath.moveTo(a.x,a.y)
+            selectionPath.lineTo(b.x,b.y);selectionPath.lineTo(c.x,c.y);selectionPath.lineTo(d.x,d.y)
+            selectionPath.close();canvas.drawPath(selectionPath,selectionPaint)
+        }
+    }
+
     fun fitPage() {
         resetInput("fit")
         geometry.fit()
@@ -155,6 +206,7 @@ class PdfViewportView(context: Context) : View(context) {
             val p = geometry.placement
             target.set(p.left, p.top, p.left + p.width, p.top + p.height)
             canvas.drawBitmap(bitmap, null, target, paint)
+            drawSelectionPreview(canvas)
         } finally {
             canvas.restoreToCount(saved)
         }
@@ -169,6 +221,13 @@ class PdfViewportView(context: Context) : View(context) {
         if (action == MotionEvent.ACTION_DOWN) {
             resetInput("fresh-down")
             reportGesture(true)
+            selectionPinchCancelled=false
+            if (previewSlot!=null && previewText!=null) {
+                onPreviewCancel?.invoke()
+                selectionAnchor=nativeAt(event.x,event.y)
+                selectionActive=selectionAnchor!=null
+                selectionAnchor?.let { onPreviewDrag?.invoke(it,it,false) }
+            }
             downTime = event.downTime
             pan.begin(event.getPointerId(0), event.x, event.y)
             parent?.requestDisallowInterceptTouchEvent(true)
@@ -178,6 +237,8 @@ class PdfViewportView(context: Context) : View(context) {
         when (action) {
             MotionEvent.ACTION_POINTER_DOWN -> {
                 hadMultiplePointers = true
+                cancelSelectionGesture()
+                selectionPinchCancelled=true
                 val index = event.findPointerIndex(pan.pointerId)
                 if (index >= 0) pan.rebase(pan.pointerId, event.getX(index), event.getY(index))
                 trace("POINTER_DOWN count=${event.pointerCount}")
@@ -202,10 +263,18 @@ class PdfViewportView(context: Context) : View(context) {
                         try { scaleDetector.onTouchEvent(cancel) } finally { cancel.recycle() }
                         trace("stale-scale-cleared")
                     }
-                    val delta = pan.move(pan.pointerId, x, y, slop)
-                    if (delta != null) { geometry.pan(delta.first, delta.second); changed() }
+                    if (previewSlot!=null) {
+                        val first=selectionAnchor
+                        if (selectionActive && !selectionPinchCancelled && first!=null) {
+                            nativeAt(x,y)?.let { onPreviewDrag?.invoke(first,it,false) }
+                        }
+                        pan.rebase(pan.pointerId,x,y)
+                    } else {
+                        val delta = pan.move(pan.pointerId, x, y, slop)
+                        if (delta != null) { geometry.pan(delta.first, delta.second); changed() }
+                    }
                     if (event.eventTime - lastMoveLog >= 250L) {
-                        trace("MOVE x=$x y=$y pan=${delta != null} top=${geometry.placement.top}")
+                        trace("MOVE x=$x y=$y preview=${previewSlot != null} top=${geometry.placement.top}")
                         lastMoveLog = event.eventTime
                     }
                 } else {
@@ -222,7 +291,12 @@ class PdfViewportView(context: Context) : View(context) {
                 trace("POINTER_UP remaining=${pan.pointerId}")
             }
             MotionEvent.ACTION_UP -> {
-                val tap = !pan.hasDragged && !hadMultiplePointers
+                val first=selectionAnchor
+                if (selectionActive && !selectionPinchCancelled && first!=null) {
+                    nativeAt(event.x,event.y)?.let { onPreviewDrag?.invoke(first,it,true) }
+                    selectionActive=false;selectionAnchor=null
+                }
+                val tap = !pan.hasDragged && !hadMultiplePointers && previewSlot==null
                 trace("UP tap=$tap")
                 resetInput("up", cancelScale = false)
                 if (tap) performClick()

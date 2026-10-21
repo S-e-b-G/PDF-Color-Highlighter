@@ -16,4 +16,8 @@
         android:targetPackage="${applicationId}" android:label="Adaptive rendering regression" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.TextSelectionInstrumentation"
         android:targetPackage="${applicationId}" android:label="Read-only structured text selection proof" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.SelectionPreviewInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Read-only selection preview regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.SelectionFlowInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Selection flow and endpoint margin regression" />
 </manifest>

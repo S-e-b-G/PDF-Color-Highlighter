@@ -114,3 +114,31 @@ Native blocks are NOT reliable semantic paragraphs; general layout/grapheme infe
 not claimed. The copied glyph limit does not bound earlier native/getBlocks allocations.
 M3b follows acceptance: native-to-view mapping and explicit read-only touch preview before
 mutations. No fake annotation activation, empty handlers or final editing completion claims.
+
+
+## 2026-10-21 - M3b interactive read-only selection preview
+Use the six existing left color targets as clearly labelled preview tools, without
+changing toolbar order/target sizes or pretending native annotations were created.
+Native extraction is serialized after preview publication, with permission checks and
+stale page-generation rejection. M3a DTOs remain engine-free. A separate pure worker
+and latest-only queue cap work to one running plus one pending selection calculation.
+Map native page origin explicitly; draw temporary actual glyph quads under Canvas clip.
+Same-page raster swaps retain alignment/gesture state. Citation is a contextual overlay
+button, not a viewport-resizing toolbar; quotation dialog is read-only and unsaved.
+One-finger preview selects, Hand restores pan; second finger cancels pending selection
+and permits pinch. Page/background/rotation return to navigation and discard previews.
+No reading metadata stores tool/selection state. Limit visible ranges to 5000 glyphs,
+refusing rather than truncating. No native annotation, dirty revision, history or save
+claim. Next mutations must include completed-edit persistence safeguards.
+
+
+## 2026-10-21 - M3b.1 selection flow and endpoint margins
+User M3b tests exposed a need for line-margin endpoints and multiline continuation.
+Keep raw glyph hit testing strict; assist selection endpoints only on the sheet in
+nearby text-line bands, refuse remote blank areas/outside-sheet points/ambiguous gutters.
+Native IDs are metadata hints, not hard paragraph boundaries. Follow bounded geometric
+continuations across compatible IDs while rejecting incompatible columns/large gaps/
+ambiguous branches. Use a path rather than raw native array order; preserve real glyph
+quads, Unicode safeguards, automatic quotation normalization and all manual Contents.
+These heuristics do not claim universal paragraph/column/layout inference. No PDF edits.
+Retest actual failed passages before accepting M3b or advancing annotation features.

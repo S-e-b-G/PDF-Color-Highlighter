@@ -23,17 +23,20 @@ object PageTextSelector {
             PageTextStatus.READY -> Unit
         }
         if (snapshot.lines.isEmpty()) return reject(SelectionRejection.NO_TEXT)
-        val a = hit(snapshot, first) ?: return reject(SelectionRejection.NO_GLYPH)
-        val b = hit(snapshot, second) ?: return reject(SelectionRejection.NO_GLYPH)
-        val addresses = snapshot.lines.flatMapIndexed { line, value -> value.glyphs.indices.map { TextAddress(line, it) } }
+        val a = TextFlowResolver.endpoint(snapshot, first) ?: return reject(SelectionRejection.NO_GLYPH)
+        val b = TextFlowResolver.endpoint(snapshot, second) ?: return reject(SelectionRejection.NO_GLYPH)
+        val top = if (snapshot.lines[a.line].bounds.top <= snapshot.lines[b.line].bounds.top) a.line else b.line
+        val bottom = if (top == a.line) b.line else a.line
+        val path = TextFlowResolver.path(snapshot,top,bottom) ?: return reject(SelectionRejection.DIFFERENT_TEXT_FLOW)
+        val addresses = path.flatMap { line -> snapshot.lines[line].glyphs.indices.map { TextAddress(line,it) } }
         val ai = addresses.indexOf(a); val bi = addresses.indexOf(b)
         var start = minOf(ai, bi); var end = maxOf(ai, bi)
         fun glyph(index: Int): TextGlyph { val at = addresses[index]; return snapshot.lines[at.line].glyphs[at.glyph] }
         while (start <= end && glyph(start).whitespace) start++
         while (end >= start && glyph(end).whitespace) end--
         if (start > end) return reject(SelectionRejection.WHITESPACE)
-        val firstLine = addresses[start].line; val lastLine = addresses[end].line
-        val lines = snapshot.lines.subList(firstLine, lastLine + 1)
+        val selectedLines = addresses.subList(start,end+1).map { it.line }.distinct()
+        val lines = selectedLines.map { snapshot.lines[it] }
         if (lines.any { !it.selectable || it.glyphs.any { g -> g.codePoint == 0x200D || g.codePoint == 0xFFFD || (g.codePoint < 32 && g.codePoint != 9) || g.codePoint == 127 || g.codePoint in 0x1F1E6..0x1F1FF } }) {
             return reject(SelectionRejection.UNSUPPORTED_TEXT)
         }

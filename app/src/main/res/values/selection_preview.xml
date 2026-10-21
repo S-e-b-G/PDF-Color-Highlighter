@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="selection_preview_tool">Sélection d’essai : %1$s — aperçu non enregistré</string>
+    <string name="selection_preview_active">Aperçu non enregistré : glissez sur le texte. Même couleur ou main : quitter.</string>
+    <string name="selection_preview_rejected">Sélection refusée : visez du texte dans un même bloc. Aucun PDF modifié.</string>
+    <string name="selection_preview_loading">Analyse du texte en arrière-plan… La lecture reste disponible.</string>
+    <string name="selection_preview_unavailable">Texte indisponible pour cette page. La lecture reste disponible.</string>
+    <string name="selection_preview_restricted">Ce PDF ne permet pas l’extraction du texte. Aperçu désactivé.</string>
+    <string name="selection_preview_complex">Page trop complexe pour l’aperçu de sélection.</string>
+    <string name="selection_preview_empty">Pas de couche texte sur cette page. Aucun OCR.</string>
+    <string name="selection_preview_unsupported">Disposition du texte non prise en charge pour la sélection.</string>
+    <string name="selection_preview_readonly">Lecture seule — couleurs : sélection d’essai, sans annotation ni enregistrement.</string>
+    <string name="selection_preview_quotation">Citation…</string>
+    <string name="selection_preview_quotation_title">Citation sélectionnée — aperçu non enregistré</string>
+    <string name="selection_preview_hand">Main — quitter la sélection d’essai</string>
+</resources>

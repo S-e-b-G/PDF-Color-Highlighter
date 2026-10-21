@@ -1,3 +1,35 @@
+# Current increment - M3b.1 selection flow/margin fix; execution pending
+
+- M3b host/build/install and six instrumentation suites passed by user report: 182
+  JVM tests, zero failures/errors/skips. Single-line, accents, colors/Hand, pinch
+  cancellation and alignment/page switching passed manual checks.
+- M3b manual acceptance remains OPEN: multiline and endpoints outside glyphs failed.
+- M3b.1 changes domain selection only: text-line-band endpoint assistance and bounded
+  geometric line continuation across native IDs/array ordering, with column safeguards.
+- Expected 206 JVM tests (182 + 24) and seven instrumentation suites. Author compiler/
+  Gradle/JUnit/Lint/PowerShell/Android execution unavailable. No observed pass claimed.
+- UI/rendering/background queue/workspace/engine/build settings and PDFs untouched.
+- Retest the SAME failed passages using docs/M3b-1-ACCEPTANCE.md. Do not advance real
+  annotation/history/save/recovery until this acceptance is resolved.
+
+## Historical status below (superseded above)
+
+# Current increment - M3b interactive read-only selection preview; source supplied, execution pending
+
+- Accepted M3a by user: 161 JVM tests, zero failures/errors/skips, five instrumentation
+  suites PASS and ordinary reader working. Repository/commit created by user; no SHA claimed.
+- M3b integrates serialized per-page snapshot extraction, off-UI coalesced pure selection,
+  existing six left color slots as explicitly unsaved preview tools, glyph-quad overlays,
+  native-origin-aware mapping and read-only quotation dialog. No native PDF annotations.
+- Expected JVM total 182 (161 + 21 mapping/queue tests); six instrumentation suites.
+  Author Kotlin/Gradle/JUnit/Lint/PowerShell/Android execution is unavailable.
+- Reader navigation/rendering/workspace, palette order, note controls and 48dp toolbar
+  layout are preserved. Hand exits preview; page/background/rotation clear ephemeral selection.
+- Run docs/M3b-ACCEPTANCE.md. Save/history/notes/settings, endpoint handles and production
+  annotation creation/recolor/delete/durability/recovery remain incomplete. No PDF writes.
+
+## Historical status below (superseded above)
+
 # Current accepted increment - M3a read-only structured-text/selection proof
 
 - M3a was accepted by the user on 2026-10-21. The user reported 161 JVM tests with zero
