@@ -1,0 +1,26 @@
+<resources>
+    <string name="reader_properties_title">Propriétés du document</string>
+    <string name="reader_properties_close">Fermer</string>
+    <string name="reader_properties_accessibility">Afficher les propriétés de %1$s</string>
+    <string name="reader_property_unknown">Non renseigné</string>
+    <string name="reader_property_name">Nom du fichier</string>
+    <string name="reader_property_title">Titre (PDF)</string>
+    <string name="reader_property_author">Auteur (PDF)</string>
+    <string name="reader_property_pages">Nombre de pages</string>
+    <string name="reader_property_size">Taille du PDF ouvert</string>
+    <plurals name="reader_property_bytes">
+        <item quantity="one">%1$,d octet</item>
+        <item quantity="other">%1$,d octets</item>
+    </plurals>
+    <string name="reader_property_format">Format</string>
+    <string name="reader_property_created">Création (métadonnées PDF)</string>
+    <string name="reader_property_modified">Modification (métadonnées PDF)</string>
+    <string name="reader_property_source_modified">Modification du fichier (fournisseur)</string>
+    <string name="reader_property_creator">Application créatrice (PDF)</string>
+    <string name="reader_property_producer">Producteur (PDF)</string>
+    <string name="reader_property_subject">Sujet (PDF)</string>
+    <string name="reader_property_keywords">Mots-clés (PDF)</string>
+    <string name="reader_property_location">Emplacement (URI)</string>
+    <string name="reader_property_timezone_unknown">fuseau non précisé</string>
+    <string name="reader_properties_snapshot">Informations du document au moment de son ouverture. La date PDF et celle du fournisseur peuvent différer.</string>
+</resources>

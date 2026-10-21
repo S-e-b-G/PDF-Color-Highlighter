@@ -1,0 +1,19 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <instrumentation
+        android:name="org.sg.pdfcolorhighlighter.NativeProofInstrumentation"
+        android:targetPackage="${applicationId}"
+        android:label="Native PDF annotation proof" />
+
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.ViewportClipInstrumentation" android:targetPackage="${applicationId}" android:label="Viewport clipping regression" />
+    <instrumentation
+        android:name="org.sg.pdfcolorhighlighter.RecentStorageInstrumentation"
+        android:targetPackage="${applicationId}"
+        android:label="Recent storage regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.WorkspaceInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Durable workspace proof" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.AdaptiveRenderInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Adaptive rendering regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.TextSelectionInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Read-only structured text selection proof" />
+</manifest>

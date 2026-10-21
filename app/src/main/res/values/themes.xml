@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.PdfSmoke" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:colorAccent">#355F91</item>
+    </style>
+</resources>

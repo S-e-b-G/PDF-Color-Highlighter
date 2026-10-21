@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_recents_browse">Parcourir…</string>
+    <string name="reader_recents_title">Documents récents</string>
+    <string name="reader_recents_empty">Aucun document récent. Ouvrez un PDF local.</string>
+    <string name="reader_recents_detail">Page %1$d / %2$d · %3$s</string>
+    <string name="reader_recents_unavailable">Accès indisponible. Réessayez ou utilisez Parcourir.</string>
+    <string name="reader_recent_unavailable">Impossible d’ouvrir ce PDF. Le fichier ou son autorisation peut être indisponible. Utilisez Parcourir pour le sélectionner à nouveau. Aucun original n’a été modifié.</string>
+    <string name="reader_recents_remove">Retirer</string>
+    <string name="reader_recents_remove_accessibility">Retirer %1$s des documents récents sans supprimer le PDF</string>
+    <string name="reader_recents_close">Fermer</string>
+    <string name="reader_recent_storage_warning">La liste ou la position de lecture n’a pas pu être conservée. Les PDF ne sont pas modifiés. En cas d’erreur de lecture, le fichier de positions est préservé et les écritures sont suspendues pour cette session.</string>
+</resources>

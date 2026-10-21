@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_render_warning">L’affichage détaillé est indisponible. L’aperçu reste lisible. Changez de page ou rouvrez le document pour réessayer. Le PDF n’a pas été modifié.</string>
+</resources>

@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Lecteur PDF — test technique</string>
+    <string name="smoke_title">Lecteur PDF — navigation M2a</string>
+    <string name="smoke_notice">Lecture seule : pincez pour zoomer, glissez pour déplacer la page. Le surlignage et l’enregistrement ne sont pas encore disponibles.</string>
+    <string name="open">Ouvrir</string>
+    <string name="previous">Précédente</string>
+    <string name="next">Suivante</string>
+    <string name="loading">Ouverture ou rendu en cours…</string>
+    <string name="empty">Ouvrez un PDF local pour vérifier le moteur.</string>
+    <string name="document_fallback">Document PDF</string>
+    <string name="page_status">Page %1$d / %2$d</string>
+    <plurals name="text_status">
+        <item quantity="one">Couche texte : %1$d caractère sur cette page.</item>
+        <item quantity="other">Couche texte : %1$d caractères sur cette page.</item>
+    </plurals>
+    <string name="copy_restricted">Extraction non effectuée : le document interdit la copie.</string>
+    <string name="render_description">Page du document PDF</string>
+    <string name="device_status">Android API %1$d · ABI : %2$s</string>
+    <string name="width_status">Largeur utile : %1$d dp. 18 cibles de 48 dp : 864 dp minimum, hors espacements.</string>
+    <string name="error_password">Ce PDF nécessite un mot de passe. Cette version de test ne gère pas encore son ouverture.</string>
+    <string name="error_limit">Ce PDF dépasse la limite provisoire de 256 Mio du test technique.</string>
+    <string name="error_open">Impossible d’ouvrir ou d’afficher ce PDF. L’original n’a pas été modifié.</string>
+    <string name="error_native">Le moteur natif MuPDF ne peut pas être chargé. Vérifiez les bibliothèques ABI de l’APK.</string>
+    <string name="error_type">Type de diagnostic : %1$s</string>
+    <string name="grant_warning">Le fournisseur n’a pas permis de conserver l’accès. L’ouverture actuelle reste possible.</string>
+    <string name="fit_page">Ajuster la page</string>
+</resources>

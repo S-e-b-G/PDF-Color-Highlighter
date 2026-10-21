@@ -1,0 +1,36 @@
+.gradle/
+.kotlin/
+**/build/
+local.properties
+.validation/
+*.jks
+*.keystore
+.idea/
+.vscode/
+
+# Local signing material and build outputs
+*.apk
+*.aab
+*.p12
+*.pfx
+*.key
+*.pem
+.env
+.env.*
+!.env.example
+**/*signing*.properties
+**/*keystore*.properties
+
+# Private validation output, historical native proof data, and generated exports
+/M1-results-*/
+/m1-crash-*.txt
+/m1-failure-*.txt
+/export_for_ai_*.md
+/grep.exe.stackdump
+/file-manifest.json
+/validation-report.json
+*.log
+/docs/SG-INFOS/
+
+# Unrelated editor/modernization state
+/.github/modernize/

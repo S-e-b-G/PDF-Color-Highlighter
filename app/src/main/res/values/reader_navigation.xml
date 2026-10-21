@@ -1,0 +1,9 @@
+<resources>
+    <string name="reader_jump_title">Aller à la page</string>
+    <string name="reader_jump_label">Numéro de page</string>
+    <string name="reader_jump_hint">Saisissez un numéro de 1 à %1$d.</string>
+    <string name="reader_jump_error">Numéro invalide : choisissez une page de 1 à %1$d.</string>
+    <string name="reader_jump_ok">OK</string>
+    <string name="reader_jump_cancel">Annuler</string>
+    <string name="reader_jump_accessibility">Page %1$d sur %2$d. Appuyer pour changer de page.</string>
+</resources>

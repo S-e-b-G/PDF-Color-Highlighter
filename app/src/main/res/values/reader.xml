@@ -1,0 +1,22 @@
+<resources>
+    <string name="reader_readonly">Lecture seule — outils d’annotation et paramètres à venir.</string>
+    <string name="reader_width_blocked">Largeur insuffisante pour la barre sur une ligne : disposition tablette à valider.</string>
+    <string name="reader_slot_1">Titres de paragraphe</string>
+    <string name="reader_slot_2">Texte de synthèse</string>
+    <string name="reader_slot_3">Texte important</string>
+    <string name="reader_slot_4">Notes</string>
+    <string name="reader_slot_5">Sous-notes</string>
+    <string name="reader_slot_6">Texte superflu</string>
+    <string name="reader_highlight_tool">Surligner : %1$s — indisponible dans cette version</string>
+    <string name="reader_note_tool">Note : %1$s — indisponible dans cette version</string>
+    <string name="reader_unavailable">%1$s — indisponible dans cette version</string>
+    <string name="reader_undo">Annuler</string>
+    <string name="reader_redo">Rétablir</string>
+    <string name="reader_save">Enregistrer</string>
+    <string name="reader_save_as">Enregistrer sous</string>
+    <string name="reader_settings">Paramètres</string>
+    <string name="reader_navigation_active">Navigation — mode actif</string>
+    <string name="reader_no_document">Aucun document</string>
+    <string name="reader_no_page">— / —</string>
+    <string name="reader_page">%1$d / %2$d</string>
+</resources>
