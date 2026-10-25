@@ -65,6 +65,7 @@ fun ReaderScreen(
     previewRejection: SelectionRejection?,
     onChoosePreviewSlot: (Int)->Unit,
     onPreviewDrag: (TextPoint,TextPoint,Boolean)->Unit, onPreviewCancel: ()->Unit,
+    onPreviewAdjust: (TextPoint,TextAddress,Boolean)->Unit,
     pageWidth: Float, pageHeight: Float, frameSerial: Long,
     onRenderViewport: (Int, Int, Float) -> Unit,
     onRenderGesture: (Boolean) -> Unit,
@@ -118,23 +119,23 @@ fun ReaderScreen(
                             factory = { context -> PdfViewportView(context).also {
                                 it.contentDescription = description
                                 it.onViewportChanged = onViewportChanged
-                                it.onPreviewDrag=onPreviewDrag;it.onPreviewCancel=onPreviewCancel
+                                it.onPreviewDrag=onPreviewDrag;it.onPreviewCancel=onPreviewCancel;it.onPreviewAdjust=onPreviewAdjust
                                 it.onRenderViewport = onRenderViewport
                                 it.onRenderGesture = onRenderGesture
                                 onViewportReady(it)
                             } },
                             update = { view ->
                                 view.onViewportChanged = onViewportChanged
-                                view.onPreviewDrag=onPreviewDrag;view.onPreviewCancel=onPreviewCancel
+                                view.onPreviewDrag=onPreviewDrag;view.onPreviewCancel=onPreviewCancel;view.onPreviewAdjust=onPreviewAdjust
                                 view.onRenderViewport = onRenderViewport
                                 view.onRenderGesture = onRenderGesture
                                 view.setInteractionEnabled(!loading)
                                 view.show(bitmap, viewportState, pageWidth, pageHeight, frameSerial)
-                                view.setSelectionPreview(textSnapshot,previewSlot,previewSpan)
+                                view.setSelectionPreview(textSnapshot,previewSlot,previewSpan,previewCommitted)
                             },
                             onRelease = { view ->
                                 view.onViewportChanged = null
-                                view.onPreviewDrag=null;view.onPreviewCancel=null
+                                view.onPreviewDrag=null;view.onPreviewCancel=null;view.onPreviewAdjust=null
                                 view.onRenderViewport = null
                                 view.onRenderGesture = null
                                 onViewportReleased(view)
@@ -162,6 +163,7 @@ fun ReaderScreen(
                     verticalAlignment=Alignment.CenterVertically) {
                     val status=when {
                         previewSlot!=null && previewRejection!=null -> selectionRejectionResource(previewRejection)
+                        previewSlot!=null && previewCommitted && previewSpan!=null -> R.string.selection_preview_adjust
                         previewSlot!=null -> R.string.selection_preview_active
                         textLoading -> R.string.selection_preview_loading
                         textFailed -> R.string.selection_preview_unavailable

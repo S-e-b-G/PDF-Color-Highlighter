@@ -143,3 +143,15 @@ paint rectangles to replace native selection geometry/export QuadPoints. Preserv
 row separation, native ownership, physical row word metadata and manual Contents policy.
 No real PDF mutations, completed save/recovery, automatic column hop or speed guarantee.
 Keep APK versionName and reader_increment synchronized. No automatic Git operations.
+
+
+## M3e continuity
+Expected 298 JVM tests/ten native suites; author runtime verification pending. User M3d
+manual feedback positive, but no full post-fix automated log supplied. Verify M3d receipt/
+source/bare-return fix before applying. See M3e-ACCEPTANCE.md.
+Handle adjustment is character/cluster-safe with exact fixed logical endpoint; do not
+re-hit-test the opposite point and drop zero-area punctuation. Retain shared range/flow
+core and explicit queue intent, epoch/snapshot/release gates. Handle tap no-op; slop/grab
+offset/cancel/pinch/rotation behavior must pass. UI punctuation height is paint-only and
+context-bounded. No letters/quads/PDF edits fabricated. No permanent toolbar changes,
+column-reading-order/auto-scroll/accessibility/editor/history/save/recovery completion.

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="reader_increment">M3d</string>
+    <string name="reader_increment">M3e</string>
     <string name="selection_status_version">%1$s · %2$s</string>
     <string name="selection_diag_button">Diagnostic…</string>
     <string name="selection_diag_title">Diagnostic de disposition — sans texte du PDF</string>

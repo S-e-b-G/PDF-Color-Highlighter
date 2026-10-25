@@ -2,7 +2,7 @@
 package org.sg.pdfcolorhighlighter.domain
 
 data class PreviewSelectionRequest(val revision: Long, val snapshot: PageTextSnapshot,
-                                   val first: TextPoint, val last: TextPoint, val finished: Boolean, val epoch: Long = 0)
+                                   val first: TextPoint, val last: TextPoint, val finished: Boolean, val epoch: Long = 0, val snapToWords: Boolean = true, val fixedAddress: TextAddress? = null)
 /** Main-thread scheduler: at most one running calculation and one replaceable pending request. */
 class SelectionPreviewQueue {
     companion object {
@@ -14,9 +14,9 @@ class SelectionPreviewQueue {
     private var running: Long?=null
     private var pending: PreviewSelectionRequest?=null
     fun offer(snapshot: PageTextSnapshot, first: TextPoint, last: TextPoint,
-              finished: Boolean): PreviewSelectionRequest? {
+              finished: Boolean, snapToWords: Boolean = true, fixedAddress: TextAddress? = null): PreviewSelectionRequest? {
         revision++
-        pending=PreviewSelectionRequest(revision,snapshot,first,last,finished,epoch)
+        pending=PreviewSelectionRequest(revision,snapshot,first,last,finished,epoch,snapToWords,fixedAddress)
         return take()
     }
     fun accepts(request: PreviewSelectionRequest)=request.revision==revision

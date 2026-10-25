@@ -63,6 +63,7 @@ class MainActivity : ComponentActivity() {
                 previewRejection=reader.previewRejection,
                 onChoosePreviewSlot={ reader.choosePreviewSlot(it) },
                 onPreviewDrag={ first,last,finished -> reader.previewSelection(first,last,finished) },
+                onPreviewAdjust={ moving,fixed,finished -> reader.previewAdjustedSelection(moving,fixed,finished) },
                 onPreviewCancel={ reader.cancelPreviewSelection() },
                 pageWidth = reader.pageWidth, pageHeight = reader.pageHeight, frameSerial = reader.frameSerial,
                 onRenderViewport = { width, height, zoom -> reader.renderViewport(width, height, zoom) },
@@ -138,7 +139,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         viewportView?.onViewportChanged = null
-        viewportView?.onPreviewDrag=null;viewportView?.onPreviewCancel=null
+        viewportView?.onPreviewDrag=null;viewportView?.onPreviewCancel=null;viewportView?.onPreviewAdjust=null
         viewportView?.onRenderViewport = null
         viewportView?.onRenderGesture = null
         viewportView = null

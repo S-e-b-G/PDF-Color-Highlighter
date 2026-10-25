@@ -16,18 +16,32 @@ object PageTextSelector {
         return indexFor(snapshot).hit(point) // Exact glyph hits; margin assistance stays in TextFlowResolver.
     }
 
+    private fun statusFailure(snapshot:PageTextSnapshot):TextSelectionAttempt.Rejected? {
+        val reason=when {
+            snapshot.status==PageTextStatus.COPY_RESTRICTED -> SelectionRejection.COPY_RESTRICTED
+            snapshot.status==PageTextStatus.TOO_COMPLEX -> SelectionRejection.TOO_COMPLEX
+            snapshot.status==PageTextStatus.EMPTY || snapshot.lines.isEmpty() -> SelectionRejection.NO_TEXT
+            else -> null
+        }
+        return reason?.let{TextSelectionAttempt.Rejected(it)}
+    }
     fun select(snapshot: PageTextSnapshot, first: TextPoint, second: TextPoint,
                snapToWords: Boolean = true): TextSelectionAttempt {
-        fun reject(reason: SelectionRejection) = TextSelectionAttempt.Rejected(reason)
-        when (snapshot.status) {
-            PageTextStatus.COPY_RESTRICTED -> return reject(SelectionRejection.COPY_RESTRICTED)
-            PageTextStatus.TOO_COMPLEX -> return reject(SelectionRejection.TOO_COMPLEX)
-            PageTextStatus.EMPTY -> return reject(SelectionRejection.NO_TEXT)
-            PageTextStatus.READY -> Unit
-        }
-        if (snapshot.lines.isEmpty()) return reject(SelectionRejection.NO_TEXT)
-        val a = TextFlowResolver.endpoint(snapshot, first) ?: return reject(SelectionRejection.NO_GLYPH)
-        val b = TextFlowResolver.endpoint(snapshot, second) ?: return reject(SelectionRejection.NO_GLYPH)
+        statusFailure(snapshot)?.let{return it}
+        val a=TextFlowResolver.endpoint(snapshot,first) ?: return TextSelectionAttempt.Rejected(SelectionRejection.NO_GLYPH)
+        val b=TextFlowResolver.endpoint(snapshot,second) ?: return TextSelectionAttempt.Rejected(SelectionRejection.NO_GLYPH)
+        return range(snapshot,a,b,snapToWords)
+    }
+    /** Exact fixed logical endpoint preserves combining/zero-area punctuation at the opposite boundary. */
+    fun adjust(snapshot:PageTextSnapshot,moving:TextPoint,fixed:TextAddress):TextSelectionAttempt {
+        statusFailure(snapshot)?.let{return it}
+        if(fixed.line !in snapshot.lines.indices || fixed.glyph !in snapshot.lines[fixed.line].glyphs.indices)
+            return TextSelectionAttempt.Rejected(SelectionRejection.NO_GLYPH)
+        val at=TextFlowResolver.endpoint(snapshot,moving) ?: return TextSelectionAttempt.Rejected(SelectionRejection.NO_GLYPH)
+        return range(snapshot,at,fixed,false)
+    }
+    private fun range(snapshot:PageTextSnapshot,a:TextAddress,b:TextAddress,snapToWords:Boolean):TextSelectionAttempt {
+        fun reject(reason:SelectionRejection)=TextSelectionAttempt.Rejected(reason)
         val top = if (snapshot.lines[a.line].bounds.top <= snapshot.lines[b.line].bounds.top) a.line else b.line
         val bottom = if (top == a.line) b.line else a.line
         val path = TextFlowResolver.path(snapshot,top,bottom) ?: return reject(SelectionRejection.DIFFERENT_TEXT_FLOW)

@@ -1,3 +1,20 @@
+# Current increment - M3e read-only endpoint handles; source supplied, execution pending
+
+- User describes M3d preview as almost satisfactory after initializer build fix; ellipsis
+  paint issue remains. Latest explicit successful automated log supplied was M3c.1. Require
+  M3d applied receipt, corrected cached initializers and 268 source test declarations;
+  do not invent an observed post-fix M3d test/native summary.
+- M3e adds start/end handle routing, character-mode adjustment with exact fixed logical
+  endpoint, and selected same-row dot/ellipsis paint-height assistance. No PDF mutations.
+- APK/status M3e. Expected JVM 298 (268+30), ten native suites; author runtime execution
+  unavailable. Existing flow/column, Unicode, physical-row and epoch safeguards remain.
+- Read docs/M3e-ACCEPTANCE.md. Test actual handles/tap/slop/char quote/reverse/pinch/reset
+  and punctuation. Screenshot alone cannot establish source ellipsis encoding/geometry.
+- No cross-column reading-order, saved highlights, editable Contents/history/save/recovery
+  or full accessibility/auto-scroll completion claimed. Native mutation durability remains.
+
+## Historical status below (superseded above)
+
 # Current increment - M3d responsive continuous preview; accepted with one known issue
 
 - M3d manual tests (user report, 2026-10-25): working, except the "…" (ellipsis) character

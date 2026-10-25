@@ -24,4 +24,6 @@
         android:targetPackage="${applicationId}" android:label="Physical text row reconstruction regression" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.SelectionFeedbackInstrumentation"
         android:targetPackage="${applicationId}" android:label="Selection feedback paint regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.EndpointHandlesInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Read-only endpoint handle regression" />
 </manifest>

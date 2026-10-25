@@ -184,3 +184,16 @@ real GlyphQuad/SelectionSpan or create PDF annotation geometry from paint bands.
 physical rows and gutters remain separate; Canvas/Compose clipping unchanged.
 No measured latency guarantee, universal layout or cross-column reading-order support.
 No native engine/dependency/SDK/workspace/Git/PDF changes. Version M3d in APK/status.
+
+
+## 2026-10-25 - M3e endpoint handles and contextual punctuation painting
+Keep normal drag word-snapped; use explicit adjustment intent with moving point and exact
+fixed TextAddress for handles. Preserve opposite combining/zero-area punctuation endpoints,
+validate status/indices, then share the existing range/flow/Unicode core. Same bounded pure
+worker/queue carries intent, current snapshot/epoch gates and strict final release.
+Visible handles have priority, dp-sized targets and grab offsets. A no-move tap does nothing;
+second finger/cancel/page/mode resets cannot commit. No auto-scroll or virtual handle nodes.
+Paint low dot/U+2026 using reliable selected neighbor row height only; never synthesize
+text/native glyph/annotation geometry or bridge gutters. Isolated/missing geometry remains
+conservative. Keep permanent toolbar/status layout, real glyph data and native ownership.
+No PDF edits, history/save/recovery or column-reading-order claims. Version M3e in APK/status.

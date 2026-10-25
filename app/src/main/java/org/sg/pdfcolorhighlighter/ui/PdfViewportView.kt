@@ -34,6 +34,18 @@ class PdfViewportView(context: Context) : View(context) {
     private val selectionPaint=Paint(Paint.ANTI_ALIAS_FLAG)
     private val previewPalette=intArrayOf(0xFFFFAD5B.toInt(),0xFF00FF00.toInt(),0xFFFC3636.toInt(),
         0xFFFFFF00.toInt(),0xFFD1DFEB.toInt(),0xFFFCD7FB.toInt())
+    private var handlesEnabled=false
+    private var activeHandle:SelectionHandleSide?=null
+    private var handleBaseSpan:SelectionSpan?=null
+    private var handleLayout:SelectionHandles?=null
+    private var handleFixed:TextAddress?=null
+    private var handleDownTouch:TextPoint?=null
+    private var handlePointOffset:TextPoint?=null
+    private var handleDelta=TextPoint(0f,0f)
+    private var handleMoved=false
+    private val handlePaint=Paint(Paint.ANTI_ALIAS_FLAG)
+    private val handleDensity get()=resources.displayMetrics.density
+    var onPreviewAdjust: ((TextPoint,TextAddress,Boolean)->Unit)?=null
     var onPreviewDrag: ((TextPoint,TextPoint,Boolean)->Unit)?=null
     var onPreviewCancel: (()->Unit)?=null
     private var gestureReported = false
@@ -125,16 +137,76 @@ class PdfViewportView(context: Context) : View(context) {
         changed()
     }
 
-    fun setSelectionPreview(snapshot: PageTextSnapshot?, slot: Int?, span: SelectionSpan?) {
+    fun setSelectionPreview(snapshot: PageTextSnapshot?, slot: Int?, span: SelectionSpan?, handles: Boolean = false) {
         require(slot==null || slot in 0..5)
         if (snapshot!==previewText || (slot==null)!=(previewSlot==null)) resetInput("preview-mode")
         if (span!==previewSpan) previewBands=span?.let{PreviewPaintGeometry.bands(it)}.orEmpty()
-        previewText=snapshot;previewSlot=slot;previewSpan=span
+        previewText=snapshot;previewSlot=slot;previewSpan=span;handlesEnabled=handles
         invalidate()
     }
+    private fun clearHandleState(){
+        activeHandle=null;handleBaseSpan=null;handleLayout=null;handleFixed=null
+        handleDownTouch=null;handlePointOffset=null;handleDelta=TextPoint(0f,0f);handleMoved=false
+    }
     private fun cancelSelectionGesture() {
-        if (selectionActive) onPreviewCancel?.invoke()
-        selectionActive=false;selectionAnchor=null
+        val notify=selectionActive || activeHandle!=null
+        selectionActive=false;selectionAnchor=null;clearHandleState()
+        if(notify)onPreviewCancel?.invoke()
+    }
+    private fun currentSelectionHandles():SelectionHandles?{
+        val span=handleBaseSpan ?: previewSpan ?: return null
+        val mapping=coordinateMap() ?: return null
+        return try{SelectionHandleGeometry.layout(span,mapping,handleDensity,width.toFloat(),height.toFloat())}
+            catch(_:IllegalArgumentException){null}
+    }
+    private fun beginPreviewGesture(x:Float,y:Float){
+        val span=previewSpan
+        val layout=if(handlesEnabled)currentSelectionHandles() else null
+        val side=if(layout!=null && x.isFinite() && y.isFinite())SelectionHandleGeometry.hit(layout,TextPoint(x,y),handleDensity)else null
+        if(side!=null && span!=null && layout!=null){
+            val handle=if(side==SelectionHandleSide.START)layout.start else layout.end
+            val mapping=coordinateMap() ?: return
+            val nativePoint=try{mapping.toView(handle.nativeCenter)}catch(_:IllegalArgumentException){return}
+            activeHandle=side;handleBaseSpan=span;handleLayout=layout
+            handleFixed=if(side==SelectionHandleSide.START)span.end else span.start
+            handleDownTouch=TextPoint(x,y);handlePointOffset=TextPoint(x-nativePoint.x,y-nativePoint.y)
+            handleDelta=TextPoint(0f,0f);handleMoved=false
+        }else{
+            onPreviewCancel?.invoke()
+            selectionAnchor=nativeAt(x,y);selectionActive=selectionAnchor!=null
+            selectionAnchor?.let{onPreviewDrag?.invoke(it,it,false)}
+        }
+    }
+    private fun updateHandle(x:Float,y:Float,finished:Boolean){
+        if(activeHandle==null || selectionPinchCancelled || !x.isFinite() || !y.isFinite())return
+        val down=handleDownTouch ?: return;val offset=handlePointOffset ?: return;val fixed=handleFixed ?: return
+        val dx=x-down.x;val dy=y-down.y
+        if(!handleMoved && dx*dx+dy*dy<=slop*slop)return
+        handleMoved=true;handleDelta=TextPoint(dx,dy)
+        nativeAt(x-offset.x,y-offset.y)?.let{onPreviewAdjust?.invoke(it,fixed,finished)}
+        invalidate()
+    }
+    private fun finishHandle(x:Float,y:Float){
+        if(activeHandle==null)return
+        updateHandle(x,y,true)
+        clearHandleState()
+    }
+    private fun drawSelectionHandles(canvas:Canvas){
+        if(previewSlot==null || (!handlesEnabled && activeHandle==null))return
+        val layout=handleLayout ?: currentSelectionHandles() ?: return
+        val density=handleDensity
+        for(h in listOf(layout.start,layout.end)){
+            if(!h.visible)continue
+            val delta=if(activeHandle==h.side && handleMoved)handleDelta else TextPoint(0f,0f)
+            val ax=h.anchor.x+delta.x;val ay=h.anchor.y+delta.y
+            val cx=h.center.x+delta.x;val cy=h.center.y+delta.y
+            handlePaint.alpha=255;handlePaint.style=Paint.Style.STROKE;handlePaint.strokeWidth=2f*density
+            handlePaint.color=Color.DKGRAY;canvas.drawLine(ax,ay,cx,cy,handlePaint)
+            handlePaint.style=Paint.Style.FILL;handlePaint.color=previewPalette[checkNotNull(previewSlot)]
+            canvas.drawCircle(cx,cy,layout.radius,handlePaint)
+            handlePaint.style=Paint.Style.STROKE;handlePaint.color=Color.DKGRAY
+            canvas.drawCircle(cx,cy,layout.radius,handlePaint)
+        }
     }
     private fun coordinateMap(): PageCoordinateMap? {
         val snapshot=previewText ?: return null
@@ -203,6 +275,7 @@ class PdfViewportView(context: Context) : View(context) {
             target.set(p.left, p.top, p.left + p.width, p.top + p.height)
             canvas.drawBitmap(bitmap, null, target, paint)
             drawSelectionPreview(canvas)
+            drawSelectionHandles(canvas)
         } finally {
             canvas.restoreToCount(saved)
         }
@@ -218,12 +291,7 @@ class PdfViewportView(context: Context) : View(context) {
             resetInput("fresh-down")
             reportGesture(true)
             selectionPinchCancelled=false
-            if (previewSlot!=null && previewText!=null) {
-                onPreviewCancel?.invoke()
-                selectionAnchor=nativeAt(event.x,event.y)
-                selectionActive=selectionAnchor!=null
-                selectionAnchor?.let { onPreviewDrag?.invoke(it,it,false) }
-            }
+            if (previewSlot!=null && previewText!=null) beginPreviewGesture(event.x,event.y)
             downTime = event.downTime
             pan.begin(event.getPointerId(0), event.x, event.y)
             parent?.requestDisallowInterceptTouchEvent(true)
@@ -260,6 +328,7 @@ class PdfViewportView(context: Context) : View(context) {
                         trace("stale-scale-cleared")
                     }
                     if (previewSlot!=null) {
+                        if(activeHandle!=null)updateHandle(x,y,false)
                         val first=selectionAnchor
                         if (selectionActive && !selectionPinchCancelled && first!=null) {
                             nativeAt(x,y)?.let { onPreviewDrag?.invoke(first,it,false) }
@@ -287,6 +356,7 @@ class PdfViewportView(context: Context) : View(context) {
                 trace("POINTER_UP remaining=${pan.pointerId}")
             }
             MotionEvent.ACTION_UP -> {
+                finishHandle(event.x,event.y)
                 val first=selectionAnchor
                 if (selectionActive && !selectionPinchCancelled && first!=null) {
                     nativeAt(event.x,event.y)?.let { onPreviewDrag?.invoke(first,it,true) }

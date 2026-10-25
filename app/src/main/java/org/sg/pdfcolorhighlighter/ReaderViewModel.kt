@@ -324,15 +324,21 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         previewSpan=null;previewCommitted=false;previewRejection=null
     }
     fun stopPreview() { previewSlot=null;cancelPreviewSelection() }
-    fun previewSelection(first: TextPoint, last: TextPoint, finished: Boolean) {
-        if (cleared || loading || previewSlot==null) return
+    fun previewSelection(first:TextPoint,last:TextPoint,finished:Boolean) {
+        offerPreview(first,last,finished,true,null)
+    }
+    fun previewAdjustedSelection(moving:TextPoint,fixed:TextAddress,finished:Boolean) {
+        offerPreview(moving,moving,finished,false,fixed)
+    }
+    private fun offerPreview(first:TextPoint,last:TextPoint,finished:Boolean,words:Boolean,fixed:TextAddress?) {
+        if(cleared || loading || previewSlot==null)return
         val snapshot=textSnapshot ?: return
-        if (previewCommitted) { previewSpan=null;previewCommitted=false }
-        selectionQueue.offer(snapshot,first,last,finished)?.let { dispatchPreview(it) }
+        if(previewCommitted){if(words)previewSpan=null;previewCommitted=false}
+        selectionQueue.offer(snapshot,first,last,finished,words,fixed)?.let{dispatchPreview(it)}
     }
     private fun dispatchPreview(request: PreviewSelectionRequest) {
         selectionWorker.execute {
-            val result: Result<TextSelectionAttempt> =try { Result.success(PageTextSelector.select(request.snapshot,request.first,request.last)) }
+            val result: Result<TextSelectionAttempt> =try { Result.success(request.fixedAddress?.let{PageTextSelector.adjust(request.snapshot,request.first,it)} ?: PageTextSelector.select(request.snapshot,request.first,request.last,request.snapToWords)) }
                 catch(error:Exception) { Result.failure(error) }
                 catch(error:OutOfMemoryError) { Result.failure(error) }
             main.post {
