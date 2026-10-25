@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.RectF
 import android.os.SystemClock
 import android.util.Log
@@ -28,11 +27,10 @@ class PdfViewportView(context: Context) : View(context) {
     private var previewText: PageTextSnapshot?=null
     private var previewSlot: Int?=null
     private var previewSpan: SelectionSpan?=null
-    private var previewQuads: List<GlyphQuad> = emptyList()
+    private var previewBands: List<PreviewPaintBand> = emptyList()
     private var selectionAnchor: TextPoint?=null
     private var selectionActive=false
     private var selectionPinchCancelled=false
-    private val selectionPath=Path()
     private val selectionPaint=Paint(Paint.ANTI_ALIAS_FLAG)
     private val previewPalette=intArrayOf(0xFFFFAD5B.toInt(),0xFF00FF00.toInt(),0xFFFC3636.toInt(),
         0xFFFFFF00.toInt(),0xFFD1DFEB.toInt(),0xFFFCD7FB.toInt())
@@ -130,7 +128,7 @@ class PdfViewportView(context: Context) : View(context) {
     fun setSelectionPreview(snapshot: PageTextSnapshot?, slot: Int?, span: SelectionSpan?) {
         require(slot==null || slot in 0..5)
         if (snapshot!==previewText || (slot==null)!=(previewSlot==null)) resetInput("preview-mode")
-        if (span!==previewSpan) previewQuads=span?.quads.orEmpty()
+        if (span!==previewSpan) previewBands=span?.let{PreviewPaintGeometry.bands(it)}.orEmpty()
         previewText=snapshot;previewSlot=slot;previewSpan=span
         invalidate()
     }
@@ -153,12 +151,10 @@ class PdfViewportView(context: Context) : View(context) {
         if(previewSpan==null) return
         val mapping=coordinateMap() ?: return
         selectionPaint.color=previewPalette[slot];selectionPaint.alpha=85
-        for (q in previewQuads) {
-            val a=mapping.toView(q.ul);val b=mapping.toView(q.ur)
-            val c=mapping.toView(q.lr);val d=mapping.toView(q.ll)
-            selectionPath.reset();selectionPath.moveTo(a.x,a.y)
-            selectionPath.lineTo(b.x,b.y);selectionPath.lineTo(c.x,c.y);selectionPath.lineTo(d.x,d.y)
-            selectionPath.close();canvas.drawPath(selectionPath,selectionPaint)
+        for (band in previewBands) {
+            val a=mapping.toView(TextPoint(band.left,band.top))
+            val b=mapping.toView(TextPoint(band.right,band.bottom))
+            canvas.drawRect(a.x,a.y,b.x,b.y,selectionPaint)
         }
     }
 

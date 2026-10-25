@@ -8,7 +8,7 @@ import kotlin.math.abs
 
 /** Call on the owning serialized native worker with doc.hasPermission(Document.PERMISSION_COPY).
  * The caller owns Page. This extractor owns/destroys StructuredText and returns only copied values.
- * M3a supplies and tests the adapter; the ordinary reader is intentionally not wired to it yet.
+ * Copied data is normalized into supported physical text rows after native cleanup.
  */
 object MuPdfTextSnapshot {
     const val MAX_GLYPHS = 100000
@@ -18,7 +18,7 @@ object MuPdfTextSnapshot {
         val bounds = TextBounds(b.x0, b.y0, b.x1, b.y1)
         if (!copyAllowed) return PageTextSnapshot(bounds, emptyList(), PageTextStatus.COPY_RESTRICTED)
         val text = page.toStructuredText()
-        try {
+        val snapshot = try {
             val result = mutableListOf<PageTextLine>()
             var total = 0L
             text.blocks.forEachIndexed { blockIndex, block ->
@@ -45,7 +45,8 @@ object MuPdfTextSnapshot {
                     }
                 }
             }
-            return PageTextSnapshot(bounds, result.toList(), if (result.isEmpty()) PageTextStatus.EMPTY else PageTextStatus.READY)
+            PageTextSnapshot(bounds, result.toList(), if (result.isEmpty()) PageTextStatus.EMPTY else PageTextStatus.READY)
         } finally { text.destroy() }
+        return TextRowCoalescer.normalize(snapshot)
     }
 }

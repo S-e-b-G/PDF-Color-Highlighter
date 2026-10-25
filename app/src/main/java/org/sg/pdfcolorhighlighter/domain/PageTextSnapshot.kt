@@ -14,13 +14,13 @@ data class TextBounds(val left: Float, val top: Float, val right: Float, val bot
 /** Clockwise/counterclockwise convex quadrilateral, stored in MuPDF UL,UR,LL,LR order. */
 data class GlyphQuad(val ul: TextPoint, val ur: TextPoint, val ll: TextPoint, val lr: TextPoint) {
     private val polygon get() = listOf(ul, ur, lr, ll)
-    val bounds: TextBounds get() {
+    val bounds: TextBounds = run {
         val p = polygon
-        return TextBounds(p.minOf { it.x }, p.minOf { it.y }, p.maxOf { it.x }, p.maxOf { it.y })
+        TextBounds(p.minOf { it.x }, p.minOf { it.y }, p.maxOf { it.x }, p.maxOf { it.y })
     }
-    val area: Double get() {
+    val area: Double = run {
         val p = polygon
-        return abs(p.indices.sumOf { i ->
+        abs(p.indices.sumOf { i ->
             val a = p[i]; val b = p[(i + 1) % 4]
             a.x.toDouble() * b.y - a.y.toDouble() * b.x
         }) / 2.0
@@ -39,13 +39,19 @@ data class GlyphQuad(val ul: TextPoint, val ur: TextPoint, val ll: TextPoint, va
 
 data class TextGlyph(val codePoint: Int, val quad: GlyphQuad) {
     init { require(Character.isValidCodePoint(codePoint) && codePoint !in 0xD800..0xDFFF) }
-    val text: String get() = String(Character.toChars(codePoint))
-    val whitespace: Boolean get() = Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint)
+    val text: String = String(Character.toChars(codePoint))
+    val whitespace: Boolean = Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint)
 }
-data class PageTextLine(val block: Int, val run: Int, val glyphs: List<TextGlyph>, val selectable: Boolean = true) {
-    init { require(glyphs.isNotEmpty()) }
-    val text: String get() = glyphs.joinToString("") { it.text }
-    val bounds: TextBounds get() = TextBounds(glyphs.minOf { it.quad.bounds.left }, glyphs.minOf { it.quad.bounds.top },
+data class PageTextLine(val block: Int, val run: Int, val glyphs: List<TextGlyph>, val selectable: Boolean = true,
+                        val spacesBefore: Set<Int> = emptySet(), val sourceFragments: Int = 1) {
+    init {
+        require(glyphs.isNotEmpty() && sourceFragments >= 1)
+        require(spacesBefore.all { it > 0 && it < glyphs.size })
+    }
+    val text: String get() = buildString {
+        glyphs.forEachIndexed { index,glyph -> if (index in spacesBefore) append(' ');append(glyph.text) }
+    }
+    val bounds: TextBounds = TextBounds(glyphs.minOf { it.quad.bounds.left }, glyphs.minOf { it.quad.bounds.top },
         glyphs.maxOf { it.quad.bounds.right }, glyphs.maxOf { it.quad.bounds.bottom })
 }
 enum class PageTextStatus { READY, EMPTY, COPY_RESTRICTED, TOO_COMPLEX }
@@ -90,7 +96,7 @@ object TextGeometryPolicy {
         if (!height.isFinite() || height / small > 1.75f) return false
         if (b.top <= a.top + small * 0.35f) return false
         val sameNativeRun = previous.block == next.block && previous.run == next.run
-        val gapLimit = height * if (sameNativeRun) 2.5f else 0.9f
+        val gapLimit = height * (if (sameNativeRun) 2.5f else 1.25f)
         if (b.top - a.bottom > gapLimit) return false
         val overlap = min(a.right, b.right) - max(a.left, b.left)
         return overlap >= min(a.width, b.width) * 0.2f || abs(a.left - b.left) <= height * 1.5f

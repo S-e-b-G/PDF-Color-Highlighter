@@ -1,3 +1,54 @@
+# Current increment - M3d responsive continuous preview; source supplied, execution pending
+
+- M3c.1 accepted user host/native report: 244 JVM tests without failures/errors/skips,
+  build/Lint/install success, eight native suites PASS. Same-column physical-row fix works;
+  diagnostics changed 123 -> 116 rows with physical glyph count preserved.
+- Cross-column reading continuation remains unsupported. User reports delayed drag feedback
+  and visible justified-word gaps in the temporary overlay.
+- M3d adds immutable geometry caches, bounded weakly cached exact-hit indexing, current-
+  gesture valid interim MOVE feedback, and UI-only continuous row paint bands.
+- Expected JVM total 268 (244+24), nine native suites. Author runtime compilation/JUnit/
+  Lint/PowerShell/Android execution unavailable. No measured speed/frame/heap promise.
+- Selection glyph/quads/text, physical-row/column safeguards and final-result validation
+  stay intact. No PDF writes, annotations/history/save/recovery or reading-order hop added.
+- Run docs/M3d-ACCEPTANCE.md; user drag/gap/cancel/final-quote tests are required.
+
+## Historical status below (superseded above)
+
+# Current increment - M3c.1 physical text rows; source supplied, runtime acceptance pending
+
+- M3c accepted automated user report: 216 JVM tests, zero failures/errors/skips,
+  build/Lint/install successful and seven native suites PASS; visible version works.
+- Real layout diagnostic exposes eight same-baseline fragments at y=282.86..290.18,
+  with small word gaps, plus a paragraph gap exceeding the old cross-ID limit.
+- M3c.1 coalesces supported same-block/run physical rows without synthetic glyph/quads;
+  logical spaces are text-boundary metadata, preserved in quotation/word snapping.
+  Native cleanup precedes normalization; cross-ID gap limit adjusts 0.9 -> 1.25 heights.
+- APK/status version M3c.1. Expected 244 JVM tests (216+28), eight native suites.
+  Author compiler/Gradle/JUnit/Lint/PowerShell/Android execution unavailable.
+- Retest original fragmented row and paragraph boundary; do not declare universal
+  paragraph/column/reading-order selection or native annotation/save/recovery complete.
+- No UI layout/renderer/queues/workspace/build-dependency changes or original PDF writes.
+
+## Historical status below (superseded above)
+
+# Current increment - M3c diagnostics/version; source supplied, runtime acceptance pending
+
+- M3b.1 targeted manual margins/short multiline/accents/zoom/column isolation improved,
+  user report. Paragraph-related and some same-paragraph refusals remain unresolved.
+- Last explicit automated log: M3b 182 tests/six suites PASS. Expected M3b.1 source
+  baseline 206 tests/seven suites; latest full automated summary not supplied here.
+- New M3c: visible status/APK versionName, accurate refusal labels, user-opened bounded
+  geometry-only diagnostic report. No words/quotations/document identities in the report.
+- Expected JVM total 216 (206 + 10 report-builder tests). Author runtime execution unavailable.
+- Selection geometry, native extraction, rendering, queues, workspaces and column guards
+  remain unchanged. No paragraph/cross-column reading-order fix is claimed by M3c.
+- Read docs/M3c-ACCEPTANCE.md and share reviewed structural evidence for a failing case.
+- Production selection completeness, handles, annotations/history/save/recovery remain
+  pending. Do not erase known limitations or invent passed test/native results.
+
+## Historical status below (superseded above)
+
 # Current increment - M3b.1 selection flow/margin fix; execution pending
 
 - M3b host/build/install and six instrumentation suites passed by user report: 182

@@ -337,7 +337,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 catch(error:OutOfMemoryError) { Result.failure(error) }
             main.post {
                 if (cleared) return@post
-                if (!loading && previewSlot!=null && request.snapshot===textSnapshot && selectionQueue.accepts(request)) {
+                if (!loading && previewSlot!=null && request.snapshot===textSnapshot && selectionQueue.acceptsFeedback(request,result.getOrNull() is TextSelectionAttempt.Selected)) {
                     result.fold(onSuccess={ selection ->
                         when(selection) {
                             is TextSelectionAttempt.Selected -> {

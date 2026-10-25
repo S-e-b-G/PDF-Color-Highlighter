@@ -142,3 +142,45 @@ ambiguous branches. Use a path rather than raw native array order; preserve real
 quads, Unicode safeguards, automatic quotation normalization and all manual Contents.
 These heuristics do not claim universal paragraph/column/layout inference. No PDF edits.
 Retest actual failed passages before accepting M3b or advancing annotation features.
+
+
+## 2026-10-21 - M3c diagnostics and visible development version
+Do not conflate geometry paragraph-gap refusals, false refusals within a paragraph and
+unimplemented cross-column reading continuation. Preserve column safety while obtaining
+real layout evidence. Add a user-opened structural report containing only bounded numeric
+metadata and status/rejection enums, never glyph text/quotes/URI/name/document bytes.
+No automatic export/log/transmission/clipboard write. Capture an immutable report on the
+user action; close on page change/rotation. Existing selector/engine/view state is unchanged.
+Show M3c first in the existing fixed-height status strip and set APK versionName to M3c.
+Keep reader_increment resource and APK versionName synchronized in future increments.
+Refusal wording describes the selector enum, not an invented exact diagnosis. No native
+annotation, paragraph-reading-order fix, final milestone or new native-suite claim.
+
+
+## 2026-10-21 - M3c.1 physical text-row reconstruction
+Use reported geometry, not a blanket column-gap relaxation. Reconstruct nearby same-
+baseline fragments only with same block/run, reliable data, bounded gaps and TWO nearby
+full-row supports. Keep actual glyphs/quads unchanged. Represent inferred word spaces
+as spacesBefore metadata, not fabricated space geometry, and stop word snapping at those
+boundaries. Preserve existing native whitespace and manual Contents policy.
+sourceFragments prevents inferred rows becoming raw support for cascading normalization.
+Run pure normalization once after StructuredText cleanup; snapshot addresses remain
+consistent for downstream consumers. Update diagnostics expectations to physical rows.
+Cross-ID vertical gap limit 1.25 heights covers the measured 1.04-height boundary; other
+column/height/alignment/ambiguity rules remain. No automatic column reading-order hop,
+semantic paragraph parser, PDF mutation or completed-editor claim. Version M3c.1 in both
+APK metadata and reader resource. Runtime/user acceptance still required.
+
+
+## 2026-10-25 - M3d preview feedback and paint geometry
+Optimize existing read-only selection before enabling mutations. Cache immutable geometry/
+scalar derived values, use bounded exact-hit buckets with original first-hit order and a
+weak prepared-index cache. Oversized cases fall back without changing selection semantics.
+Permit valid serial interim MOVE results only within the current gesture epoch, retaining
+VM snapshot/loading/tool gates; suppress obsolete refusals and pending-release MOVE feedback.
+Final results remain strictly latest-only. Cancel/page/mode invalidates the epoch.
+Fill small inter-word gaps using separate UI PreviewPaintBand rectangles, never replace
+real GlyphQuad/SelectionSpan or create PDF annotation geometry from paint bands. Separate
+physical rows and gutters remain separate; Canvas/Compose clipping unchanged.
+No measured latency guarantee, universal layout or cross-column reading-order support.
+No native engine/dependency/SDK/workspace/Git/PDF changes. Version M3d in APK/status.

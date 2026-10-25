@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package org.sg.pdfcolorhighlighter.domain
 
+import java.lang.ref.WeakReference
+
 /** Stateless read-only selection over copied geometry. No native objects or annotation mutations. */
 object PageTextSelector {
+    private var prepared=WeakReference<PageTextHitIndex>(null)
+    @Synchronized private fun indexFor(snapshot:PageTextSnapshot):PageTextHitIndex{
+        val existing=prepared.get()
+        if(existing!=null && existing.owns(snapshot))return existing
+        return PageTextHitIndex(snapshot).also{prepared=WeakReference(it)}
+    }
     fun hit(snapshot: PageTextSnapshot, point: TextPoint): TextAddress? {
         if (snapshot.status != PageTextStatus.READY) return null
-        snapshot.lines.forEachIndexed { line, value ->
-            value.glyphs.forEachIndexed { glyph, char ->
-                if (char.quad.contains(point)) return TextAddress(line, glyph)
-            }
-        }
-        return null // Never invent a nearest word for a touch in blank page space.
+        return indexFor(snapshot).hit(point) // Exact glyph hits; margin assistance stays in TextFlowResolver.
     }
 
     fun select(snapshot: PageTextSnapshot, first: TextPoint, second: TextPoint,
@@ -32,6 +35,8 @@ object PageTextSelector {
         val ai = addresses.indexOf(a); val bi = addresses.indexOf(b)
         var start = minOf(ai, bi); var end = maxOf(ai, bi)
         fun glyph(index: Int): TextGlyph { val at = addresses[index]; return snapshot.lines[at.line].glyphs[at.glyph] }
+        fun boundary(left:Int,right:Int):Boolean = addresses[left].line != addresses[right].line ||
+            addresses[right].glyph in snapshot.lines[addresses[right].line].spacesBefore
         while (start <= end && glyph(start).whitespace) start++
         while (end >= start && glyph(end).whitespace) end--
         if (start > end) return reject(SelectionRejection.WHITESPACE)
@@ -49,24 +54,29 @@ object PageTextSelector {
                 type == Character.ENCLOSING_MARK.toInt() || cp in 0x1F3FB..0x1F3FF
         }
         // Character adjustment must not separate combining marks or emoji modifiers from their base.
-        while (start > 0 && addresses[start - 1].line == addresses[start].line && continuation(glyph(start).codePoint)) start--
-        while (end + 1 < addresses.size && addresses[end + 1].line == addresses[end].line && continuation(glyph(end + 1).codePoint)) end++
+        while (start > 0 && !boundary(start-1,start) && continuation(glyph(start).codePoint)) start--
+        while (end + 1 < addresses.size && !boundary(end,end+1) && continuation(glyph(end + 1).codePoint)) end++
         fun core(cp: Int) = Character.isLetterOrDigit(cp) || continuation(cp) || cp == '_'.code
         fun word(index: Int): Boolean {
             val cp = glyph(index).codePoint
             if (core(cp)) return true
             return (cp == 39 || cp == 0x2019) && index > 0 && index + 1 < addresses.size &&
-                addresses[index - 1].line == addresses[index].line && addresses[index + 1].line == addresses[index].line &&
+                !boundary(index-1,index) && !boundary(index,index+1) &&
                 core(glyph(index - 1).codePoint) && core(glyph(index + 1).codePoint)
         }
         if (snapToWords) {
-            if (word(start)) while (start > 0 && addresses[start - 1].line == addresses[start].line && word(start - 1)) start--
-            if (word(end)) while (end + 1 < addresses.size && addresses[end + 1].line == addresses[end].line && word(end + 1)) end++
+            if (word(start)) while (start > 0 && !boundary(start-1,start) && word(start - 1)) start--
+            if (word(end)) while (end + 1 < addresses.size && !boundary(end,end+1) && word(end + 1)) end++
         }
         val selected = (start..end).map { glyph(it) }
         if (selected.none { !it.whitespace && it.quad.area >= 0.000001 }) return reject(SelectionRejection.NO_GEOMETRY)
         val visual = linkedMapOf<Int, StringBuilder>()
-        for (index in start..end) visual.getOrPut(addresses[index].line) { StringBuilder() }.append(glyph(index).text)
+        for (index in start..end) {
+            val at=addresses[index]
+            val row=visual.getOrPut(at.line) { StringBuilder() }
+            if (row.isNotEmpty() && at.glyph in snapshot.lines[at.line].spacesBefore) row.append(' ')
+            row.append(glyph(index).text)
+        }
         val visualLines = visual.values.map { it.toString() }
         return TextSelectionAttempt.Selected(SelectionSpan(addresses[start], addresses[end],
             visualLines.joinToString("\n"), QuotationNormalizer.fromParagraphs(listOf(visualLines)), selected.toList()))

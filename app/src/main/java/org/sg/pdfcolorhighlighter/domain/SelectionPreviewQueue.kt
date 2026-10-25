@@ -2,7 +2,7 @@
 package org.sg.pdfcolorhighlighter.domain
 
 data class PreviewSelectionRequest(val revision: Long, val snapshot: PageTextSnapshot,
-                                   val first: TextPoint, val last: TextPoint, val finished: Boolean)
+                                   val first: TextPoint, val last: TextPoint, val finished: Boolean, val epoch: Long = 0)
 /** Main-thread scheduler: at most one running calculation and one replaceable pending request. */
 class SelectionPreviewQueue {
     companion object {
@@ -10,16 +10,20 @@ class SelectionPreviewQueue {
         fun allows(span: SelectionSpan)=span.glyphs.size<=MAX_VISIBLE_GLYPHS
     }
     private var revision=0L
+    private var epoch=0L
     private var running: Long?=null
     private var pending: PreviewSelectionRequest?=null
     fun offer(snapshot: PageTextSnapshot, first: TextPoint, last: TextPoint,
               finished: Boolean): PreviewSelectionRequest? {
         revision++
-        pending=PreviewSelectionRequest(revision,snapshot,first,last,finished)
+        pending=PreviewSelectionRequest(revision,snapshot,first,last,finished,epoch)
         return take()
     }
     fun accepts(request: PreviewSelectionRequest)=request.revision==revision
-    fun cancel() { revision++;pending=null }
+    /** In-order MOVE feedback may publish within this gesture, never across cancellation or past a pending release. */
+    fun acceptsProgress(request:PreviewSelectionRequest)=!request.finished && request.epoch==epoch && pending?.finished!=true
+    fun acceptsFeedback(request:PreviewSelectionRequest,validSelection:Boolean)=accepts(request) || (validSelection && acceptsProgress(request))
+    fun cancel() { revision++;epoch++;pending=null }
     fun complete(request: PreviewSelectionRequest): PreviewSelectionRequest? {
         check(running==request.revision) { "Unexpected selection completion" }
         running=null

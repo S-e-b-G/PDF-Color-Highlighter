@@ -108,3 +108,38 @@ Selection endpoints can resolve to actual glyphs within text-line bands on the s
 raw hit stays strict. Native block IDs are not hard selection boundaries; geometric
 path/column/ambiguity/gap guards govern continuation. No new UI, rendering, annotation,
 PDF write, history/save/recovery claims. Require failed-passage regression acceptance.
+
+
+## M3c continuity
+New source is diagnostics/version, NOT a paragraph/cross-column selection fix. Known
+same-paragraph false refusals and paragraph/reading-order limitations remain explicit.
+Expected 216 tests from source baseline 206+10; author runtime execution pending. Read
+M3c-ACCEPTANCE.md. Reports contain only structural DTO metadata, not text/identity/bytes;
+never automatically export/log/transmit/copy them. Preserve user consent and review.
+Update APK versionName AND reader_increment resource for future app increments. Keep
+fixed status height, permanent tool layout, all existing selection/render/persistence
+safety rules and source guards. Do not advance PDF mutations without durability safeguards.
+
+
+## M3c.1 continuity
+M3c passed user host/native checks (216 tests, seven suites). M3c.1 source expected244
+JVM tests and eight native suites, author execution pending. Read M3c-1-ACCEPTANCE.md.
+Physical-row coalescing must preserve all real glyphs/quads, same-column guards and
+Unicode/manual-Contents policy. Inferred spaces are metadata, never fake glyphs/geometry;
+word and character selection must respect them. Keep two raw supporting rows, bounded
+normalization, idempotence and no cascading supports. Native cleanup precedes pure
+normalization. No PDF writes, read-order-column continuation or semantic paragraph
+claims. Retest original user layout; keep APK/status increment synchronized.
+
+
+## M3d continuity
+M3c.1 passed user host/native checks (244 tests/eight suites) and physical-row manual case.
+M3d source expected268 tests/nine suites; author runtime checks pending. See M3d acceptance.
+Cache only copied immutable data; weak/bounded hit index must preserve exact first-hit order.
+Interim feedback is valid in-order MOVE only, same gesture epoch and VM snapshot/tool/page;
+never revive canceled/page-old/final-old results or suppress final release accuracy.
+PreviewPaintBand is UI-only, NOT a native GlyphQuad or PDF annotation format. Never use
+paint rectangles to replace native selection geometry/export QuadPoints. Preserve gutters,
+row separation, native ownership, physical row word metadata and manual Contents policy.
+No real PDF mutations, completed save/recovery, automatic column hop or speed guarantee.
+Keep APK versionName and reader_increment synchronized. No automatic Git operations.

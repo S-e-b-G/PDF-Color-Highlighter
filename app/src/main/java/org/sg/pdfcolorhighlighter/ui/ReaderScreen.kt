@@ -74,6 +74,8 @@ fun ReaderScreen(
     onViewportChanged: (PageViewportState) -> Unit,
 ) {
     var quotationOpen by remember { mutableStateOf(false) }
+    var diagnosticReport by remember { mutableStateOf<SelectionLayoutReport?>(null) }
+    LaunchedEffect(textSnapshot) { diagnosticReport=null }
     val previewEnabled=!loading && textSnapshot?.status==PageTextStatus.READY &&
         textSnapshot.lines.any { it.selectable && it.glyphs.any { glyph -> !glyph.whitespace } }
     var jumpOpen by rememberSaveable { mutableStateOf(false) }
@@ -147,12 +149,19 @@ fun ReaderScreen(
                             shape=RoundedCornerShape(8.dp),shadowElevation=2.dp) {
                             TextButton(onClick={ quotationOpen=true }) { Text(stringResource(R.string.selection_preview_quotation)) }
                         }
+                    } else if (!loading && (previewRejection!=null || textFailed)) {
+                        Surface(Modifier.align(Alignment.TopEnd).padding(8.dp).zIndex(1f),
+                            shape=RoundedCornerShape(8.dp),shadowElevation=2.dp) {
+                            TextButton(onClick={ diagnosticReport=SelectionLayoutDiagnostics.build(textSnapshot,previewRejection) }) {
+                                Text(stringResource(R.string.selection_diag_button))
+                            }
+                        }
                     }
                 }
                 Row(Modifier.fillMaxWidth().background(barColor).zIndex(1f).padding(horizontal=8.dp),
                     verticalAlignment=Alignment.CenterVertically) {
                     val status=when {
-                        previewSlot!=null && previewRejection!=null -> R.string.selection_preview_rejected
+                        previewSlot!=null && previewRejection!=null -> selectionRejectionResource(previewRejection)
                         previewSlot!=null -> R.string.selection_preview_active
                         textLoading -> R.string.selection_preview_loading
                         textFailed -> R.string.selection_preview_unavailable
@@ -162,7 +171,7 @@ fun ReaderScreen(
                         textSnapshot!=null && !previewEnabled -> R.string.selection_preview_unsupported
                         else -> R.string.selection_preview_readonly
                     }
-                    Text(stringResource(status),Modifier.weight(1f).padding(vertical=2.dp),
+                    Text(stringResource(R.string.selection_status_version,stringResource(R.string.reader_increment),stringResource(status)),Modifier.weight(1f).padding(vertical=2.dp),
                         style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines=1,overflow=TextOverflow.Ellipsis)
                 }
@@ -197,6 +206,7 @@ fun ReaderScreen(
                 },
             )
         }
+        diagnosticReport?.let { report -> SelectionDiagnosticDialog(report) { diagnosticReport=null } }
         if (quotationOpen && previewSpan!=null) {
             AlertDialog(onDismissRequest={ quotationOpen=false },
                 title={ Text(stringResource(R.string.selection_preview_quotation_title)) },
@@ -205,7 +215,10 @@ fun ReaderScreen(
                 } },
                 confirmButton={ TextButton(onClick={ quotationOpen=false }) {
                     Text(stringResource(R.string.reader_recents_close))
-                } })
+                } },
+                dismissButton={ TextButton(onClick={
+                    quotationOpen=false;diagnosticReport=SelectionLayoutDiagnostics.build(textSnapshot,previewRejection)
+                }) { Text(stringResource(R.string.selection_diag_button)) } })
         }
         if (propertiesOpen && documentProperties != null) {
             DocumentPropertiesDialog(documentProperties, onDismiss = { propertiesOpen = false })

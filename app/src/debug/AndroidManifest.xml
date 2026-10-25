@@ -20,4 +20,8 @@
         android:targetPackage="${applicationId}" android:label="Read-only selection preview regression" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.SelectionFlowInstrumentation"
         android:targetPackage="${applicationId}" android:label="Selection flow and endpoint margin regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.PhysicalTextRowsInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Physical text row reconstruction regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.SelectionFeedbackInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Selection feedback paint regression" />
 </manifest>

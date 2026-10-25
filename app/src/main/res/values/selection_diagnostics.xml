@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_increment">M3d</string>
+    <string name="selection_status_version">%1$s · %2$s</string>
+    <string name="selection_diag_button">Diagnostic…</string>
+    <string name="selection_diag_title">Diagnostic de disposition — sans texte du PDF</string>
+    <string name="selection_diag_flow">Sélection refusée : continuité ou ordre de lecture ambigu. Diagnostic disponible.</string>
+    <string name="selection_diag_endpoint">Sélection refusée : aucun texte près d’une extrémité.</string>
+    <string name="selection_diag_whitespace">Sélection vide : uniquement des espaces.</string>
+    <string name="selection_diag_unsupported">Écriture ou disposition non prise en charge.</string>
+    <string name="selection_diag_complex">Sélection trop complexe ou trop longue pour cet aperçu.</string>
+    <string name="selection_diag_geometry">Aucune géométrie fiable pour cette sélection.</string>
+    <string name="selection_diag_reason_none">Aucun refus déclaré</string>
+    <string name="selection_diag_unknown">Non disponible</string>
+    <string name="selection_diag_yes">oui</string>
+    <string name="selection_diag_no">non</string>
+    <string name="selection_diag_summary">Version : %1$s\nÉtat texte : %2$s\nRefus déclaré : %3$s\nLignes : %4$d · Glyphes : %5$d</string>
+    <string name="selection_diag_bounds">Page native : x=[%1$s ; %3$s], y=[%2$s ; %4$s]</string>
+    <string name="selection_diag_line">L%1$d · bloc=%2$d, segment=%3$d · x=[%4$s ; %6$s], y=[%5$s ; %7$s] · glyphes=%8$d · compatible=%9$s</string>
+    <string name="selection_diag_truncated">Rapport limité à %1$d lignes sur %2$d.</string>
+    <string name="selection_diag_notice">Ce rapport contient seulement des coordonnées, identifiants de blocs, compteurs et indicateurs. Aucun mot, citation, nom ou URI du PDF. Il ne détermine pas à lui seul la cause du refus. Rien n’est envoyé automatiquement ; vérifiez avant de partager. Appui long sur le rapport pour le sélectionner et le copier.</string>
+</resources>
