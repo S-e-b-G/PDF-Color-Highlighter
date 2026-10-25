@@ -1,4 +1,8 @@
-# Current increment - M3d responsive continuous preview; source supplied, execution pending
+# Current increment - M3d responsive continuous preview; accepted with one known issue
+
+- M3d manual tests (user report, 2026-10-25): working, except the "…" (ellipsis) character
+  is not highlighted like other characters in the preview. Known issue, to be fixed in a
+  later increment. Automated test counts/native suite results were not reported here.
 
 - M3c.1 accepted user host/native report: 244 JVM tests without failures/errors/skips,
   build/Lint/install success, eight native suites PASS. Same-column physical-row fix works;
