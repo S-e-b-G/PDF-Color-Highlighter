@@ -37,10 +37,15 @@ fun SelectionDiagnosticDialog(report:SelectionLayoutReport,onDismiss:()->Unit){
     val bounds=if(page!=null)stringResource(R.string.selection_diag_bounds,number(page.left),number(page.top),number(page.right),number(page.bottom)) else unknown
     val yes=stringResource(R.string.selection_diag_yes);val no=stringResource(R.string.selection_diag_no)
     val lineTemplate=stringResource(R.string.selection_diag_line)
+    val unicodeTemplate=stringResource(R.string.selection_diag_unicode)
+    val exceptionalTemplate=stringResource(R.string.selection_diag_exceptional)
     val rows=report.lines.joinToString("\n"){line ->
         val b=line.bounds
         String.format(Locale.ROOT,lineTemplate,line.index,line.block,line.run,number(b.left),number(b.top),
-            number(b.right),number(b.bottom),line.glyphCount,if(line.selectable)yes else no)
+            number(b.right),number(b.bottom),line.glyphCount,if(line.selectable)yes else no) + "\n" +
+            String.format(Locale.ROOT,unicodeTemplate,line.unreliableGlyphs,line.unsupportedGlyphs,
+                line.combiningMarks,line.spacingAccents,line.inferredClusterSplits,line.bulletGlyphs) + "\n" +
+            String.format(Locale.ROOT,exceptionalTemplate,line.spacingPairs,line.exceptionalSymbols)
     }
     val limit=if(report.truncated)stringResource(R.string.selection_diag_truncated,report.lines.size,report.totalLines)else ""
     val warning=stringResource(R.string.selection_diag_notice)

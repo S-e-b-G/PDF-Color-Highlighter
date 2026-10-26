@@ -131,7 +131,7 @@ fun ReaderScreen(
                                 view.onRenderGesture = onRenderGesture
                                 view.setInteractionEnabled(!loading)
                                 view.show(bitmap, viewportState, pageWidth, pageHeight, frameSerial)
-                                view.setSelectionPreview(textSnapshot,previewSlot,previewSpan,previewCommitted)
+                                view.setSelectionPreview(textSnapshot,if(previewEnabled)previewSlot else null,previewSpan,previewCommitted)
                             },
                             onRelease = { view ->
                                 view.onViewportChanged = null
@@ -162,15 +162,16 @@ fun ReaderScreen(
                 Row(Modifier.fillMaxWidth().background(barColor).zIndex(1f).padding(horizontal=8.dp),
                     verticalAlignment=Alignment.CenterVertically) {
                     val status=when {
-                        previewSlot!=null && previewRejection!=null -> selectionRejectionResource(previewRejection)
-                        previewSlot!=null && previewCommitted && previewSpan!=null -> R.string.selection_preview_adjust
-                        previewSlot!=null -> R.string.selection_preview_active
+                        loading -> R.string.loading
                         textLoading -> R.string.selection_preview_loading
                         textFailed -> R.string.selection_preview_unavailable
                         textSnapshot?.status==PageTextStatus.COPY_RESTRICTED -> R.string.selection_preview_restricted
                         textSnapshot?.status==PageTextStatus.TOO_COMPLEX -> R.string.selection_preview_complex
                         textSnapshot?.status==PageTextStatus.EMPTY -> R.string.selection_preview_empty
                         textSnapshot!=null && !previewEnabled -> R.string.selection_preview_unsupported
+                        previewSlot!=null && previewRejection!=null -> selectionRejectionResource(previewRejection)
+                        previewSlot!=null && previewCommitted && previewSpan!=null -> R.string.selection_preview_adjust
+                        previewSlot!=null -> R.string.selection_preview_active
                         else -> R.string.selection_preview_readonly
                     }
                     Text(stringResource(R.string.selection_status_version,stringResource(R.string.reader_increment),stringResource(status)),Modifier.weight(1f).padding(vertical=2.dp),
@@ -180,7 +181,7 @@ fun ReaderScreen(
                 HorizontalDivider()
                 ReaderFooter(documentName, page, pageCount, loading, bitmap != null,
                     { openMenu = true }, onPrevious, onNext, onFit, onFitWidth, onHand,
-                    onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = previewSlot==null)
+                    onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = previewSlot==null || !previewEnabled)
             }
         }
         if (openMenu) {

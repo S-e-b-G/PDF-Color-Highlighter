@@ -26,4 +26,6 @@
         android:targetPackage="${applicationId}" android:label="Selection feedback paint regression" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.EndpointHandlesInstrumentation"
         android:targetPackage="${applicationId}" android:label="Read-only endpoint handle regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.PreviewContinuityInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Preview continuity and quote structure regression" />
 </manifest>

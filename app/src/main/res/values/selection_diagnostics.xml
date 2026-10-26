@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="reader_increment">M3e</string>
+    <string name="reader_increment">M3f.2</string>
     <string name="selection_status_version">%1$s · %2$s</string>
     <string name="selection_diag_button">Diagnostic…</string>
     <string name="selection_diag_title">Diagnostic de disposition — sans texte du PDF</string>
@@ -18,5 +18,7 @@
     <string name="selection_diag_bounds">Page native : x=[%1$s ; %3$s], y=[%2$s ; %4$s]</string>
     <string name="selection_diag_line">L%1$d · bloc=%2$d, segment=%3$d · x=[%4$s ; %6$s], y=[%5$s ; %7$s] · glyphes=%8$d · compatible=%9$s</string>
     <string name="selection_diag_truncated">Rapport limité à %1$d lignes sur %2$d.</string>
-    <string name="selection_diag_notice">Ce rapport contient seulement des coordonnées, identifiants de blocs, compteurs et indicateurs. Aucun mot, citation, nom ou URI du PDF. Il ne détermine pas à lui seul la cause du refus. Rien n’est envoyé automatiquement ; vérifiez avant de partager. Appui long sur le rapport pour le sélectionner et le copier.</string>
+    <string name="selection_diag_notice">Rapport local : coordonnées, compteurs, positions et codes Unicode limités aux caractères de contrôle, remplacement, jointure et accents autonomes. Aucun texte courant, citation, nom, URI ou identifiant de police. Les symboles exceptionnels peuvent révéler des détails du document : vérifiez avant de partager. Rien ne se copie et rien ne se transmet automatiquement. Les associations accent-lettre sont des interprétations géométriques prudentes, pas une preuve de la cause du refus.</string>
+    <string name="selection_diag_unicode">  Unicode : non fiables=%1$d · refusables=%2$d · combinants=%3$d · accents autonomes=%4$d · séparations inférées neutralisées=%5$d · puces reconnues=%6$d</string>
+    <string name="selection_diag_exceptional">  Accents associés=%1$d · symboles exceptionnels : %2$s</string>
 </resources>

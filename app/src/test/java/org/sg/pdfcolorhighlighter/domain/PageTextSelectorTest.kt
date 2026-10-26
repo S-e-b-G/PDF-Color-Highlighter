@@ -31,7 +31,7 @@ class PageTextSelectorTest {
     }
     @Test fun combiningMarkCannotBeSeparatedFromBase() {
         val s=snapshot(line("e\u0301tude"))
-        assertEquals("e\u0301",selected(s,TextAddress(0,1),TextAddress(0,1),false).quotation)
+        assertEquals("é",selected(s,TextAddress(0,1),TextAddress(0,1),false).quotation)
     }
     @Test fun supplementaryCodePointRemainsWhole() {
         val s=snapshot(line("A\uD83D\uDE00B"))

@@ -155,3 +155,34 @@ core and explicit queue intent, epoch/snapshot/release gates. Handle tap no-op; 
 offset/cancel/pinch/rotation behavior must pass. UI punctuation height is paint-only and
 context-bounded. No letters/quads/PDF edits fabricated. No permanent toolbar changes,
 column-reading-order/auto-scroll/accessibility/editor/history/save/recovery completion.
+
+
+## M3f continuity
+M3e accepted: 298 tests/ten suites/manual checks, user report. M3f source expected 328
+JVM tests/eleven suites; author runtime verification pending. See M3f-ACCEPTANCE.md.
+Retain only completed copied range for its exact current snapshot; pinch/lifecycle cancel
+drafts to it. Same-document pages keep color but discard range/snapshot; new PDF starts
+navigation. Hand/tool exit/VM cleanup clears checkpoint. No process-death selection promise.
+Start handle above, clipped/hidden safely at top. Availability-first status/effective view
+mode avoid fake selection on empty/restricted pages. Quote policy preserves recognized
+items/paragraphs, not every physical wrap or unknown semantic intent. Never run it over
+manual Contents. Preserve all native ownership/epoch/cached-geometry/workspace safeguards.
+
+## M3f.1 continuity
+M3f user reports 328 JVM tests/eleven reader checks and continuity tests passed;
+accent and bullet-row issues remain open. M3f.1 expects 348 tests, not run here.
+Use per-glyph unicodeReliable provenance; never guess Unicode from CID/GID.
+Validate the final expanded range; preserve bidi/layout/complex-cluster guards.
+Use one inferred-boundary policy. Never remove actual whitespace or native glyphs.
+NFC applies only to automatic quotations, never manually corrected Contents.
+Diagnostics expose category counts, not actual text/code points.
+Retest the exact failing passage before claiming the reported issue resolved.
+
+## M3f.2 continuity
+M3f.1 manual accent/multi-item failures remain open. New geometry-checked spacing-accent
+clusters apply only to automatic quotations and selection endpoints; retain raw glyphs/
+quads/order/visualText and all native/column/queue safety rules. Do not guess unknown
+bullets or silently drop controls. Diagnostics now deliberately disclose only bounded
+exceptional-symbol IDs/offsets and relative geometry, never ordinary text or native IDs;
+keep the explicit review notice and no automatic transmission. Expected 372 tests/eleven
+reader suites, not executed here. Exact screenshot/PDF acceptance required.

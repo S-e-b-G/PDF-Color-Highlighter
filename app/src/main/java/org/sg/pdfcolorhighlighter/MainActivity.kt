@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
-        reader.stopPreview()
+        reader.cancelPreviewSelection()
         reader.releaseRenderViewport()
         reader.checkpoint()
         super.onStop()

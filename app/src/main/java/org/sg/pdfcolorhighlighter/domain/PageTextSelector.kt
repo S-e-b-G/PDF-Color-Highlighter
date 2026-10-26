@@ -50,28 +50,36 @@ object PageTextSelector {
         var start = minOf(ai, bi); var end = maxOf(ai, bi)
         fun glyph(index: Int): TextGlyph { val at = addresses[index]; return snapshot.lines[at.line].glyphs[at.glyph] }
         fun boundary(left:Int,right:Int):Boolean = addresses[left].line != addresses[right].line ||
-            addresses[right].glyph in snapshot.lines[addresses[right].line].spacesBefore
+            SpacingAccentPolicy.inferredSpaceBefore(snapshot.lines[addresses[right].line], addresses[right].glyph)
         while (start <= end && glyph(start).whitespace) start++
         while (end >= start && glyph(end).whitespace) end--
         if (start > end) return reject(SelectionRejection.WHITESPACE)
         val selectedLines = addresses.subList(start,end+1).map { it.line }.distinct()
         val lines = selectedLines.map { snapshot.lines[it] }
-        if (lines.any { !it.selectable || it.glyphs.any { g -> g.codePoint == 0x200D || g.codePoint == 0xFFFD || (g.codePoint < 32 && g.codePoint != 9) || g.codePoint == 127 || g.codePoint in 0x1F1E6..0x1F1FF } }) {
+        // Keep whole-row guards for unsupported multi-code-point clusters.
+        if (lines.any { !it.selectable || it.glyphs.any { g ->
+            g.codePoint == 0x200D || g.codePoint in 0x1F1E6..0x1F1FF
+        } }) {
             return reject(SelectionRejection.UNSUPPORTED_TEXT)
         }
         if (lines.zipWithNext().any { (left, right) -> !TextGeometryPolicy.sameFlow(left, right) }) {
             return reject(SelectionRejection.DIFFERENT_TEXT_FLOW)
         }
-        fun continuation(cp: Int): Boolean {
-            val type = Character.getType(cp)
-            return type == Character.NON_SPACING_MARK.toInt() || type == Character.COMBINING_SPACING_MARK.toInt() ||
-                type == Character.ENCLOSING_MARK.toInt() || cp in 0x1F3FB..0x1F3FF
+        fun continuation(cp: Int) = SelectionUnicodePolicy.continuation(cp)
+        fun expandSpacingClusters() {
+            val first=addresses[start];val last=addresses[end]
+            snapshot.lines[first.line].spacingAccents.pairAt(first.glyph)?.let { start-=first.glyph-it.first }
+            snapshot.lines[last.line].spacingAccents.pairAt(last.glyph)?.let { end+=it.last-last.glyph }
         }
+        expandSpacingClusters()
         // Character adjustment must not separate combining marks or emoji modifiers from their base.
         while (start > 0 && !boundary(start-1,start) && continuation(glyph(start).codePoint)) start--
         while (end + 1 < addresses.size && !boundary(end,end+1) && continuation(glyph(end + 1).codePoint)) end++
         fun core(cp: Int) = Character.isLetterOrDigit(cp) || continuation(cp) || cp == '_'.code
         fun word(index: Int): Boolean {
+            if (SelectionUnicodePolicy.unsupported(glyph(index))) return false
+            val at=addresses[index]
+            if(snapshot.lines[at.line].spacingAccents.pairAt(at.glyph)!=null)return true
             val cp = glyph(index).codePoint
             if (core(cp)) return true
             return (cp == 39 || cp == 0x2019) && index > 0 && index + 1 < addresses.size &&
@@ -82,17 +90,27 @@ object PageTextSelector {
             if (word(start)) while (start > 0 && !boundary(start-1,start) && word(start - 1)) start--
             if (word(end)) while (end + 1 < addresses.size && !boundary(end,end+1) && word(end + 1)) end++
         }
+        expandSpacingClusters()
         val selected = (start..end).map { glyph(it) }
+        // Check the final expanded range, not unrelated glyphs on its rows.
+        // Included unknown prefixes/interiors remain refusals; nothing is skipped.
+        if (selected.any { SelectionUnicodePolicy.unsupported(it) }) return reject(SelectionRejection.UNSUPPORTED_TEXT)
         if (selected.none { !it.whitespace && it.quad.area >= 0.000001 }) return reject(SelectionRejection.NO_GEOMETRY)
         val visual = linkedMapOf<Int, StringBuilder>()
         for (index in start..end) {
             val at=addresses[index]
             val row=visual.getOrPut(at.line) { StringBuilder() }
-            if (row.isNotEmpty() && at.glyph in snapshot.lines[at.line].spacesBefore) row.append(' ')
+            if (row.isNotEmpty() && SelectionUnicodePolicy.inferredSpaceBefore(snapshot.lines[at.line], at.glyph)) row.append(' ')
             row.append(glyph(index).text)
         }
         val visualLines = visual.values.map { it.toString() }
+        // Interpret only selected copied glyphs; raw visual text and QuadPoints remain unchanged.
+        val quotationLines=visual.keys.map { lineIndex ->
+            val first=if(addresses[start].line==lineIndex)addresses[start].glyph else 0
+            val last=if(addresses[end].line==lineIndex)addresses[end].glyph else snapshot.lines[lineIndex].glyphs.lastIndex
+            SpacingAccentPolicy.quotation(snapshot.lines[lineIndex],first,last)
+        }
         return TextSelectionAttempt.Selected(SelectionSpan(addresses[start], addresses[end],
-            visualLines.joinToString("\n"), QuotationNormalizer.fromParagraphs(listOf(visualLines)), selected.toList()))
+            visualLines.joinToString("\n"), SelectionQuotationPolicy.compose(snapshot,visual.keys.toList(),quotationLines), selected.toList()))
     }
 }

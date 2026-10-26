@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package org.sg.pdfcolorhighlighter.domain
 
+import java.text.Normalizer
+
 /** Normalizes automatic quotations from explicitly identified paragraphs.
  * This class does not infer paragraphs or reading order from arbitrary PDF layouts.
  * Never pass manually edited Contents through this normalizer.
@@ -9,7 +11,7 @@ object QuotationNormalizer {
     fun fromParagraphs(paragraphs: List<List<String>>): String = paragraphs.mapNotNull { visualLines ->
         val lines = visualLines.map { line ->
             require('\n' !in line && '\r' !in line) { "Expected individual visual lines" }
-            line.trim { it == ' ' || it == '\t' }
+            Normalizer.normalize(line.trim { it == ' ' || it == '\t' }, Normalizer.Form.NFC)
         }.filter { it.isNotEmpty() }
         if (lines.isEmpty()) null else lines.drop(1).fold(lines.first(), ::joinLines)
     }.joinToString("\n\n")

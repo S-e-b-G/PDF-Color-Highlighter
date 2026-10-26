@@ -15,11 +15,13 @@ object SelectionHandleGeometry{
         val radius=7f*density
         if(width<2*radius || height<2*radius || span.glyphs.isEmpty() || span.glyphs.none{it.quad.area>=0.000001})return null
         fun handle(g:TextGlyph,side:SelectionHandleSide):SelectionHandle{
-            val q=g.quad
-            val anchor=mapping.toView(if(side==SelectionHandleSide.START)q.ll else q.lr)
-            val x=anchor.x+if(side==SelectionHandleSide.START)-radius else radius
-            val y=anchor.y+12f*density
-            val visible=anchor.x>=-radius && anchor.x<=width+radius && anchor.y>=-radius && anchor.y<=height+radius
+            val q=g.quad;val start=side==SelectionHandleSide.START
+            val anchor=mapping.toView(if(start)q.ul else q.lr)
+            val x=anchor.x+(if(start)-radius else radius)
+            val y=anchor.y+(if(start)-12f*density else 12f*density)
+            val onScreen=anchor.x>=-radius && anchor.x<=width+radius && anchor.y>=-radius && anchor.y<=height+radius
+            // Never clamp the start circle down onto selected text when there is no room above.
+            val visible=onScreen && (!start || y-radius>=0f)
             return SelectionHandle(side,anchor,TextPoint(x.coerceIn(radius,width-radius),y.coerceIn(radius,height-radius)),center(q),visible)
         }
         return SelectionHandles(handle(span.glyphs.first(),SelectionHandleSide.START),handle(span.glyphs.last(),SelectionHandleSide.END),radius)

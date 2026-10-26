@@ -31,12 +31,13 @@ object MuPdfTextSnapshot {
                             reliable = false
                             null
                         } else {
-                            if (char.bidi % 2 != 0 || (char.flags and
-                                (StructuredText.CHAR_FLAGS_UNICODE_IS_CID or StructuredText.CHAR_FLAGS_UNICODE_IS_GID)) != 0) reliable = false
+                            if (char.bidi % 2 != 0) reliable = false
+                            val unicodeReliable = (char.flags and
+                                (StructuredText.CHAR_FLAGS_UNICODE_IS_CID or StructuredText.CHAR_FLAGS_UNICODE_IS_GID)) == 0
                             val q = char.quad
                             try {
                                 TextGlyph(char.c, GlyphQuad(TextPoint(q.ul_x, q.ul_y), TextPoint(q.ur_x, q.ur_y),
-                                    TextPoint(q.ll_x, q.ll_y), TextPoint(q.lr_x, q.lr_y)))
+                                    TextPoint(q.ll_x, q.ll_y), TextPoint(q.lr_x, q.lr_y)), unicodeReliable)
                             } catch (_: IllegalArgumentException) { reliable = false; null }
                         }
                     }

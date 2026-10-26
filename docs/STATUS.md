@@ -1,3 +1,45 @@
+## M3f.2 current status — runtime acceptance pending
+M3f.1 still fails the screenshot accent case and multi-item bullet selection by user report.
+Standalone accents, not combining marks, appear in the supplied diagnostic rows. L5/L7/L9
+have one rejectable glyph each but no unmapped glyphs; their exact symbols remain unknown.
+M3f.2 adds geometry-checked adjacent spacing-accent quotation clusters and bounded
+exceptional-symbol diagnostics. Unknown list markers remain explicit refusals.
+Expected 372 JVM tests (348+24), eleven existing reader suites. No runtime pass claimed.
+Read docs/M3f-2-ACCEPTANCE.md. No PDF mutations/save/history/recovery/column continuation.
+
+## Historical status below (superseded)
+
+# Current increment — M3f.1; runtime and same-passage acceptance pending
+
+M3f user baseline: 328 JVM tests, eleven reader instrumentation checks and continuity
+manual checks passed. Citation accents and some bullet rows remain open.
+
+M3f.1 adds per-glyph fallback provenance, final-range validation, combining-safe
+inferred boundaries, NFC automatic quotations, mapped black-circle list recognition
+and content-free Unicode category counters.
+
+Expected 348 JVM tests and the existing eleven reader instrumentation checks.
+No runtime execution is claimed for this delivery. See M3f-1-ACCEPTANCE.md.
+No PDF mutations, history/save/recovery or cross-column continuation added.
+
+## Historical status below
+
+# Current increment - M3f preview/tool continuity and citation structure; execution pending
+
+- Accepted M3e user report: 298 JVM tests with zero failures/errors/skips, host/Lint/install
+  successful, ten native suites PASS, all requested manual handle/ellipsis checks OK.
+- M3f: start circle above text; completed current-page selection checkpoint survives
+  pinch/cancel/ordinary rotation; page navigation retains chosen color but clears range;
+  automatic citation preserves recognized list/paragraph boundaries while joining wraps.
+- Expected JVM total 328 (298+30), eleven native suites. Author runtime execution unavailable.
+- Checkpoint is memory-only copied current-snapshot data, not native annotation/recovery.
+  New PDF/fresh process starts navigation. Semantic paragraph/list inference is conservative,
+  not tag-tree or original source-line-break reconstruction. Ambiguous layouts remain.
+- No native PDF writes, editing/history/save/recovery or cross-column reading-order claim.
+  Read docs/M3f-ACCEPTANCE.md and await real rotation/tool/list/paragraph acceptance.
+
+## Historical status below (superseded above)
+
 # Current increment - M3e read-only endpoint handles; source supplied, execution pending
 
 - User describes M3d preview as almost satisfactory after initializer build fix; ellipsis

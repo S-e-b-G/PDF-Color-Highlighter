@@ -29,6 +29,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     )
     private val selectionWorker=Executors.newSingleThreadExecutor()
     private val selectionQueue=SelectionPreviewQueue()
+    private val previewRetention=PreviewRetentionState()
     var textSnapshot by mutableStateOf<PageTextSnapshot?>(null)
         private set
     var textLoading by mutableStateOf(false)
@@ -164,7 +165,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     fun navigate(index: Int, navigationState: PageViewportState) {
         if (loading || bitmap == null || index !in 0 until pageCount || index == page) return
-        resetPageText()
+        resetPageText(preserveTool=true)
         stopRefinement()
         checkpoint()
         pendingViewport = navigationState
@@ -300,8 +301,10 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
 
-    private fun resetPageText() {
-        stopPreview()
+    private fun resetPageText(preserveTool:Boolean=false) {
+        val tool=PreviewContinuityPolicy.toolAfterPageChange(previewSlot,preserveTool)
+        previewRetention.clear();previewSlot=tool
+        cancelPreviewSelection()
         textSnapshot=null;textLoading=false;textFailed=false
     }
     private fun loadPageText() {
@@ -321,9 +324,10 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
     fun cancelPreviewSelection() {
         selectionQueue.cancel()
-        previewSpan=null;previewCommitted=false;previewRejection=null
+        previewSpan=previewRetention.restore(textSnapshot)
+        previewCommitted=previewSpan!=null;previewRejection=null
     }
-    fun stopPreview() { previewSlot=null;cancelPreviewSelection() }
+    fun stopPreview() { previewSlot=null;previewRetention.clear();cancelPreviewSelection() }
     fun previewSelection(first:TextPoint,last:TextPoint,finished:Boolean) {
         offerPreview(first,last,finished,true,null)
     }
@@ -349,15 +353,19 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                             is TextSelectionAttempt.Selected -> {
                                 if(SelectionPreviewQueue.allows(selection.span)) {
                                     previewSpan=selection.span;previewCommitted=request.finished;previewRejection=null
+                                    if(request.finished)previewRetention.commit(request.snapshot,selection.span)
                                 } else {
+                                    if(request.finished)previewRetention.clear()
                                     previewSpan=null;previewCommitted=false;previewRejection=SelectionRejection.TOO_COMPLEX
                                 }
                             }
                             is TextSelectionAttempt.Rejected -> {
+                                if(request.finished)previewRetention.clear()
                                 previewSpan=null;previewCommitted=false;previewRejection=selection.reason
                             }
                         }
                     },onFailure={
+                        if(request.finished)previewRetention.clear()
                         cancelPreviewSelection();previewRejection=SelectionRejection.TOO_COMPLEX
                     })
                 }

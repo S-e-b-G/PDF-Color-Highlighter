@@ -13,7 +13,7 @@ class SelectionEndpointAdjustmentTest{
     @Test fun fixedEndpointIsNotResolvedFromTouchCoordinates(){val s=snap(line("abcdef"));assertEquals(TextAddress(0,3),result(s,p(s,1),TextAddress(0,3)).end)}
     @Test fun crossingTheFixedEndpointSortsTheRange(){val s=snap(line("abcdef"));val r=result(s,p(s,1),TextAddress(0,3));assertEquals("bcd",r.quotation);assertEquals(TextAddress(0,1),r.start)}
     @Test fun fixedZeroAreaPunctuationRemainsInQuotation(){val ordinary=line("abc.");val g=ordinary.glyphs.toMutableList();g[3]=TextGlyph(46,GlyphQuad(TextPoint(40f,30f),TextPoint(44f,30f),TextPoint(40f,30f),TextPoint(44f,30f)));val s=snap(ordinary.copy(glyphs=g));assertEquals("abc.",result(s,p(s,0),TextAddress(0,3)).quotation)}
-    @Test fun combiningSequenceRemainsWhole(){val s=snap(line("e\u0301abc"));assertEquals("e\u0301a",result(s,p(s,2),TextAddress(0,1)).quotation)}
+    @Test fun combiningSequenceRemainsWhole(){val s=snap(line("e\u0301abc"));assertEquals("éa",result(s,p(s,2),TextAddress(0,1)).quotation)}
     @Test fun inferredSpacesArePreserved(){val l=line("abcd").copy(spacesBefore=setOf(2),sourceFragments=2);val s=snap(l);assertEquals("ab cd",result(s,p(s,0),TextAddress(0,3)).quotation)}
     @Test fun invalidFixedAddressReturnsRejection(){val s=snap(line("abc"));assertEquals(TextSelectionAttempt.Rejected(SelectionRejection.NO_GLYPH),PageTextSelector.adjust(s,p(s,0),TextAddress(20,99)))}
     @Test fun copyRestrictionIsStillHonored(){val s=snap(line("abc"));assertEquals(TextSelectionAttempt.Rejected(SelectionRejection.COPY_RESTRICTED),PageTextSelector.adjust(s.copy(status=PageTextStatus.COPY_RESTRICTED),p(s,0),TextAddress(0,1)))}

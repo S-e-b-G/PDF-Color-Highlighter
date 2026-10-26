@@ -37,7 +37,7 @@ data class GlyphQuad(val ul: TextPoint, val ur: TextPoint, val ll: TextPoint, va
     }
 }
 
-data class TextGlyph(val codePoint: Int, val quad: GlyphQuad) {
+data class TextGlyph(val codePoint: Int, val quad: GlyphQuad, val unicodeReliable: Boolean = true) {
     init { require(Character.isValidCodePoint(codePoint) && codePoint !in 0xD800..0xDFFF) }
     val text: String = String(Character.toChars(codePoint))
     val whitespace: Boolean = Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint)
@@ -48,8 +48,11 @@ data class PageTextLine(val block: Int, val run: Int, val glyphs: List<TextGlyph
         require(glyphs.isNotEmpty() && sourceFragments >= 1)
         require(spacesBefore.all { it > 0 && it < glyphs.size })
     }
+    val spacingAccents:SpacingAccentLayout by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        SpacingAccentPolicy.prepare(glyphs)
+    }
     val text: String get() = buildString {
-        glyphs.forEachIndexed { index,glyph -> if (index in spacesBefore) append(' ');append(glyph.text) }
+        glyphs.forEachIndexed { index,glyph -> if (SelectionUnicodePolicy.inferredSpaceBefore(this@PageTextLine, index)) append(' ');append(glyph.text) }
     }
     val bounds: TextBounds = TextBounds(glyphs.minOf { it.quad.bounds.left }, glyphs.minOf { it.quad.bounds.top },
         glyphs.maxOf { it.quad.bounds.right }, glyphs.maxOf { it.quad.bounds.bottom })

@@ -197,3 +197,32 @@ Paint low dot/U+2026 using reliable selected neighbor row height only; never syn
 text/native glyph/annotation geometry or bridge gutters. Isolated/missing geometry remains
 conservative. Keep permanent toolbar/status layout, real glyph data and native ownership.
 No PDF edits, history/save/recovery or column-reading-order claims. Version M3e in APK/status.
+
+
+## 2026-10-25 - M3f requested preview continuity
+User explicitly revised preview lifecycle/tool defaults: retain completed range through
+zoom/configuration recreation and keep chosen color on same-document page navigation.
+Use one identity-bound copied checkpoint per current snapshot, cancel drafts to it, clear
+on final invalid range/Hand/tool exit/page/document/VM cleanup. Never persist selection/
+tool as annotation/recovery state or resurrect a checkpoint on another snapshot.
+Same-document navigation clears range but retains color; unavailable text temporarily
+uses navigation and availability-first status. New document/fresh launch stays navigation.
+Move start circle above first glyph; when no room above hide rather than cover text/bars.
+Preserve quote structure with explicit bullets/peer-supported markers and conservative
+block/spacing/indent cues, joining ordinary wraps via existing normalizer. PDF semantic
+paragraph intent is not guaranteed from visual rows; no manual Contents transformation.
+No native engine/dependency/workspace/SDK/Git/PDF mutations or column-reading-order changes.
+
+## 2026-10-25 — M3f.1 Unicode fidelity
+Automatic quotations use canonical NFC; raw visual text and geometry remain copied.
+Only inferred boundaries before trustworthy attached continuations are neutralized.
+CID/GID fallback provenance is per glyph. Included unknown glyphs still reject.
+Do not guess spacing-accent/font mappings or normalize manual Contents.
+Mapped BLACK CIRCLE is a strong list marker. Category-only diagnostics preserve privacy.
+
+## 2026-10-26 — M3f.2 spacing accents are a geometry interpretation
+NFC alone cannot fix standalone spacing accents. Allow only unique adjacent reliable
+Latin pairs with overlapping copied geometry and a canonical single composed result.
+Keep real glyphs/quads/order unchanged; ambiguous/actual-spaced/unmapped marks stay raw.
+Manual Contents never enter this policy. Unknown marker decoding awaits exceptional-
+symbol diagnostics; no control-to-bullet substitution is authorized by appearance alone.

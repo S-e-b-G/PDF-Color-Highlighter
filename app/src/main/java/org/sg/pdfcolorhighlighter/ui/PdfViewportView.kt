@@ -172,9 +172,10 @@ class PdfViewportView(context: Context) : View(context) {
             handleDownTouch=TextPoint(x,y);handlePointOffset=TextPoint(x-nativePoint.x,y-nativePoint.y)
             handleDelta=TextPoint(0f,0f);handleMoved=false
         }else{
+            val keepCompleted=handlesEnabled && previewSpan!=null
             onPreviewCancel?.invoke()
             selectionAnchor=nativeAt(x,y);selectionActive=selectionAnchor!=null
-            selectionAnchor?.let{onPreviewDrag?.invoke(it,it,false)}
+            if(!keepCompleted)selectionAnchor?.let{onPreviewDrag?.invoke(it,it,false)}
         }
     }
     private fun updateHandle(x:Float,y:Float,finished:Boolean){
