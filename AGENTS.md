@@ -234,3 +234,14 @@ horizontal flow; keep rotated rows in snapshots/diagnostics and reject explicitl
 endpoints. Do not skip unreadable/RTL horizontal body text or reinstate paragraph/font/ID
 vetoes. No character/name/position exception or native ownership change. Expected478/fifteen,
 not author runtime. Test supplied paragraph and previously accepted passages.
+
+## M3h checkpoint foundation
+Accepted M3g.1 user478 JVM/build/Lint plus15 device suites/manual OK. Freeze selection.
+New DurablePdfRevisionStore is a separate app-private non-cache editing namespace; never
+reuse read-only retention. Published PDFs immutable; operate on a separate native candidate,
+close all objects before callbacks return, no callback reentry. Two head slots preserve
+last committed data; expected token/idempotent operation ID, checksums and corruption
+rejection matter. Keep unknown/orphan/pinned material; prune only after readers close.
+No power-loss guarantee or implicit rollback of a live mutated native reader. This does
+not activate editor/history/save/recovery UI. Expected498 tests/16 suites, not author runtime.
+Validate has a hash-bound DeviceOnly resume; do not ask users to rebuild after USB drops.

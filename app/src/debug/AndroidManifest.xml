@@ -36,4 +36,6 @@
         android:targetPackage="${applicationId}" android:label="Flexible same-column selection regression" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.HorizontalFlowOrientationInstrumentation"
         android:targetPackage="${applicationId}" android:label="Horizontal flow excludes rotated overlays regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.DurableNativeEditInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Isolated durable native edit checkpoint proof" />
 </manifest>

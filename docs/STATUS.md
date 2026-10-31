@@ -1,3 +1,15 @@
+# Current increment — M3h durable edit-checkpoint foundation; runtime pending
+M3g.1 accepted by user: previously478 JVM tests/build/Lint success, device-only resume
+verified saved reports without rerunning JVM, installed/passed15 native suites; manual OK.
+Selection/reader logic stays frozen. M3h adds a separate immutable-PDF two-slot checkpoint
+store, stale/idempotency/corruption/failure guards and native persisted-highlight proof.
+Expected498 JVM tests (478+20),16 reader suites; author runtime unavailable. Editing UI,
+history, autosave/recovery chooser and external Save/SaveAs remain unavailable. This is
+required durable native-edit infrastructure, not another text-selection patch.
+Read docs/M3h-ACCEPTANCE.md. Device-only retry is now built into Validate-M3h.ps1.
+
+## Historical status below (superseded)
+
 # Current increment — M3g.1 horizontal-flow orientation repair; runtime pending
 User M3g automated results:466 JVM tests, fourteen reader suites, build/Lint/install/launch
 success. Jury/list works. Supplied page author-reference range fails UNSUPPORTED_TEXT.

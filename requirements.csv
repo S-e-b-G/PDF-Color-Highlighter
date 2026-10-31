@@ -52,3 +52,5 @@
 "SEL-FLEXIBLE-01","User-directed same-column ranges across paragraphs, lists, fonts and native IDs","M3","M3g source delivered; runtime and supplied list acceptance pending","466 expected JVM tests; fourteen suites; exact split-marker geometry, large/reverse/handle ranges; retained copy/Unicode/column/resource safeguards"
 
 "SEL-ORIENTATION-01","Horizontal selection excludes incidental rotated side text without discarding unreadable body text","M3","M3g.1 source supplied; runtime and supplied-page acceptance pending","478 expected JVM tests; fifteen reader suites; exact watermark/body geometry and native rotated/diagonal fixture; accepted flexible flow unchanged"
+
+"EDIT-CHECKPOINT-01","Separate validated immutable PDF edit checkpoints with interrupted-publication recovery","M3/M4","M3h source delivered; runtime acceptance pending; production editor integration not yet enabled","498 expected JVM tests;16 reader suites; persisted native highlight, stale/idempotent retries, corruption/failure/source protection; explicit retention and device-only resume"

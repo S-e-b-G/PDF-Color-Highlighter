@@ -266,3 +266,13 @@ Keep native writing-direction geometry in the copied DTO. Exclude non-horizontal
 from implicit horizontal row construction, not from the source snapshot. Reliability stays
 separate: unreadable horizontal text remains visible as a refusal rather than being dropped.
 Explicit non-horizontal endpoints remain unsupported. No content/keyword-specific patch.
+
+## 2026-10-31 — M3h completed-native-edit persistence before UI mutation
+Use a separate immutable PDF checkpoint store with alternating manifest slots; never
+replace the active record or mutate the original/private read-only baseline. Validate/
+sync/hash a native candidate before publication. Keep stale-write and latest-operation
+retry guards, strict slot/version/fingerprint checks and explicit maintenance/pins. Corrupt
+published data must not silently select an older edit. Process-interruption safety is not
+hardware power-failure protection. UI editing remains disabled until session integration.
+Bind successful host validation to APK/source/result hashes so device-only retries skip
+an unnecessary rebuild after disconnection. Native decoder/reader/selection unchanged.
