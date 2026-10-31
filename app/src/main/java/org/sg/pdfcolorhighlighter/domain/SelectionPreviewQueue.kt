@@ -6,7 +6,7 @@ data class PreviewSelectionRequest(val revision: Long, val snapshot: PageTextSna
 /** Main-thread scheduler: at most one running calculation and one replaceable pending request. */
 class SelectionPreviewQueue {
     companion object {
-        const val MAX_VISIBLE_GLYPHS=5000
+        const val MAX_VISIBLE_GLYPHS=25000
         fun allows(span: SelectionSpan)=span.glyphs.size<=MAX_VISIBLE_GLYPHS
     }
     private var revision=0L

@@ -5,7 +5,7 @@ import kotlin.math.*
 
 /** Endpoint assistance is confined to a text-line band on the sheet, never arbitrary blank page space. */
 object TextFlowResolver {
-    const val MAX_FLOW_LINES = 2048
+    const val MAX_FLOW_LINES = ColumnFlowRows.MAX_LINES
     private data class Candidate(val index: Int, val score: Double)
 
     fun endpoint(snapshot: PageTextSnapshot, point: TextPoint): TextAddress? {
@@ -40,40 +40,7 @@ object TextFlowResolver {
         return TextAddress(chosen.index, nearest)
     }
 
-    /** Top-to-bottom continuation graph: source-array order cannot force an unrelated column into a range. */
-    fun path(snapshot: PageTextSnapshot, firstLine: Int, lastLine: Int): List<Int>? {
-        if (firstLine == lastLine) return listOf(firstLine)
-        val bounds = snapshot.lines.map { it.bounds }
-        val first = bounds[firstLine]
-        val last = bounds[lastLine]
-        if (last.top <= first.top + min(first.height,last.height) * 0.35f) return null
-        val between = snapshot.lines.indices.filter { index ->
-            val top = bounds[index].top
-            index != firstLine && top > first.top && top <= last.top + 0.001f
-        }
-        if (between.size > MAX_FLOW_LINES) return null
-        val ordered = between.sortedWith(compareBy<Int> { bounds[it].top }
-            .thenBy { bounds[it].left }.thenBy { it })
-        val result = mutableListOf(firstLine)
-        val visited = mutableSetOf(firstLine)
-        while (result.last() != lastLine) {
-            val currentIndex = result.last()
-            val current = snapshot.lines[currentIndex]
-            val currentBounds = bounds[currentIndex]
-            val candidates = ordered.asSequence().takeWhile { bounds[it].top <= currentBounds.bottom + currentBounds.height * 5f }
-                .filter { index -> index !in visited &&
-                    TextGeometryPolicy.sameFlow(current,snapshot.lines[index],currentBounds,bounds[index]) }.toList()
-            val next = candidates.firstOrNull() ?: return null
-            val nextLine = snapshot.lines[next]
-            // Multiple fragments at the next row are ambiguous: don't choose an unrelated branch.
-            if (candidates.drop(1).any { other ->
-                abs(bounds[other].top - bounds[next].top) <=
-                    min(bounds[other].height,bounds[next].height) * 0.45f
-            }) return null
-            if (nextLine.glyphs.all { it.whitespace }) return null
-            result.add(next);visited.add(next)
-            if (result.size > MAX_FLOW_LINES) return null
-        }
-        return result.toList()
-    }
+    /** Paragraphs, native IDs, font changes and vertical gaps are not selection boundaries. */
+    fun path(snapshot:PageTextSnapshot,firstLine:Int,lastLine:Int):List<Int>? =
+        ColumnFlowRows.path(snapshot,firstLine,lastLine)
 }

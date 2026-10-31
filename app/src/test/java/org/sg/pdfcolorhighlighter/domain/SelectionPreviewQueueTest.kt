@@ -17,6 +17,6 @@ class SelectionPreviewQueueTest {
     @Test fun largeOverlayIsRefusedNotTruncated() {
         val g=TextGlyph(65,GlyphQuad(TextPoint(0f,0f),TextPoint(1f,0f),TextPoint(0f,1f),TextPoint(1f,1f)))
         fun span(n:Int)=SelectionSpan(TextAddress(0,0),TextAddress(0,0),"A","A",List(n){g})
-        assertTrue(SelectionPreviewQueue.allows(span(5000)));assertFalse(SelectionPreviewQueue.allows(span(5001)))
+        assertTrue(SelectionPreviewQueue.allows(span(25000)));assertFalse(SelectionPreviewQueue.allows(span(25001)))
     }
 }

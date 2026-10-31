@@ -42,3 +42,13 @@
 "TXT-UNICODE-01","Canonical automatic citations and per-glyph fallback provenance","M3","M3f.1 source supplied; runtime and exact-PDF acceptance pending","348 expected JVM tests; eleven existing reader checks; same accented passage and bullet-body tests; no guessed mappings or manual-Contents changes"
 
 "TXT-SPACING-01","Geometry-checked automatic spacing-accent clusters and bounded exceptional-symbol diagnostics","M3","M3f.2 source delivered; exact user-PDF and runtime acceptance pending","372 expected JVM tests; eleven existing suites; screenshot passage and exceptional symbols for L5 L7 L9; no guessed bullet mappings"
+
+"TXT-DOCUMENT-01","Bounded dotless accent clusters, synthetic accent-gap handling and reviewed legacy circle mapping","M3","M3f.3 source supplied; runtime and same-PDF acceptance pending","402 expected JVM tests; twelve reader suites; supplied mastery/costs and AFIS-INCOSE cases; no generic control conversion or PDF writes"
+
+"TXT-NATIVE-REPLACEMENT-01","Leading reviewed circle-font replacement glyph becomes a generic list bullet","M3","M3f.4 source supplied; runtime and AFIS-INCOSE acceptance pending","414 expected JVM tests; twelve reader suites including explicit native ToUnicode U+FFFD; no generic replacement-character acceptance"
+
+"SEL-INLINE-YEAR-01","Preserve complete inline identifier/year headings and continue across entries","M3","M3f.5 source supplied; runtime and supplied-page acceptance pending","438 expected JVM tests; thirteen reader suites; both prEN years and reverse selection retained; no cross-column guard relaxation"
+
+"SEL-FLEXIBLE-01","User-directed same-column ranges across paragraphs, lists, fonts and native IDs","M3","M3g source delivered; runtime and supplied list acceptance pending","466 expected JVM tests; fourteen suites; exact split-marker geometry, large/reverse/handle ranges; retained copy/Unicode/column/resource safeguards"
+
+"SEL-ORIENTATION-01","Horizontal selection excludes incidental rotated side text without discarding unreadable body text","M3","M3g.1 source supplied; runtime and supplied-page acceptance pending","478 expected JVM tests; fifteen reader suites; exact watermark/body geometry and native rotated/diagonal fixture; accepted flexible flow unchanged"

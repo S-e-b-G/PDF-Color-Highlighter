@@ -28,4 +28,12 @@
         android:targetPackage="${applicationId}" android:label="Read-only endpoint handle regression" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.PreviewContinuityInstrumentation"
         android:targetPackage="${applicationId}" android:label="Preview continuity and quote structure regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.DocumentTextRepairInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Legacy font and accent text repair regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.InlineReferenceRowsInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Complete split reference headings regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.FlexibleColumnSelectionInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Flexible same-column selection regression" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.HorizontalFlowOrientationInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Horizontal flow excludes rotated overlays regression" />
 </manifest>

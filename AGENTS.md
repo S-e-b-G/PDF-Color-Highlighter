@@ -186,3 +186,51 @@ bullets or silently drop controls. Diagnostics now deliberately disclose only bo
 exceptional-symbol IDs/offsets and relative geometry, never ordinary text or native IDs;
 keep the explicit review notice and no automatic transmission. Expected 372 tests/eleven
 reader suites, not executed here. Exact screenshot/PDF acceptance required.
+
+## M3f.3 continuity
+M3f.2 privacy-test fix accepted: 372 JVM tests/eleven reader suites, user build/Lint/install.
+M3f.3 expected402 tests/twelve suites; author runtime unavailable. Inspect acceptance guide.
+Dotless-i conversion is limited to unique overlapping accent clusters. Keep explicit spaces,
+NBSP, true word gaps and manual Contents. Suppress only proven synthetic accent gaps or
+inferred metadata with touching actual base bounds. Retain raw sourceCodePoint/synthetic
+flags/quads. Only reviewed reliable U+000F in exact AdvP4C4E74 may map to BLACK CIRCLE.
+Walker Font/Image wrappers own kept references in pinned JNI: destroy in callbacks and
+retain no native object/font name in DTOs. Preserve limits/copy/native-worker ownership.
+Do not commit the user PDF or its embedded fonts. No CI/Git side effects or PDF mutations.
+
+## M3f.4 continuity
+Preserve accepted M3f.3 accents and selection continuity. Device evidence is leading U+FFFD,
+not a remaining generic layout problem. Only exact reviewed font, reliable provenance and
+native-line prefix permit generic bullet normalization; no global replacement deletion.
+U+000F mapping remains unchanged; loss of filled/hollow identity uses generic bullet, never
+pretend exact glyph recovery. Keep source scalar/quads/native ownership/column safeguards.
+Expected414 JVM tests and twelve suites; execute native explicit-replacement fixture before
+claiming runtime acceptance. No user PDF/font inclusion, CI/Git action or original PDF writes.
+
+## M3f.5 continuity
+Never silently omit same-baseline year fragments. New bounded InlineReferenceRows follows
+TextRowCoalescer: only supported numeric identifier + detached parenthesized year with
+unique same-baseline/block/run and immediate spanning-body evidence. Preserve actual
+objects/quads/counts, add logical space metadata only, no fake glyphs. No cascading merges
+or general table/column hop. Keep existing selector/flow thresholds/accent/bullet/retention
+native ownership and manual Contents policy. Preserve the repaired debug INCOSE assertion.
+Expected438 tests/thirteen reader suites, not executed by author. See acceptance guide.
+
+## M3g policy continuity (supersedes conservative next-line selection notes)
+User explicitly requests flexible large same-column selection, not repeated character/layout
+exceptions. Use physical-row intervals and the explicit endpoint column. Do not reinstate
+native-ID/paragraph-gap/font-height vetoes. Include nearby compact/styled inline fragments
+without requiring particular glyph values. Preserve real glyphs/quads, endpoint/cluster,
+copy/unknown-text, native ownership, worker epoch and preview-retention safety. Disjoint
+columns still need a reading-order choice.25k preview/100k extraction resource limits are
+explicit, not permission to truncate. No native mutation/renderer/toolbar/dependency/Git changes.
+Expected466 tests/fourteen suites; author cannot run platform tools here. See acceptance guide.
+
+## M3g.1 writing-direction continuity
+M3g actual466 tests/fourteen suites passed, but its physical-row grouping could pull a tall
+rotated watermark into a body range and trigger unsupported-text refusal. Store geometric
+horizontal direction independently of reliability. Only horizontal rows enter incidental
+horizontal flow; keep rotated rows in snapshots/diagnostics and reject explicitly rotated
+endpoints. Do not skip unreadable/RTL horizontal body text or reinstate paragraph/font/ID
+vetoes. No character/name/position exception or native ownership change. Expected478/fifteen,
+not author runtime. Test supplied paragraph and previously accepted passages.

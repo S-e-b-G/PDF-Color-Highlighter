@@ -42,6 +42,8 @@ object PageTextSelector {
     }
     private fun range(snapshot:PageTextSnapshot,a:TextAddress,b:TextAddress,snapToWords:Boolean):TextSelectionAttempt {
         fun reject(reason:SelectionRejection)=TextSelectionAttempt.Rejected(reason)
+        if(!snapshot.lines[a.line].horizontal || !snapshot.lines[b.line].horizontal)
+            return reject(SelectionRejection.UNSUPPORTED_TEXT)
         val top = if (snapshot.lines[a.line].bounds.top <= snapshot.lines[b.line].bounds.top) a.line else b.line
         val bottom = if (top == a.line) b.line else a.line
         val path = TextFlowResolver.path(snapshot,top,bottom) ?: return reject(SelectionRejection.DIFFERENT_TEXT_FLOW)
@@ -62,9 +64,8 @@ object PageTextSelector {
         } }) {
             return reject(SelectionRejection.UNSUPPORTED_TEXT)
         }
-        if (lines.zipWithNext().any { (left, right) -> !TextGeometryPolicy.sameFlow(left, right) }) {
-            return reject(SelectionRejection.DIFFERENT_TEXT_FLOW)
-        }
+        // ColumnFlowRows already ordered the physical-row interval. Reapplying the former
+        // next-line gap/height checks here would reintroduce paragraph and inline refusals.
         fun continuation(cp: Int) = SelectionUnicodePolicy.continuation(cp)
         fun expandSpacingClusters() {
             val first=addresses[start];val last=addresses[end]
@@ -79,6 +80,7 @@ object PageTextSelector {
         fun word(index: Int): Boolean {
             if (SelectionUnicodePolicy.unsupported(glyph(index))) return false
             val at=addresses[index]
+            if(SpacingAccentPolicy.ignoredSyntheticSpace(snapshot.lines[at.line],at.glyph))return true
             if(snapshot.lines[at.line].spacingAccents.pairAt(at.glyph)!=null)return true
             val cp = glyph(index).codePoint
             if (core(cp)) return true

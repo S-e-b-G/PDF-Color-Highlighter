@@ -136,7 +136,12 @@ class CitationUnicodeRegressionTest {
         assertEquals(1,row.inferredClusterSplits)
         assertEquals(1,row.unreliableGlyphs)
         assertFalse(r.toString().contains("PRIVATE"))
-        assertFalse(r.toString().contains("U+"))
+        // M3f.2 permits exceptional-symbol IDs, not ordinary text or font IDs.
+        val diagnostic=r.toString()
+        assertTrue(row.exceptionalSymbols.contains("U+00B4(unpaired:"))
+        assertTrue(row.exceptionalSymbols.contains("unmapped-ID-hidden"))
+        assertEquals(1,diagnostic.split("U+00B4").size-1)
+        assertFalse(diagnostic.replace("U+00B4", "").contains("U+"))
     }
 
     @Test fun manualContentsRemainByteForByteUnnormalized() {

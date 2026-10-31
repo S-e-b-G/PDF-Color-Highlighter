@@ -1,3 +1,62 @@
+# Current increment — M3g.1 horizontal-flow orientation repair; runtime pending
+User M3g automated results:466 JVM tests, fourteen reader suites, build/Lint/install/launch
+success. Jury/list works. Supplied page author-reference range fails UNSUPPORTED_TEXT.
+PDF geometry exposes a tall rotated publisher watermark centred on the body row, wrongly
+attached by M3g row construction. Preserve native horizontal orientation and omit rotated
+rows from incidental horizontal flow. Raw data remains; unsupported horizontal text still
+refuses. No new paragraph/font/block barrier or resource change. Expected478 JVM tests and
+fifteen reader suites, not run by author. See docs/M3g-1-ACCEPTANCE.md for actual retest.
+
+## Historical status below (superseded)
+
+# Current increment — M3g flexible same-column ranges; runtime acceptance pending
+M3f.5 user says standards checks OK. New single-column paragraph/list range still refused;
+Diag_3 shows a separate inline bullet and body, not an encoding or range-size issue.
+M3g replaces next-line graph rejection by physical-row/endpoint-column intervals: paragraph
+gaps/font changes/native IDs no longer veto selection, compact inline fragments are included.
+Unknown text/copy/geometry protection remains. Preview budget25000; extraction100000.
+Expected466 JVM tests (438+28), fourteen suites; four old policy assertions intentionally
+updated, no test skipped. Author runtime unavailable. See docs/M3g-ACCEPTANCE.md.
+No PDF edits, history/save/recovery, cross-page selection or automatic column reading-order.
+
+## Historical status below (superseded)
+
+# Current increment — M3f.5 complete inline year headings; runtime acceptance pending
+M3f.4 user report: AFIS/INCOSE selection now works. Standards selection omits detached
+(2013) and refuses two entries. Current diagnostic confirms same-baseline fragments
+L32/L33 and L35/L36 and DIFFERENT_TEXT_FLOW. M3f.5 normalizes bounded identifier/year
+headings with same-block spanning-body support before selection; no flow guard widening.
+Expected438 JVM tests (414+24) and thirteen reader suites. Author runtime unavailable.
+Retest both standards including both years and the wrapped description. Existing accents,
+bullets, retention, native ownership and PDF read-only guarantees remain unchanged.
+Read docs/M3f-5-ACCEPTANCE.md. This is not universal table/cross-column reading support.
+
+## Historical status below (superseded)
+
+# Current increment — M3f.4 native replacement-marker fix; execution pending
+M3f.3 manual report: page 1 accents and zoom/rotation/ordinary selection OK. Cross-item
+AFIS/INCOSE selection still refused. Device diagnostic shows g0 U+FFFD at L5/L7 and other
+item rows, not the U+000F assumed by the earlier reviewed font profile.
+M3f.4 adds leading-only reliable U+FFFD normalization to generic bullet in exact known
+AdvP4C4E74, preserving raw provenance and all geometry/column/accent rules. Other U+FFFD
+remains refused. Source baseline 402 declarations; expected414 tests/twelve reader suites.
+The native fixture now explicitly exercises ToUnicode->U+FFFD. Author runtime unavailable.
+Read docs/M3f-4-ACCEPTANCE.md. No PDF mutation, history/save/recovery or cross-column claim.
+
+## Historical status below (superseded)
+
+# Current increment — M3f.3 supplied-document text repair; runtime acceptance pending
+M3f.2 diagnostic-test repair accepted by user: actual 372 JVM tests/eleven reader suites,
+build/Lint/install success. Remaining manual defects: dotless-i circumflex, false accent
+word gaps and legacy C15 circle markers across entries. Supplied two-page PDF inspected.
+M3f.3 adds bounded typographic dotless-i clusters, native synthetic-space provenance and
+base-aware boundaries, plus reviewed AdvP4C4E74 U+000F-to-circle normalization in a copied
+native walker. Expected 402 JVM tests/twelve suites, not executed by author. No blanket
+control conversion, PDF edits, history/save/recovery or cross-column reading continuation.
+Read docs/M3f-3-ACCEPTANCE.md and retest the supplied passages before declaring acceptance.
+
+## Historical status below (superseded)
+
 ## M3f.2 current status — runtime acceptance pending
 M3f.1 still fails the screenshot accent case and multi-item bullet selection by user report.
 Standalone accents, not combining marks, appear in the supplied diagnostic rows. L5/L7/L9

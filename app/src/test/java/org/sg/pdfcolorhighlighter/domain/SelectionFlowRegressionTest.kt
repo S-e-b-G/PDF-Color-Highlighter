@@ -73,9 +73,10 @@ class SelectionFlowRegressionTest {
         val s=snap(line("left one",block=1),line("right two",x=300f,y=35f,block=2))
         rejected(s,TextPoint(25f,25f),TextPoint(305f,40f),SelectionRejection.DIFFERENT_TEXT_FLOW)
     }
-    @Test fun largeParagraphGapRemainsBoundary() {
+    @Test fun largeParagraphGapIsNotASelectionBoundary() {
         val s=snap(line("top",block=1),line("bottom",y=100f,block=2))
-        rejected(s,TextPoint(25f,25f),TextPoint(25f,105f),SelectionRejection.DIFFERENT_TEXT_FLOW)
+        val q=select(s,TextPoint(25f,25f),TextPoint(25f,105f)).quotation
+        assertTrue(q.contains("top") && q.contains("bottom"))
     }
     @Test fun shortContinuationAcrossBlocksIsAllowed() {
         val s=snap(line("A short line",block=1),line("yes",y=35f,block=2))
@@ -85,10 +86,12 @@ class SelectionFlowRegressionTest {
         val s=snap(line("very long first line",block=1),line("short",y=35f,block=2))
         assertEquals("very long first line short",select(s,TextPoint(25f,25f),TextPoint(60f,40f)).quotation)
     }
-    @Test fun ambiguousWideHeaderContinuationIsRejected() {
+    @Test fun wideHeaderUsesTheExplicitEndColumn() {
         val s=snap(line("A very wide header spanning columns",block=1),line("left",y=35f,block=2),
             line("right",x=250f,y=35f,block=3),line("end",y=50f,block=4))
-        rejected(s,TextPoint(25f,25f),TextPoint(25f,55f),SelectionRejection.DIFFERENT_TEXT_FLOW)
+        val q=select(s,TextPoint(25f,25f),TextPoint(25f,55f)).quotation
+        assertTrue(q.contains("header") && q.contains("left") && q.contains("end"))
+        assertFalse(q.contains("right"))
     }
     @Test fun unsupportedIntermediateLineIsNotSkipped() {
         val s=snap(line("first",block=1),line("unknown",y=35f,block=2,reliable=false),line("third",y=50f,block=3))

@@ -226,3 +226,43 @@ Latin pairs with overlapping copied geometry and a canonical single composed res
 Keep real glyphs/quads/order unchanged; ambiguous/actual-spaced/unmapped marks stay raw.
 Manual Contents never enter this policy. Unknown marker decoding awaits exceptional-
 symbol diagnostics; no control-to-bullet substitution is authorized by appearance alone.
+
+## 2026-10-27 — M3f.3 verified PDF text representations
+Supplied PDF confirms dotless U+0131 plus overlapping circumflex and a narrow accent
+whose advance can create a false following space. Restore only bounded accent clusters;
+keep explicit spaces and ordinary dotless letters. Copy MuPDF synthetic provenance.
+Supplied CFF /C15 in AdvP4C4E74 is a filled circle decoded as U+000F; permit that reviewed
+font profile only, never controls in other fonts or CID/GID guesses. Retain source scalar.
+Use StructuredTextWalker to access Font transiently; release the kept callback wrappers.
+The new native fixture/font is self-authored, not copied from the supplied document.
+
+## 2026-10-28 — M3f.4 native replacement representation
+Actual diagnostic confirms U+FFFD at item prefixes. Preserve font-context gating and add
+explicit prefix evidence for this native representation. Reviewed circular-marker family
+may normalize its leading replacement to generic U+2022; filled/hollow identity is lost.
+Ordinary/interior/unreliable/unknown-font replacements remain explicit refusals. No layout
+rule widening or changes to the accepted accent/synthetic-space policy are required.
+
+## 2026-10-28 — M3f.5 complete identifier/year headings
+The supplied standards heading is split into an identifier and separately placed date.
+Represent a bounded evidence-supported heading as one copied physical row BEFORE hit/
+range selection, rather than teaching quotation code to invent missing text or weakening
+column ambiguity guards. Keep all actual glyphs/quads; metadata inserts no fake geometry.
+Require parenthesized date syntax, same native block/run, bounded baseline/gap and immediate
+spanning-body evidence. Non-year/table layouts remain a separate reading-order task.
+
+## 2026-10-28 — M3g user-directed selection takes precedence over paragraph inference
+The next-line continuation graph rejected legitimate paragraph/list ranges and could omit
+same-row fragments. Replace it with geometry-ordered row intervals in the endpoint column.
+Remove redundant selector sameFlow rechecks, not the independent geometry API used elsewhere.
+Retain actual data/permission/unsupported-text safety; do not confuse gap/font/native IDs
+with user selection intent. Existing paragraph/list quotation formatting remains separate.
+Increase preview resource ceiling to25k without truncation; keep copied row preparation
+bounded/cached and avoid quadratic inline closure. No claim of arbitrary table/cross-page order.
+
+## 2026-10-30 — M3g.1 orientation is not reliability
+A PDF's rotated watermark can have a body-row-like centre but hundreds of points of height.
+Keep native writing-direction geometry in the copied DTO. Exclude non-horizontal content
+from implicit horizontal row construction, not from the source snapshot. Reliability stays
+separate: unreadable horizontal text remains visible as a refusal rather than being dropped.
+Explicit non-horizontal endpoints remain unsupported. No content/keyword-specific patch.

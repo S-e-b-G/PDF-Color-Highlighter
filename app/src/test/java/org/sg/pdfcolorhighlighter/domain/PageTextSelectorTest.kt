@@ -68,10 +68,12 @@ class PageTextSelectorTest {
         assertEquals(TextSelectionAttempt.Rejected(SelectionRejection.DIFFERENT_TEXT_FLOW),
             PageTextSelector.select(s,TextPoint(5f,5f),TextPoint(305f,20f)))
     }
-    @Test fun largeParagraphGapIsRejectedNotSilentlyJoined() {
+    @Test fun largeSameColumnParagraphGapRemainsSelectable() {
         val s=snapshot(line("haut"),line("bas",y=100f))
-        assertEquals(TextSelectionAttempt.Rejected(SelectionRejection.DIFFERENT_TEXT_FLOW),
-            PageTextSelector.select(s,TextPoint(5f,5f),TextPoint(5f,105f)))
+        val result=PageTextSelector.select(s,TextPoint(5f,5f),TextPoint(5f,105f))
+        assertTrue(result is TextSelectionAttempt.Selected)
+        val quote=(result as TextSelectionAttempt.Selected).span.quotation
+        assertTrue(quote.contains("haut") && quote.contains("bas"))
     }
     @Test fun internalNonbreakingSpaceIsPreserved() {
         val s=snapshot(line("un\u00A0texte")); assertEquals("un\u00A0texte",selected(s,TextAddress(0,0),TextAddress(0,7)).quotation)

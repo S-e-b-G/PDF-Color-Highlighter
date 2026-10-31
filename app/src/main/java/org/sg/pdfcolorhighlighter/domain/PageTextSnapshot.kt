@@ -37,13 +37,16 @@ data class GlyphQuad(val ul: TextPoint, val ur: TextPoint, val ll: TextPoint, va
     }
 }
 
-data class TextGlyph(val codePoint: Int, val quad: GlyphQuad, val unicodeReliable: Boolean = true) {
+data class TextGlyph(val codePoint: Int, val quad: GlyphQuad, val unicodeReliable: Boolean = true,
+                     val synthetic:Boolean = false, val sourceCodePoint:Int = codePoint) {
     init { require(Character.isValidCodePoint(codePoint) && codePoint !in 0xD800..0xDFFF) }
+    init { require(Character.isValidCodePoint(sourceCodePoint) && sourceCodePoint !in 0xD800..0xDFFF) }
     val text: String = String(Character.toChars(codePoint))
     val whitespace: Boolean = Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint)
 }
 data class PageTextLine(val block: Int, val run: Int, val glyphs: List<TextGlyph>, val selectable: Boolean = true,
-                        val spacesBefore: Set<Int> = emptySet(), val sourceFragments: Int = 1) {
+                        val spacesBefore: Set<Int> = emptySet(), val sourceFragments: Int = 1,
+                        val horizontal:Boolean = true) {
     init {
         require(glyphs.isNotEmpty() && sourceFragments >= 1)
         require(spacesBefore.all { it > 0 && it < glyphs.size })
