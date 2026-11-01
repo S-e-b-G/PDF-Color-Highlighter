@@ -245,3 +245,23 @@ rejection matter. Keep unknown/orphan/pinned material; prune only after readers 
 No power-loss guarantee or implicit rollback of a live mutated native reader. This does
 not activate editor/history/save/recovery UI. Expected498 tests/16 suites, not author runtime.
 Validate has a hash-bound DeviceOnly resume; do not ask users to rebuild after USB drops.
+
+## M3i local editing scope
+User M3h498 JVM/16 suites/no-regression accepted. New explicit preview Valider creates
+native Highlights in a separate local checkpoint generation; NEVER writes original URI.
+Native worker owns candidates/reader swaps/history. Undo/Redo affects newly created current-
+open-session Highlights only, uses exact NM/page identity and durable commits. Keep manual
+Contents protocol ready but do not claim its editing UI. Source URI+byte fingerprint gates
+recovery; other/unverified generations preserve data and block edits. No standalone source-
+unavailable recovery UI or external Save/SaveAs yet. Clearly label local-only state; no dirty
+flag inferred from PDF-byte hash/revision number. Preserve selection and all48dp tool slots.
+Expected518/17 suites, not author runtime. No user/private PDF or font bundled.
+
+## M3j external export scope
+M3i user518/17 accepted. Save As uses fresh ACTION_CREATE_DOCUMENT only; copy immutable
+checkpoint on native worker, require copy permission and verified recovery state, refuse
+source URI/nonempty target, close output then bounded SHA256+length read-back. No deletes,
+source writes, export rebind or dirty-state reset. UI blocked while request pending/running;
+rotation retains request, process-death orphan result ignored. Failed provider target may be
+partial; retain local edits and retry new Save As. Save/overwrite and conflict resolution
+are deferred, not silently mapped to Save As. Expected534/18; author runtime unavailable.

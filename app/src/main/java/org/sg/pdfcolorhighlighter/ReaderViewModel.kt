@@ -16,7 +16,7 @@ import java.io.File
 import java.util.concurrent.Executors
 
 /**
- * Owns the read-only native session across configuration changes.
+ * Owns the reader and local editing session across configuration changes.
  * Main-thread entry points. Never retains an Activity, View or picker.
  */
 class ReaderViewModel(application: Application) : AndroidViewModel(application) {
@@ -44,6 +44,52 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         private set
     var previewRejection by mutableStateOf<SelectionRejection?>(null)
         private set
+    var editBusy by mutableStateOf(false)
+        private set
+    var editAllowed by mutableStateOf(false)
+        private set
+    var localRevision by mutableStateOf(0L)
+        private set
+    var localCanUndo by mutableStateOf(false)
+        private set
+    var localCanRedo by mutableStateOf(false)
+        private set
+    var localEditNotice by mutableStateOf(LocalEditNotice.NONE)
+        private set
+    var localEditError by mutableStateOf<Int?>(null)
+        private set
+
+    var exportMessage by mutableStateOf<Int?>(null)
+        private set
+    private var exportPendingUri:String?=null
+    val canExport:Boolean get()=!cleared && !loading && !editBusy && bitmap!=null &&
+        activeUri!=null && localEditNotice==LocalEditNotice.NONE
+    fun beginExport():String? {
+        if(!canExport)return null
+        val stamp=java.text.SimpleDateFormat("yyyyMMdd-HHmmss-SSS",java.util.Locale.ROOT).format(java.util.Date())
+        val name=VerifiedDocumentExport.suggestedName(documentName,stamp)
+        exportPendingUri=activeUri;exportMessage=R.string.reader_export_choose;editBusy=true
+        stopRefinement();cancelPreviewSelection();checkpoint()
+        return name
+    }
+    fun finishExportPicker(target:android.net.Uri?) {
+        // A result surviving process death has no retained request: never export a different PDF.
+        val expected=exportPendingUri ?: return
+        exportPendingUri=null
+        if(target==null){editBusy=false;exportMessage=R.string.reader_export_cancelled;return}
+        exportMessage=R.string.reader_export_busy
+        session.exportNewDocument(target,expected){result->
+            if(!cleared){
+                editBusy=false
+                exportMessage=if(result.isSuccess)R.string.reader_export_ok else R.string.reader_export_failed
+            }
+        }
+    }
+    private var pendingHighlight:HighlightEdit?=null
+    private var pendingHighlightSpan:SelectionSpan?=null
+    private var pendingHighlightSlot:Int?=null
+    val canCommitHighlight:Boolean get()=!cleared && !loading && !editBusy && editAllowed &&
+        previewCommitted && previewSpan!=null && previewSlot!=null
     private var cleared = false
     private var writesAllowed = false
     private var dirty = false
@@ -133,13 +179,17 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun openDocument(uri: String) {
-        if (!ready || loading) return
+        if (!ready || loading || editBusy) return
         val entry = recents.firstOrNull { it.uri == uri }
         open(uri, entry?.page ?: 0, entry?.viewport ?: PageViewportState())
     }
 
     private fun open(uri: String, index: Int, state: PageViewportState) {
-        if (uri == activeUri && bitmap != null && !loading) return
+        if (uri == activeUri && bitmap != null && !loading && localEditError==null && localEditNotice==LocalEditNotice.NONE) return
+        exportMessage=null
+        editAllowed=false;localRevision=0L;localCanUndo=false;localCanRedo=false
+        localEditNotice=LocalEditNotice.NONE;localEditError=null
+        pendingHighlight=null;pendingHighlightSpan=null;pendingHighlightSlot=null
         resetPageText()
         stopRefinement()
         checkpoint()
@@ -164,7 +214,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun navigate(index: Int, navigationState: PageViewportState) {
-        if (loading || bitmap == null || index !in 0 until pageCount || index == page) return
+        if (loading || editBusy || bitmap == null || index !in 0 until pageCount || index == page) return
         resetPageText(preserveTool=true)
         stopRefinement()
         checkpoint()
@@ -183,6 +233,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         loading = false
         result.fold(
             onSuccess = { frame ->
+                editAllowed=frame.editAllowed;localRevision=frame.localRevision
+                localCanUndo=frame.canUndoLocal;localCanRedo=frame.canRedoLocal;localEditNotice=frame.editNotice
                 pageWidth = frame.pageWidth
                 pageHeight = frame.pageHeight
                 frameSerial++
@@ -233,7 +285,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun viewportChanged(state: PageViewportState) {
-        if (loading || bitmap == null || activeUri == null) return
+        if (loading || editBusy || bitmap == null || activeUri == null) return
         viewportState = state
         val updated = RecentDocuments.location(
             recents, checkNotNull(activeUri), page, state
@@ -271,7 +323,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun scheduleRefinement() {
         main.removeCallbacks(refinement)
-        if (!cleared && !loading && !gestureActive && !refinementBlocked &&
+        if (!cleared && !loading && !editBusy && !gestureActive && !refinementBlocked &&
             bitmap != null && renderWidth > 0 && renderHeight > 0) {
             main.postDelayed(refinement, 250L)
         }
@@ -319,7 +371,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     fun choosePreviewSlot(slot: Int) {
         require(slot in 0..5)
         val snapshot=textSnapshot ?: return
-        if (loading || snapshot.status!=PageTextStatus.READY) return
+        if (loading || editBusy || snapshot.status!=PageTextStatus.READY) return
         if (previewSlot==slot) stopPreview() else previewSlot=slot
     }
     fun cancelPreviewSelection() {
@@ -335,7 +387,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         offerPreview(moving,moving,finished,false,fixed)
     }
     private fun offerPreview(first:TextPoint,last:TextPoint,finished:Boolean,words:Boolean,fixed:TextAddress?) {
-        if(cleared || loading || previewSlot==null)return
+        if(cleared || loading || editBusy || previewSlot==null)return
         val snapshot=textSnapshot ?: return
         if(previewCommitted){if(words)previewSpan=null;previewCommitted=false}
         selectionQueue.offer(snapshot,first,last,finished,words,fixed)?.let{dispatchPreview(it)}
@@ -372,6 +424,53 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 selectionQueue.complete(request)?.let { dispatchPreview(it) }
             }
         }
+    }
+
+    fun commitLocalHighlight(){
+        if(!canCommitHighlight)return
+        val span=previewSpan ?: return;val slot=previewSlot ?: return;val uri=activeUri ?: return
+        val edit=try{
+            if(pendingHighlightSpan===span && pendingHighlightSlot==slot)checkNotNull(pendingHighlight)
+            else HighlightEdit.from(page,slot,span).also{pendingHighlight=it;pendingHighlightSpan=span;pendingHighlightSlot=slot}
+        }catch(_:Exception){localEditError=R.string.reader_edit_failed;return}
+        editBusy=true;localEditError=null;stopRefinement();selectionQueue.cancel()
+        pendingViewport=viewportState
+        session.createLocalHighlight(edit,uri,::acceptLocalEdit)
+    }
+    fun undoLocalHighlight(){
+        if(cleared || loading || editBusy || !localCanUndo)return
+        val uri=activeUri ?: return
+        editBusy=true;localEditError=null;stopRefinement();resetPageText(preserveTool=true)
+        pendingViewport=viewportState
+        session.undoLocalHighlight(page,uri,::acceptLocalEdit)
+    }
+    fun redoLocalHighlight(){
+        if(cleared || loading || editBusy || !localCanRedo)return
+        val uri=activeUri ?: return
+        editBusy=true;localEditError=null;stopRefinement();resetPageText(preserveTool=true)
+        pendingViewport=viewportState
+        session.redoLocalHighlight(page,uri,::acceptLocalEdit)
+    }
+    private fun acceptLocalEdit(result:Result<LocalEditOutcome>){
+        if(cleared){result.getOrNull()?.frame?.bitmap?.recycle();return}
+        editBusy=false
+        result.fold(onSuccess={outcome->
+            pendingHighlight=null;pendingHighlightSpan=null;pendingHighlightSlot=null
+            resetPageText(preserveTool=true)
+            localRevision=outcome.sequence;localCanUndo=outcome.canUndo;localCanRedo=outcome.canRedo
+            val frame=outcome.frame
+            if(frame!=null){
+                opening=false;accept(Result.success(frame))
+                localEditError=null
+            }else{
+                editAllowed=false;refinementBlocked=true
+                localEditError=R.string.reader_edit_refresh_failed
+            }
+        },onFailure={
+            localEditError=R.string.reader_edit_failed
+            if(textSnapshot==null && bitmap!=null)loadPageText()
+            // Keep the same pending creation UUID so retry cannot duplicate an uncertain commit.
+        })
     }
 
     fun removeRecent(uri: String) {

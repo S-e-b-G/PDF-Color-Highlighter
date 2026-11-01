@@ -276,3 +276,18 @@ published data must not silently select an older edit. Process-interruption safe
 hardware power-failure protection. UI editing remains disabled until session integration.
 Bind successful host validation to APK/source/result hashes so device-only retries skip
 an unnecessary rebuild after disconnection. Native decoder/reader/selection unchanged.
+
+## 2026-10-31 — M3i explicit local Highlight commit boundary
+Add Valider beside the existing floating Citation control, not a reordered primary bar.
+Keep automatic drag as a temporary range until explicit durable commit. Add/Undo/Redo operate
+on a native candidate and publish before reader replacement. Reopen uses exact source URI
+hash+baseline fingerprint, not guessed filenames or a changed source. Failed/unverified
+recovery data is preserved with visible warning. History is bounded/copied and in-memory
+for this first creation feature; export and complete persistent history/recovery remain
+separate milestones. Native private text hints follow the accepted UTF-16BE protocol.
+
+## 2026-11-01 — M3j export before overwrite
+Deliver verified new-file export separately from source replacement. ACTION_CREATE_DOCUMENT
+cannot overwrite an existing document by contract. Immediate byte read-back confirms the
+chosen provider view, not atomic writes or completed remote synchronization. Never clear
+editing history or infer saved/dirty from local revision number. No new original-write grants.

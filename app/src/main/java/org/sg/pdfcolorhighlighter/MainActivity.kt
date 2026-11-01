@@ -27,6 +27,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
+    private val exportPicker=registerForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")){uri->
+        reader.finishExportPicker(uri)
+    }
+    private fun saveAs(){
+        val name=reader.beginExport() ?: return
+        try{exportPicker.launch(name)}catch(_:Exception){reader.finishExportPicker(null)}
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         reader = ViewModelProvider(this)[ReaderViewModel::class.java]
@@ -48,12 +57,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ReaderScreen(
+                canExport=reader.canExport,onSaveAs={saveAs()},
+                exportMessage=reader.exportMessage?.let{getString(it)},
                 bitmap = reader.bitmap,
                 documentName = reader.documentName,
                 documentProperties = reader.properties,
                 page = reader.page,
                 pageCount = reader.pageCount,
-                loading = reader.loading || !reader.ready,
+                loading = reader.loading || reader.editBusy || !reader.ready,
                 errorText = reader.errorRes?.let { getString(it) }
                     ?: if (reader.renderWarning) getString(R.string.reader_render_warning) else null,
                 grantWarning = reader.grantWarning,
@@ -65,6 +76,10 @@ class MainActivity : ComponentActivity() {
                 onPreviewDrag={ first,last,finished -> reader.previewSelection(first,last,finished) },
                 onPreviewAdjust={ moving,fixed,finished -> reader.previewAdjustedSelection(moving,fixed,finished) },
                 onPreviewCancel={ reader.cancelPreviewSelection() },
+                canCommitHighlight=reader.canCommitHighlight,localCanUndo=reader.localCanUndo,localCanRedo=reader.localCanRedo,
+                editBusy=reader.editBusy,localRevision=reader.localRevision,localEditNotice=reader.localEditNotice,
+                localEditError=reader.localEditError?.let{getString(it)},
+                onCommitHighlight={reader.commitLocalHighlight()},onUndoLocal={reader.undoLocalHighlight()},onRedoLocal={reader.redoLocalHighlight()},
                 pageWidth = reader.pageWidth, pageHeight = reader.pageHeight, frameSerial = reader.frameSerial,
                 onRenderViewport = { width, height, zoom -> reader.renderViewport(width, height, zoom) },
                 onRenderGesture = { reader.renderGesture(it) },
@@ -99,7 +114,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun pickDocument() {
-        if (!reader.ready || reader.loading) return
+        if (!reader.ready || reader.loading || reader.editBusy) return
         reader.checkpoint()
         picker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)

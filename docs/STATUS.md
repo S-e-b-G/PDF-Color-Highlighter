@@ -1,3 +1,26 @@
+# Current increment — M3j verified Save As; runtime acceptance pending
+M3i accepted by user: 518 JVM tests/build/Lint,17 device suites and local-edit manual checks.
+M3j activates Save As only: new user-chosen document, serialized immutable checkpoint copy,
+SHA-256/length read-back, local/original preservation, no rebind or dirty-state assertion.
+Expected534 JVM tests,18 suites. Actual platform checks NOT run by author.
+Original overwrite/Save, autosave to external URIs, conflict handling and recovery chooser
+remain pending. Export failure may leave partial destination; local revisions remain safe.
+See M3j-ACCEPTANCE.md for tablet/provider/downstream tests and precise limitations.
+
+## Historical status below (superseded)
+
+# Current increment — M3i local native highlight creation/history UI; runtime pending
+M3h accepted: user498 JVM tests/build/Lint,16 native suites/install/launch and no regression.
+M3i adds explicit Valider on the existing preview surface, actual native local checkpoints,
+current-open-session Undo/Redo and recovery on reopening the same URI/source bytes. Original
+PDF is untouched; external Save/SaveAs, prior-session annotation editing/deletion, notes,
+manual Contents UI, full persistent history/recovery chooser remain pending. Same-source
+reopen still requires source access; checkpoints are kept if it becomes unavailable.
+Expected518 tests (498+20),17 suites; author platform runtime unavailable. See acceptance.
+Selection/viewport algorithms and permanent toolbar positions unchanged.
+
+## Historical status below (superseded)
+
 # Current increment — M3h durable edit-checkpoint foundation; runtime pending
 M3g.1 accepted by user: previously478 JVM tests/build/Lint success, device-only resume
 verified saved reports without rerunning JVM, installed/passed15 native suites; manual OK.

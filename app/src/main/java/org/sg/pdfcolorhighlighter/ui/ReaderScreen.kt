@@ -55,6 +55,7 @@ private val slotNames = listOf(R.string.reader_slot_1, R.string.reader_slot_2, R
 /** M2b.2: centered page-navigation group, page-jump dialog and fading press feedback. */
 @Composable
 fun ReaderScreen(
+    canExport:Boolean,onSaveAs:()->Unit,exportMessage:String?,
     bitmap: Bitmap?, documentName: String?, documentProperties: org.sg.pdfcolorhighlighter.domain.DocumentProperties?, page: Int, pageCount: Int, loading: Boolean,
     errorText: String?, grantWarning: Boolean, viewportState: PageViewportState,
     onOpen: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit, onFit: () -> Unit,
@@ -63,6 +64,9 @@ fun ReaderScreen(
     textSnapshot: PageTextSnapshot?, textLoading: Boolean, textFailed: Boolean,
     previewSlot: Int?, previewSpan: SelectionSpan?, previewCommitted: Boolean,
     previewRejection: SelectionRejection?,
+    canCommitHighlight:Boolean,localCanUndo:Boolean,localCanRedo:Boolean,
+    editBusy:Boolean,localRevision:Long,localEditNotice:LocalEditNotice,localEditError:String?,
+    onCommitHighlight:()->Unit,onUndoLocal:()->Unit,onRedoLocal:()->Unit,
     onChoosePreviewSlot: (Int)->Unit,
     onPreviewDrag: (TextPoint,TextPoint,Boolean)->Unit, onPreviewCancel: ()->Unit,
     onPreviewAdjust: (TextPoint,TextAddress,Boolean)->Unit,
@@ -93,11 +97,11 @@ fun ReaderScreen(
                     when {
                         maxWidth >= 768.dp -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot)
-                            Spacer(Modifier.weight(1f)); Actions(); Spacer(Modifier.weight(1f))
+                            Spacer(Modifier.weight(1f)); Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs); Spacer(Modifier.weight(1f))
                             ColorTools(notes = true)
                         }
                         !tablet -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot) }; Row { Actions() }; Row { ColorTools(notes = true) }
+                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs) }; Row { ColorTools(notes = true) }
                         }
                         else -> Text(stringResource(R.string.reader_width_blocked),
                             Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
@@ -110,6 +114,8 @@ fun ReaderScreen(
                 if (storageWarning) Text(stringResource(R.string.reader_recent_storage_warning),
                     Modifier.background(barColor).padding(horizontal = 8.dp),
                     color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                exportMessage?.let { Text(it, Modifier.background(barColor).padding(horizontal = 8.dp),
+                    style = MaterialTheme.typography.bodySmall) }
                 errorText?.let { Text(it, Modifier.background(barColor).padding(horizontal = 8.dp),
                     color = MaterialTheme.colorScheme.error) }
                 Box(Modifier.fillMaxWidth().weight(1f).clipToBounds(), contentAlignment = Alignment.Center) {
@@ -148,7 +154,10 @@ fun ReaderScreen(
                     if (previewCommitted && previewSpan!=null) {
                         Surface(Modifier.align(Alignment.TopEnd).padding(8.dp).zIndex(1f),
                             shape=RoundedCornerShape(8.dp),shadowElevation=2.dp) {
-                            TextButton(onClick={ quotationOpen=true }) { Text(stringResource(R.string.selection_preview_quotation)) }
+                            Row(verticalAlignment=Alignment.CenterVertically){
+                                TextButton(onClick={ quotationOpen=true },enabled=!loading) { Text(stringResource(R.string.selection_preview_quotation)) }
+                                TextButton(onClick=onCommitHighlight,enabled=canCommitHighlight && !loading){Text(stringResource(R.string.reader_edit_commit))}
+                            }
                         }
                     } else if (!loading && (previewRejection!=null || textFailed)) {
                         Surface(Modifier.align(Alignment.TopEnd).padding(8.dp).zIndex(1f),
@@ -162,6 +171,10 @@ fun ReaderScreen(
                 Row(Modifier.fillMaxWidth().background(barColor).zIndex(1f).padding(horizontal=8.dp),
                     verticalAlignment=Alignment.CenterVertically) {
                     val status=when {
+                        editBusy -> R.string.reader_edit_busy
+                        localEditError!=null -> R.string.reader_edit_failed
+                        localEditNotice==LocalEditNotice.RECOVERY_UNVERIFIED -> R.string.reader_edit_recovery_warning
+                        localEditNotice==LocalEditNotice.OTHER_SOURCE_VERSION -> R.string.reader_edit_source_changed
                         loading -> R.string.loading
                         textLoading -> R.string.selection_preview_loading
                         textFailed -> R.string.selection_preview_unavailable
@@ -170,11 +183,13 @@ fun ReaderScreen(
                         textSnapshot?.status==PageTextStatus.EMPTY -> R.string.selection_preview_empty
                         textSnapshot!=null && !previewEnabled -> R.string.selection_preview_unsupported
                         previewSlot!=null && previewRejection!=null -> selectionRejectionResource(previewRejection)
-                        previewSlot!=null && previewCommitted && previewSpan!=null -> R.string.selection_preview_adjust
+                        previewSlot!=null && previewCommitted && previewSpan!=null && !canCommitHighlight -> R.string.reader_edit_unavailable
+                        previewSlot!=null && previewCommitted && previewSpan!=null -> R.string.reader_edit_ready
                         previewSlot!=null -> R.string.selection_preview_active
+                        localRevision>0 -> R.string.reader_edit_local
                         else -> R.string.selection_preview_readonly
                     }
-                    Text(stringResource(R.string.selection_status_version,stringResource(R.string.reader_increment),stringResource(status)),Modifier.weight(1f).padding(vertical=2.dp),
+                    Text(stringResource(R.string.selection_status_version,stringResource(R.string.reader_increment),localEditError ?: stringResource(status)),Modifier.weight(1f).padding(vertical=2.dp),
                         style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines=1,overflow=TextOverflow.Ellipsis)
                 }
@@ -401,11 +416,11 @@ private fun RowScope.ColorTools(notes: Boolean) {
     }
 }
 @Composable
-private fun RowScope.Actions() {
+private fun RowScope.Actions(canUndo:Boolean,canRedo:Boolean,onUndo:()->Unit,onRedo:()->Unit,canExport:Boolean,onSaveAs:()->Unit) {
     UnavailableIcon(R.drawable.reader_save, stringResource(R.string.reader_save))
-    UnavailableIcon(R.drawable.reader_undo, stringResource(R.string.reader_undo))
-    UnavailableIcon(R.drawable.reader_redo, stringResource(R.string.reader_redo))
-    UnavailableIcon(R.drawable.reader_save_as, stringResource(R.string.reader_save_as))
+    PulseIcon(R.drawable.reader_undo,stringResource(R.string.reader_edit_undo),canUndo,onUndo)
+    PulseIcon(R.drawable.reader_redo,stringResource(R.string.reader_edit_redo),canRedo,onRedo)
+    PulseIcon(R.drawable.reader_save_as,stringResource(R.string.reader_save_as),canExport,onSaveAs)
 }
 @Composable
 private fun UnavailableIcon(icon: Int, label: String) {

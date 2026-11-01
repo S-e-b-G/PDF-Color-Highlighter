@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_export_choose">Choisissez une destination. Seuls les surlignages validés sont exportés ; le document ouvert reste la copie locale.</string>
+    <string name="reader_export_busy">Export et vérification en cours…</string>
+    <string name="reader_export_ok">Copie exportée et relue à l’identique. Le document ouvert reste la copie locale ; l’original est inchangé.</string>
+    <string name="reader_export_cancelled">Export annulé. La copie locale est conservée.</string>
+    <string name="reader_export_failed">Export non confirmé. La destination peut être vide ou partielle : ne vous y fiez pas. La copie locale est conservée ; réessayez Enregistrer sous.</string>
+</resources>
