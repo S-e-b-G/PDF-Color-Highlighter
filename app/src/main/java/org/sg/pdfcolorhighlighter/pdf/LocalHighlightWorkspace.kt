@@ -15,7 +15,7 @@ class LocalHighlightWorkspace(root:File,uri:String,private val baseline:File,pri
     private val otherVersions=root.listFiles().orEmpty().any{it.isDirectory && Regex("[0-9a-f]{64}-[0-9a-f]{64}").matches(it.name) && it.name.startsWith(uriPrefix) && it.name!=directory.name}
     private val store=DurablePdfRevisionStore(directory)
     private var revision:PdfRevision?=null
-    private val history=LocalHighlightHistory()
+    private val history=CheckpointHistory()
     var notice:LocalEditNotice=LocalEditNotice.NONE
         private set
     val sequence:Long get()=revision?.sequence ?: 0L
@@ -53,22 +53,36 @@ class LocalHighlightWorkspace(root:File,uri:String,private val baseline:File,pri
         }
         revision=committed
     }
+
+    private fun remember(action:()->Unit){
+        val head=ready();val before=currentFile()
+        action()
+        history.added(CheckpointChange(before,currentFile(),head.sha256,checkNotNull(revision).sha256))
+    }
     fun add(edit:HighlightEdit){
-        if(history.contains(edit.id))return
-        transact(edit.id){NativeHighlightEdits.add(it,edit)}
-        history.added(edit)
+        ready()
+        val pdf=com.artifex.mupdf.fitz.Document.openDocument(currentFile().absolutePath)
+        val exists=try{NativeHighlightEdits.list(pdf as com.artifex.mupdf.fitz.PDFDocument,edit.page).any{it.edit.id==edit.id}}finally{pdf.destroy()}
+        if(exists)return
+        remember{transact(edit.id){NativeHighlightEdits.add(it,edit)}}
     }
-    fun undo(){
-        val edit=checkNotNull(history.undo)
-        transact(UUID.randomUUID().toString()){NativeHighlightEdits.remove(it,edit)}
-        history.didUndo(edit)
+    fun replace(before:ManagedHighlight,after:ManagedHighlight?,operation:String){
+        remember{transact(operation){NativeHighlightEdits.replace(it,before,after)}}
     }
-    fun redo(){
-        val edit=checkNotNull(history.redo)
-        transact(UUID.randomUUID().toString()){NativeHighlightEdits.add(it,edit)}
-        history.didRedo(edit)
+    private fun restore(file:File,expectedSha256:String){
+        require(CheckpointFingerprint.of(file)==expectedSha256){"Undo checkpoint fingerprint mismatch"}
+        val expected=ready();val operation=UUID.randomUUID().toString()
+        val committed=try{
+            store.commit(expected,operation,{target->file.copyTo(target,overwrite=false);require(CheckpointFingerprint.of(target)==expectedSha256)},NativePdfEditTransaction::validateEditable)
+        }catch(error:Exception){
+            val recovered=runCatching{store.recover()}.getOrNull()
+            if(recovered?.operationId==operation)recovered else throw error
+        }
+        revision=committed
     }
+    fun undo(){val command=checkNotNull(history.undo);restore(command.before,command.beforeSha256);history.didUndo(command)}
+    fun redo(){val command=checkNotNull(history.redo);restore(command.after,command.afterSha256);history.didRedo(command)}
     fun currentFile():File=store.currentFile(checkNotNull(revision))
     /** Only after the reader has swapped to the new head and closed its old native document. */
-    fun maintain(){runCatching{store.pruneOld()}}
+    fun maintain(){runCatching{store.pruneOld(history.pins)}}
 }

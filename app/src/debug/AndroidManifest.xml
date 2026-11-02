@@ -42,4 +42,6 @@
         android:targetPackage="${applicationId}" android:label="Native local highlight add undo redo recovery workflow" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.VerifiedExportInstrumentation"
         android:targetPackage="${applicationId}" android:label="Verified immutable native PDF export" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.HighlightInteractionInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Native highlight selection edit undo redo proof" />
 </manifest>

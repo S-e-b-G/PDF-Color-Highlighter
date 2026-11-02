@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_edit_retry">Réessayer</string>
+    <string name="reader_highlight_overlap">Plusieurs surlignages se chevauchent. Touchez une zone non commune pour choisir sans ambiguïté.</string>
+    <string name="reader_highlight_unresolved">Bornes du surlignage non reconnues. Aucune modification effectuée.</string>
+</resources>

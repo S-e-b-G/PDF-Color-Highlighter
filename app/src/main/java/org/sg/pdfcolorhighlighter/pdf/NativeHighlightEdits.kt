@@ -14,6 +14,89 @@ object NativeHighlightEdits {
             try{return if(value.isString)value.asString()else ""}finally{if(!value.isNull)value.destroy()}
         }finally{if(!obj.isNull)obj.destroy()}
     }
+
+    private fun string(annotation:PDFAnnotation,key:String):String? {
+        val obj=annotation.`object`
+        try{val value=obj.get(key)
+            try{return if(value.isString) {
+                if(key=="SGCHQuotation" || key=="SGCHSyncedContents")PdfTextString.decodeAppText(value.asByteString())else value.asString()
+            }else null}finally{if(!value.isNull)value.destroy()}
+        }finally{obj.destroy()}
+    }
+    private fun managed(annotation:PDFAnnotation,page:Int):ManagedHighlight? {
+        if(annotation.type!=PDFAnnotation.TYPE_HIGHLIGHT)return null
+        val name=id(annotation)
+        if(!Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").matches(name))return null
+        val mode=string(annotation,"SGCHTextMode") ?: return null
+        if(mode!=TextMode.AUTOMATIC.name && mode!=TextMode.MANUAL.name)return null
+        val quotation=string(annotation,"SGCHQuotation") ?: return null
+        val synced=string(annotation,"SGCHSyncedContents") ?: return null
+        // Do not allow destructive edits to hidden/locked/read-only annotations.
+        if((annotation.flags and ((1 shl 0) or (1 shl 1) or (1 shl 5) or (1 shl 6) or (1 shl 7) or (1 shl 9)))!=0)return null
+        val rgb=annotation.color
+        if(rgb.size!=3)return null
+        val slot=colors.indices.singleOrNull{s->
+            val c=colors[s];kotlin.math.abs(rgb[0]-((c shr 16) and 255)/255f)<.002f &&
+                kotlin.math.abs(rgb[1]-((c shr 8) and 255)/255f)<.002f && kotlin.math.abs(rgb[2]-(c and 255)/255f)<.002f
+        } ?: return null
+        if(annotation.quadPointCount !in 1..25000)return null
+        val native=annotation.quadPoints
+        val quads=native.map{q->GlyphQuad(TextPoint(q.ul_x,q.ul_y),TextPoint(q.ur_x,q.ur_y),TextPoint(q.ll_x,q.ll_y),TextPoint(q.lr_x,q.lr_y))}
+        val contents=annotation.contents ?: ""
+        val automatic=mode==TextMode.AUTOMATIC.name && contents==synced
+        return ManagedHighlight(HighlightEdit(name,page,slot,quotation,quads),contents,
+            if(automatic)TextMode.AUTOMATIC else TextMode.MANUAL)
+    }
+    fun list(pdf:PDFDocument,index:Int):List<ManagedHighlight> {
+        val page=pdf.loadPage(index) as PDFPage
+        try{val annotations=page.annotations ?: emptyArray()
+            try{
+                // One bad/unrelated annotation must not invalidate the rendered page.
+                if(annotations.size>4096)return emptyList()
+
+                val copied=mutableListOf<ManagedHighlight>();var quads=0L
+                for(annotation in annotations){
+                    val item=runCatching{managed(annotation,index)}.getOrNull() ?: continue
+                    quads+=item.edit.quads.size
+                    if(quads>100000L)return emptyList()
+                    copied.add(item)
+                }
+                val duplicates=annotations.map{runCatching{id(it)}.getOrDefault("")}.groupingBy{it}.eachCount().filterValues{it>1}.keys
+                return copied.filter{it.edit.id !in duplicates}.takeIf{it.sumOf{x->x.edit.quads.size.toLong()}<=100000L}.orEmpty()
+            }finally{annotations.forEach{it.destroy()}}
+        }finally{page.destroy()}
+    }
+    /** Modify in place: preserve unrelated PDF dictionary entries, opacity and flags. */
+    fun replace(pdf:PDFDocument,before:ManagedHighlight,after:ManagedHighlight?) {
+        require(pdf.hasPermission(Document.PERMISSION_COPY))
+        require(after==null || after.edit.id==before.edit.id && after.edit.page==before.edit.page)
+        val page=pdf.loadPage(before.edit.page) as PDFPage
+        try{val annotations=page.annotations ?: emptyArray()
+            try{
+                val found=annotations.filter{id(it)==before.edit.id}
+                require(found.size==1){"Highlight identity not unique"}
+                val annotation=found.single()
+                require(managed(annotation,before.edit.page)==before){"Stale highlight state"}
+                if(after==null)page.deleteAnnotation(annotation)
+                else{
+                    annotation.setQuadPoints(after.edit.quads.map{q->Quad(q.ul.x,q.ul.y,q.ur.x,q.ur.y,q.ll.x,q.ll.y,q.lr.x,q.lr.y)}.toTypedArray())
+                    val c=colors[after.edit.slot]
+                    annotation.setColor(floatArrayOf(((c shr 16) and 255)/255f,((c shr 8) and 255)/255f,(c and 255)/255f))
+                    annotation.setContents(after.contents)
+                    val obj=annotation.`object`
+                    try{
+                        obj.put("SGCHTextMode",after.mode.name)
+                        for((key,value)in listOf("SGCHQuotation" to after.edit.quotation,"SGCHSyncedContents" to after.contents)){
+                            val encoded=pdf.newByteString(PdfTextString.encode(value))
+                            try{obj.put(key,encoded)}finally{encoded.destroy()}
+                        }
+                    }finally{obj.destroy()}
+                    annotation.update()
+                }
+                page.update()
+            }finally{annotations.forEach{it.destroy()}}
+        }finally{page.destroy()}
+    }
     fun add(pdf:PDFDocument,edit:HighlightEdit){
         require(pdf.hasPermission(Document.PERMISSION_COPY)){"PDF copy permission is required for extracted quotations"}
         require(edit.page in 0 until pdf.countPages())

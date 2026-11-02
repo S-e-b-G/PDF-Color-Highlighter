@@ -265,3 +265,12 @@ source writes, export rebind or dirty-state reset. UI blocked while request pend
 rotation retains request, process-death orphan result ignored. Failed provider target may be
 partial; retain local edits and retry new Save As. Save/overwrite and conflict resolution
 are deferred, not silently mapped to Save As. Expected534/18; author runtime unavailable.
+
+## M3k automatic commit and managed editing
+M3j user534/18/export checks accepted. Commit only accepted final release, never interim,
+stale/cancel/pinch. Tap managed annotation selects SAME native ID/handles/color; different
+slot recolors, checked slot deletes. New text gesture creates; adjusted handle replaces.
+Third-party/unrecognized/locked annotation editing is deferred, not guessed. Preserve manual
+Contents and existing dictionary fields. Undo/Redo restores checksummed full PDFs; pin all
+required history snapshots before maintenance, session-only16/64MiB with latest always kept.
+No original writes; M3j export code stays intact. Expected560/19,author runtime unavailable.

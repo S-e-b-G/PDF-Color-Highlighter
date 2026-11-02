@@ -75,6 +75,7 @@ class MainActivity : ComponentActivity() {
                 onChoosePreviewSlot={ reader.choosePreviewSlot(it) },
                 onPreviewDrag={ first,last,finished -> reader.previewSelection(first,last,finished) },
                 onPreviewAdjust={ moving,fixed,finished -> reader.previewAdjustedSelection(moving,fixed,finished) },
+                onHighlightTap={reader.tapHighlight(it)},
                 onPreviewCancel={ reader.cancelPreviewSelection() },
                 canCommitHighlight=reader.canCommitHighlight,localCanUndo=reader.localCanUndo,localCanRedo=reader.localCanRedo,
                 editBusy=reader.editBusy,localRevision=reader.localRevision,localEditNotice=reader.localEditNotice,
@@ -154,6 +155,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         viewportView?.onViewportChanged = null
+        viewportView?.onHighlightTap=null
         viewportView?.onPreviewDrag=null;viewportView?.onPreviewCancel=null;viewportView?.onPreviewAdjust=null
         viewportView?.onRenderViewport = null
         viewportView?.onRenderGesture = null

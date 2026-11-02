@@ -45,6 +45,9 @@ class PdfViewportView(context: Context) : View(context) {
     private var handleMoved=false
     private val handlePaint=Paint(Paint.ANTI_ALIAS_FLAG)
     private val handleDensity get()=resources.displayMetrics.density
+    var onHighlightTap: ((TextPoint)->Boolean)?=null
+    private var touchOrigin=TextPoint(0f,0f)
+    private var touchMoved=false
     var onPreviewAdjust: ((TextPoint,TextAddress,Boolean)->Unit)?=null
     var onPreviewDrag: ((TextPoint,TextPoint,Boolean)->Unit)?=null
     var onPreviewCancel: (()->Unit)?=null
@@ -292,6 +295,7 @@ class PdfViewportView(context: Context) : View(context) {
             resetInput("fresh-down")
             reportGesture(true)
             selectionPinchCancelled=false
+            touchOrigin=TextPoint(event.x,event.y);touchMoved=false
             if (previewSlot!=null && previewText!=null) beginPreviewGesture(event.x,event.y)
             downTime = event.downTime
             pan.begin(event.getPointerId(0), event.x, event.y)
@@ -321,6 +325,8 @@ class PdfViewportView(context: Context) : View(context) {
                     return true
                 }
                 val x = event.getX(index); val y = event.getY(index)
+                val dx=x-touchOrigin.x;val dy=y-touchOrigin.y
+                if(dx*dx+dy*dy>slop*slop)touchMoved=true
                 if (event.pointerCount == 1) {
                     if (scaleDetector.isInProgress) {
                         val now = SystemClock.uptimeMillis()
@@ -356,7 +362,16 @@ class PdfViewportView(context: Context) : View(context) {
                 } else pan.end()
                 trace("POINTER_UP remaining=${pan.pointerId}")
             }
+
             MotionEvent.ACTION_UP -> {
+                val dx=event.x-touchOrigin.x;val dy=event.y-touchOrigin.y
+                val nativeTap=if(!touchMoved && dx*dx+dy*dy<=slop*slop && !hadMultiplePointers &&
+                    !selectionPinchCancelled && activeHandle==null)nativeAt(event.x,event.y)else null
+                // Route a deliberate tap before word-selection release; never intercept handle taps.
+                if(nativeTap!=null && onHighlightTap?.invoke(nativeTap)==true){
+                    selectionActive=false;selectionAnchor=null
+                    resetInput("highlight-tap",cancelScale=false);performClick();return true
+                }
                 finishHandle(event.x,event.y)
                 val first=selectionAnchor
                 if (selectionActive && !selectionPinchCancelled && first!=null) {

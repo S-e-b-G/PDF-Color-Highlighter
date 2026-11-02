@@ -57,3 +57,4 @@
 
 "HIGHLIGHT-LOCAL-01","Explicit native local highlight creation with current-session Undo/Redo and same-source recovery","M3","M3i source supplied; runtime/UI acceptance pending; external Save/SaveAs not enabled","518 expected JVM tests;17 suites; real add/undo/redo/reopen/source-byte protection; preserve toolbar and selection; clearly local-only and bounded history"
 "SAVE-AS-01","Verified new-file export of committed local native highlights","M4","M3j source delivered; runtime/provider/downstream acceptance pending","534 expected JVM tests;18 reader suites; SAF cancellation rotation failure and independent annotation extraction manual checks"
+"HL-DIRECT-01","Auto-commit on valid release; tap managed highlight for handles; recolor or same-slot delete; undo redo complete local edits","M3","M3k source supplied; runtime and gesture acceptance pending","560 expected JVM tests;19 suites; original and M3j Save As retained; generic imported-highlight editing deferred"

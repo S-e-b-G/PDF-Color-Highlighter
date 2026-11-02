@@ -291,3 +291,10 @@ Deliver verified new-file export separately from source replacement. ACTION_CREA
 cannot overwrite an existing document by contract. Immediate byte read-back confirms the
 chosen provider view, not atomic writes or completed remote synchronization. Never clear
 editing history or infer saved/dirty from local revision number. No new original-write grants.
+
+## 2026-11-01 — M3k direct highlighting and durable editing
+User requests no per-annotation validation. Final accepted release is the local durability
+boundary; interim preview is never a write. App-managed native IDs restore interaction after
+reopen. In-place recolor/resize preserves unknown dictionary data; full-PDF checksummed undo
+restores deletion without reconstructing annotation metadata. Ambiguous overlap selection
+requires an exclusive hit. Keep source overwrite and generic imported editing out of scope.

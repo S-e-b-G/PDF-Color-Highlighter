@@ -1,3 +1,23 @@
+# M3k — native fixture correction supplied; full device acceptance pending
+User: build/Lint/560 JVM tests and previous18 native suites PASS. New19th native suite failed
+at the first handle-restoration assertion. Its fixture used search-result geometry instead
+of production glyph-selection geometry. Test-only helper correction supplied; all assertions
+retained/strengthened. App version and application code unchanged. Rebuild/native rerun
+pending. No UI/gesture acceptance claimed. See M3k-ACCEPTANCE.md correction note.
+
+## Prior status (historical)
+
+# Current increment — M3k direct highlight editing; runtime pending
+M3j user534 JVM/18 native suites/build/Lint and reported Save As checks accepted.
+M3k removes Valider for normal use. Accepted release creates/adjusts; tapping managed highlight
+restores handles/checked color, different color recolors, same color deletes. Checksummed
+complete-PDF session Undo/Redo preserves dictionaries and pins its bounded historical files.
+Recognized app-created highlights only; generic third-party editing remains pending.
+No source overwrite/Save activation. M3j Save As preserved. Expected560 JVM tests/19 suites,
+not run by author; native proof is not UI automation. See M3k-ACCEPTANCE.md.
+
+## Historical status below (superseded)
+
 # Current increment — M3j verified Save As; runtime acceptance pending
 M3i accepted by user: 518 JVM tests/build/Lint,17 device suites and local-edit manual checks.
 M3j activates Save As only: new user-chosen document, serialized immutable checkpoint copy,

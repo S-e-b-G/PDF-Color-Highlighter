@@ -27,6 +27,7 @@ data class SmokeFrame(
     val properties: DocumentProperties,
     val pageWidth: Float,
     val pageHeight: Float,
+    val managedHighlights:List<org.sg.pdfcolorhighlighter.domain.ManagedHighlight> = emptyList(),
     val editAllowed:Boolean=false,val localRevision:Long=0L,
     val canUndoLocal:Boolean=false,val canRedoLocal:Boolean=false,
     val editNotice:org.sg.pdfcolorhighlighter.domain.LocalEditNotice=org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE,
@@ -201,6 +202,7 @@ class SmokePdfSession(context: Context) {
                     localEditNotice==org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE
             }catch(_:Exception){false}
             return SmokeFrame(bitmap,index,count,documentName,chars,properties,width,height,
+                if(editable && doc is com.artifex.mupdf.fitz.PDFDocument)NativeHighlightEdits.list(doc,index)else emptyList(),
                 editable,editing?.sequence ?: 0L,editing?.canUndo ?: false,editing?.canRedo ?: false,localEditNotice)
         } finally { page.destroy() }
     }
@@ -250,6 +252,12 @@ class SmokePdfSession(context: Context) {
     fun createLocalHighlight(edit:org.sg.pdfcolorhighlighter.domain.HighlightEdit,uri:String,
                              callback:(Result<LocalEditOutcome>)->Unit){
         localEdit(edit.page,uri,{it.add(edit)},callback)
+    }
+
+    fun replaceLocalHighlight(before:org.sg.pdfcolorhighlighter.domain.ManagedHighlight,
+                              after:org.sg.pdfcolorhighlighter.domain.ManagedHighlight?,operation:String,uri:String,
+                              callback:(Result<LocalEditOutcome>)->Unit){
+        localEdit(before.edit.page,uri,{it.replace(before,after,operation)},callback)
     }
     fun undoLocalHighlight(page:Int,uri:String,callback:(Result<LocalEditOutcome>)->Unit){
         localEdit(page,uri,{it.undo()},callback)

@@ -2,13 +2,13 @@
 <resources>
     <string name="reader_edit_commit">Valider</string>
     <string name="reader_edit_busy">Opération sur la copie locale…</string>
-    <string name="reader_edit_ready">Ajustez puis Valider : surlignage dans la copie locale, original intact.</string>
+    <string name="reader_edit_ready">Relâchez pour enregistrer localement ; touchez un surlignage pour le modifier.</string>
     <string name="reader_edit_local">Copie locale — révisions conservées ; original intact ; copie exportable avec Enregistrer sous.</string>
     <string name="reader_edit_unavailable">Validation indisponible : PDF signé, chiffré, permissions ou récupération locale à vérifier.</string>
-    <string name="reader_edit_failed">Modification locale non confirmée. Réessayez ou rouvrez le PDF ; original intact.</string>
+    <string name="reader_edit_failed">Modification locale non confirmée. Réessayez la même action ou rouvrez le PDF ; original intact.</string>
     <string name="reader_edit_refresh_failed">Révision locale conservée mais affichage non actualisé. Changez de page ou rouvrez ce PDF.</string>
     <string name="reader_edit_recovery_warning">Copie locale non vérifiable : original affiché, données conservées, édition suspendue.</string>
     <string name="reader_edit_source_changed">Une copie locale existe pour une autre version de cette source : données conservées, édition suspendue.</string>
-    <string name="reader_edit_undo">Annuler le dernier surlignage ajouté pendant cette session</string>
-    <string name="reader_edit_redo">Rétablir le surlignage annulé pendant cette session</string>
+    <string name="reader_edit_undo">Annuler la dernière modification de surlignage de cette session</string>
+    <string name="reader_edit_redo">Rétablir la modification de surlignage annulée</string>
 </resources>
