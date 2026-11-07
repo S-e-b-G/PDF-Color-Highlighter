@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_source_save_title">Enregistrer dans le fichier original</string>
+    <string name="reader_source_save_warning">Remplacer « %1$s » par la copie locale validée ? Des sauvegardes locales sont conservées avant écriture. Le fournisseur peut interrompre une écriture : aucune atomicité ni synchronisation cloud ne sont garanties. Si un accès est demandé, sélectionnez exactement le même fichier. Évitez toute modification simultanée dans un autre logiciel.</string>
+    <string name="reader_source_save_confirm">Remplacer le fichier</string>
+    <string name="reader_source_save_wait">Vérification et enregistrement du fichier original…</string>
+    <string name="reader_source_save_cancelled">Enregistrement annulé ; copie locale conservée.</string>
+    <string name="reader_source_save_wrong_target">Fichier différent : aucune écriture effectuée. Sélectionnez exactement le fichier ouvert.</string>
+    <string name="reader_source_save_permission">Accès en écriture absent. Rouvrez le fichier avec cet accès ou utilisez Enregistrer sous.</string>
+    <string name="reader_source_save_ok">Original enregistré et relu à l’identique. Les modifications locales ultérieures nécessiteront un nouvel enregistrement.</string>
+    <string name="reader_source_save_conflict">Source modifiée depuis son ouverture : écriture refusée. Copie locale conservée ; utilisez Enregistrer sous ou rouvrez la source.</string>
+    <string name="reader_source_save_failed">Enregistrement non confirmé. La source peut être partielle ; copie locale conservée. Utilisez Enregistrer sous. Après redémarrage, la récupération locale est possible si sa version est identifiable.</string>
+    <string name="reader_source_recover">Ouvrir la copie locale de récupération</string>
+    <string name="reader_source_detached">Copie locale récupérée : source indisponible ou non vérifiable. Enregistrer dans la source est désactivé ; utilisez Enregistrer sous.</string>
+    <string name="reader_source_recovered_name">Copie locale récupérée</string>
+</resources>

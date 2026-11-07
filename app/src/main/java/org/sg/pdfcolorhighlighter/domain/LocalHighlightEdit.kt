@@ -5,14 +5,15 @@ import java.security.MessageDigest
 import java.util.UUID
 
 enum class LocalEditNotice { NONE, OTHER_SOURCE_VERSION, RECOVERY_UNVERIFIED }
-data class HighlightEdit(val id:String,val page:Int,val slot:Int,val quotation:String,val quads:List<GlyphQuad>) {
+data class HighlightEdit(val id:String,val page:Int,val slot:Int,val quotation:String,val quads:List<GlyphQuad>,val appearance:List<GlyphQuad> = emptyList()) {
     init {
         require(Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").matches(id))
         require(page>=0 && slot in 0..5 && quotation.isNotBlank() && quotation.length<=100000)
         require(quads.size in 1..25000 && quads.all{it.area>=.000001})
+        require(appearance.size<=25000 && appearance.all{it.area>=.000001})
     }
     companion object {
-        fun from(page:Int,slot:Int,span:SelectionSpan)=HighlightEdit(UUID.randomUUID().toString(),page,slot,span.quotation,span.quads.toList())
+        fun from(page:Int,slot:Int,span:SelectionSpan)=HighlightEdit(UUID.randomUUID().toString(),page,slot,span.quotation,span.quads.toList(),NativeHighlightAppearance.forSpan(span))
     }
 }
 object LocalEditIdentity {

@@ -61,7 +61,48 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     var exportMessage by mutableStateOf<Int?>(null)
         private set
+
     private var exportPendingUri:String?=null
+    private var savePendingUri:String?=null
+    var sourceDetached by mutableStateOf(false)
+        private set
+    private var saveBlocked by mutableStateOf(false)
+    private var editFeedbackAt=0L
+    private var editFeedbackSerial:Long?=null
+    val canSave:Boolean get()=canExport && editAllowed && !sourceDetached && !saveBlocked
+    val canRecover:Boolean get()=ready && !loading && !editBusy && !sourceDetached &&
+        (activeUri!=null || unavailableUri!=null) && (bitmap==null || saveBlocked || localEditNotice!=LocalEditNotice.NONE)
+    fun beginSave():android.net.Uri?{
+        if(!canSave)return null
+        savePendingUri=activeUri;editBusy=true;exportMessage=R.string.reader_source_save_wait
+        stopRefinement();cancelPreviewSelection();checkpoint();return activeUri?.toUri()
+    }
+    fun hasWriteGrant(uri:android.net.Uri):Boolean=app.checkUriPermission(uri,android.os.Process.myPid(),android.os.Process.myUid(),
+        Intent.FLAG_GRANT_WRITE_URI_PERMISSION)==android.content.pm.PackageManager.PERMISSION_GRANTED
+    fun finishSaveAuthorization(target:android.net.Uri?){
+        val expected=savePendingUri ?: return;savePendingUri=null
+        if(target==null){editBusy=false;scheduleRefinement();exportMessage=R.string.reader_source_save_cancelled;return}
+        if(target.toString()!=expected || activeUri!=expected){editBusy=false;scheduleRefinement();exportMessage=R.string.reader_source_save_wrong_target;return}
+        if(!hasWriteGrant(target)){editBusy=false;scheduleRefinement();exportMessage=R.string.reader_source_save_permission;return}
+        session.saveSource(expected){result->if(!cleared){
+            editBusy=false;scheduleRefinement();properties=properties?.copy(sourceModifiedMillis=null)
+            result.fold(onSuccess={saveBlocked=false;exportMessage=R.string.reader_source_save_ok},onFailure={error->
+                saveBlocked=true;exportMessage=if(error is SourceSaveConflict)R.string.reader_source_save_conflict else R.string.reader_source_save_failed})
+        }}
+    }
+    fun recoverLocal(){
+        if(!canRecover)return
+        val uri=activeUri ?: unavailableUri ?: return
+        checkpoint();stopRefinement();resetPageText();bitmap=null;loading=true;opening=true
+        activeUri=uri;exportMessage=null;errorRes=null;pendingViewport=viewportState
+        session.open(uri.toUri(),page,::accept,recoveryOnly=true)
+    }
+    fun recordFrameDrawn(serial:Long){
+        if(editFeedbackSerial!=serial)return
+        editFeedbackSerial=null
+        android.util.Log.i("PdfEditFeedback","requestToDrawMs=${android.os.SystemClock.uptimeMillis()-editFeedbackAt}")
+    }
+    private fun startEditFeedback(){editFeedbackAt=android.os.SystemClock.uptimeMillis();editFeedbackSerial=null;exportMessage=null}
     val canExport:Boolean get()=!cleared && !loading && !editBusy && bitmap!=null &&
         activeUri!=null && localEditNotice==LocalEditNotice.NONE
     fun beginExport():String? {
@@ -76,11 +117,11 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         // A result surviving process death has no retained request: never export a different PDF.
         val expected=exportPendingUri ?: return
         exportPendingUri=null
-        if(target==null){editBusy=false;exportMessage=R.string.reader_export_cancelled;return}
+        if(target==null){editBusy=false;scheduleRefinement();exportMessage=R.string.reader_export_cancelled;return}
         exportMessage=R.string.reader_export_busy
         session.exportNewDocument(target,expected){result->
             if(!cleared){
-                editBusy=false
+                editBusy=false;scheduleRefinement()
                 exportMessage=if(result.isSuccess)R.string.reader_export_ok else R.string.reader_export_failed
             }
         }
@@ -104,11 +145,24 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         localEditError=null
         return true
     }
+
+    fun editHighlightContents(contents:String){
+        val before=selectedHighlight ?: return
+        if(contents.length>100000){localEditError=R.string.reader_contents_too_long;return}
+        if(contents==before.contents)return
+        changeHighlight(before,before.copy(contents=contents,mode=TextMode.MANUAL))
+    }
+    fun smoothHighlight(){
+        val before=selectedHighlight ?: return
+        val span=previewSpan ?: return
+        changeHighlight(before,before.copy(edit=before.edit.copy(appearance=NativeHighlightAppearance.forSpan(span))))
+    }
     private fun clearHighlightTarget(){selectedHighlight=null;reselectHighlightId=null}
     private fun changeHighlight(before:ManagedHighlight,after:ManagedHighlight?){
         if(loading || editBusy || !editAllowed)return
         val uri=activeUri ?: return
         if(before==after)return
+        startEditFeedback()
         editBusy=true;localEditError=null;stopRefinement();selectionQueue.cancel();pendingViewport=viewportState
         reselectHighlightId=after?.edit?.id
         session.replaceLocalHighlight(before,after,java.util.UUID.randomUUID().toString(),uri,::acceptLocalEdit)
@@ -213,8 +267,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun open(uri: String, index: Int, state: PageViewportState) {
-        if (uri == activeUri && bitmap != null && !loading && localEditError==null && localEditNotice==LocalEditNotice.NONE) return
-        exportMessage=null
+        if (uri == activeUri && bitmap != null && !loading && !sourceDetached && !saveBlocked && localEditError==null && localEditNotice==LocalEditNotice.NONE) return
+        exportMessage=null;sourceDetached=false;saveBlocked=false;savePendingUri=null
         editAllowed=false;localRevision=0L;localCanUndo=false;localCanRedo=false
         localEditNotice=LocalEditNotice.NONE;localEditError=null
         pendingHighlight=null;pendingHighlightSpan=null;pendingHighlightSlot=null
@@ -261,6 +315,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         loading = false
         result.fold(
             onSuccess = { frame ->
+                sourceDetached=frame.sourceDetached;saveBlocked=frame.sourceSaveBlocked
                 pageHighlights=frame.managedHighlights
                 editAllowed=frame.editAllowed;localRevision=frame.localRevision
                 localCanUndo=frame.canUndoLocal;localCanRedo=frame.canRedoLocal;localEditNotice=frame.editNotice
@@ -389,6 +444,19 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         cancelPreviewSelection()
         textSnapshot=null;textLoading=false;textFailed=false
     }
+
+    private fun clearEditSelection(){
+        selectionQueue.cancel();selectedHighlight=null;previewRetention.clear()
+        previewSpan=null;previewCommitted=false;previewRejection=null
+    }
+    private fun restoreEditedSelection(snapshot:PageTextSnapshot){
+        val id=reselectHighlightId;reselectHighlightId=null
+        val item=pageHighlights.singleOrNull{it.edit.id==id} ?: return
+        val span=ManagedHighlightSelection.span(snapshot,item)
+        if(span!=null){selectedHighlight=item;previewSlot=item.edit.slot;previewSpan=span
+            previewCommitted=true;previewRetention.commit(snapshot,span)}
+        else{selectedHighlight=null;localEditError=R.string.reader_highlight_unresolved}
+    }
     private fun loadPageText() {
         textLoading=true;textFailed=false
         val serial=frameSerial;val uri=activeUri;val index=page
@@ -398,14 +466,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
             result.fold(onSuccess={ snapshot->
                 textSnapshot=snapshot
-                val id=reselectHighlightId;reselectHighlightId=null
-                val item=pageHighlights.singleOrNull{it.edit.id==id}
-                if(item!=null){
-                    val span=ManagedHighlightSelection.span(snapshot,item)
-                    if(span!=null){selectedHighlight=item;previewSlot=item.edit.slot;previewSpan=span
-                        previewCommitted=true;previewRetention.commit(snapshot,span)}
-                    else{selectedHighlight=null;localEditError=R.string.reader_highlight_unresolved}
-                }
+                restoreEditedSelection(snapshot)
             },onFailure={ textFailed=true;textSnapshot=null;reselectHighlightId=null })
         }
     }
@@ -489,6 +550,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
             if(pendingHighlightSpan===span && pendingHighlightSlot==slot)checkNotNull(pendingHighlight)
             else HighlightEdit.from(page,slot,span).also{pendingHighlight=it;pendingHighlightSpan=span;pendingHighlightSlot=slot}
         }catch(_:Exception){localEditError=R.string.reader_edit_failed;return}
+        startEditFeedback()
         editBusy=true;localEditError=null;stopRefinement();selectionQueue.cancel()
         pendingViewport=viewportState
         reselectHighlightId=edit.id
@@ -497,39 +559,44 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     fun undoLocalHighlight(){
         if(cleared || loading || editBusy || !localCanUndo)return
         val uri=activeUri ?: return
-        editBusy=true;localEditError=null;stopRefinement();resetPageText(preserveTool=true)
+        startEditFeedback()
+        editBusy=true;localEditError=null;stopRefinement();clearHighlightTarget();clearEditSelection()
         pendingViewport=viewportState
         session.undoLocalHighlight(page,uri,::acceptLocalEdit)
     }
     fun redoLocalHighlight(){
         if(cleared || loading || editBusy || !localCanRedo)return
         val uri=activeUri ?: return
-        editBusy=true;localEditError=null;stopRefinement();resetPageText(preserveTool=true)
+        startEditFeedback()
+        editBusy=true;localEditError=null;stopRefinement();clearHighlightTarget();clearEditSelection()
         pendingViewport=viewportState
         session.redoLocalHighlight(page,uri,::acceptLocalEdit)
     }
+
     private fun acceptLocalEdit(result:Result<LocalEditOutcome>){
         if(cleared){result.getOrNull()?.frame?.bitmap?.recycle();return}
         editBusy=false
         result.fold(onSuccess={outcome->
             pendingHighlight=null;pendingHighlightSpan=null;pendingHighlightSlot=null
-            val reselect=reselectHighlightId
-            resetPageText(preserveTool=true)
-            reselectHighlightId=reselect
             localRevision=outcome.sequence;localCanUndo=outcome.canUndo;localCanRedo=outcome.canRedo
             val frame=outcome.frame
             if(frame!=null){
-                opening=false;accept(Result.success(frame))
-                localEditError=null
-            }else{
-                editAllowed=false;refinementBlocked=true
-                localEditError=R.string.reader_edit_refresh_failed
-            }
+                val retained=textSnapshot.takeIf{EditFramePolicy.retainText(page,frame.page,pageWidth,frame.pageWidth,
+                    pageHeight,frame.pageHeight,frame.textCodePoints!=null,it)}
+                clearEditSelection();pageHighlights=frame.managedHighlights;editAllowed=frame.editAllowed
+                localEditNotice=frame.editNotice;sourceDetached=frame.sourceDetached;saveBlocked=frame.sourceSaveBlocked
+                localRevision=frame.localRevision;localCanUndo=frame.canUndoLocal;localCanRedo=frame.canRedoLocal
+                pageWidth=frame.pageWidth;pageHeight=frame.pageHeight;page=frame.page;pageCount=frame.pageCount
+                frameSerial++;editFeedbackSerial=frameSerial
+                viewportState=pendingViewport;bitmap=frame.bitmap;properties=frame.properties
+                refinementBlocked=false;renderWarning=false;opening=false;loading=false;localEditError=null
+                textSnapshot=retained;textLoading=false;textFailed=false
+                if(retained!=null)restoreEditedSelection(retained)else loadPageText()
+                scheduleRefinement()
+            }else{editAllowed=false;refinementBlocked=true;localEditError=R.string.reader_edit_refresh_failed}
         },onFailure={
-            reselectHighlightId=null
-            localEditError=R.string.reader_edit_failed
+            editFeedbackSerial=null;reselectHighlightId=null;localEditError=R.string.reader_edit_failed
             if(textSnapshot==null && bitmap!=null)loadPageText()
-            // Keep the same pending creation UUID so retry cannot duplicate an uncertain commit.
         })
     }
 
@@ -573,7 +640,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun persistPickedGrant(uri: android.net.Uri, flags: Int) {
-        val read = flags and Intent.FLAG_GRANT_READ_URI_PERMISSION
+        val read = flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         if (read != 0 && flags and Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION != 0) {
             try {
                 app.contentResolver.takePersistableUriPermission(uri, read)

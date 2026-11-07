@@ -36,6 +36,22 @@ class MainActivity : ComponentActivity() {
         try{exportPicker.launch(name)}catch(_:Exception){reader.finishExportPicker(null)}
     }
 
+
+    private val savePicker=registerForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
+        val data=result.data;val target=if(result.resultCode==RESULT_OK)data?.data else null
+        if(target!=null && data!=null && target.toString()==reader.activeUri)reader.persistPickedGrant(target,data.flags)
+        reader.finishSaveAuthorization(target)
+    }
+    private fun saveOriginal(){
+        val uri=reader.beginSave() ?: return
+        if(reader.hasWriteGrant(uri)){reader.finishSaveAuthorization(uri);return}
+        try{savePicker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT).apply{
+            addCategory(Intent.CATEGORY_OPENABLE);type="application/pdf"
+            putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI,uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+        })}catch(_:Exception){reader.finishSaveAuthorization(null)}
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         reader = ViewModelProvider(this)[ReaderViewModel::class.java]
@@ -57,6 +73,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ReaderScreen(
+                canSave=reader.canSave,onSave={saveOriginal()},
+                canRecover=reader.canRecover,onRecover={reader.recoverLocal()},sourceDetached=reader.sourceDetached,
+                onFrameDrawn={reader.recordFrameDrawn(it)},
                 canExport=reader.canExport,onSaveAs={saveAs()},
                 exportMessage=reader.exportMessage?.let{getString(it)},
                 bitmap = reader.bitmap,
@@ -75,6 +94,8 @@ class MainActivity : ComponentActivity() {
                 onChoosePreviewSlot={ reader.choosePreviewSlot(it) },
                 onPreviewDrag={ first,last,finished -> reader.previewSelection(first,last,finished) },
                 onPreviewAdjust={ moving,fixed,finished -> reader.previewAdjustedSelection(moving,fixed,finished) },
+                highlightContents=reader.selectedHighlight?.contents,highlightId=reader.selectedHighlight?.edit?.id,
+                onChangeContents={reader.editHighlightContents(it)},onSmoothHighlight={reader.smoothHighlight()},
                 onHighlightTap={reader.tapHighlight(it)},
                 onPreviewCancel={ reader.cancelPreviewSelection() },
                 canCommitHighlight=reader.canCommitHighlight,localCanUndo=reader.localCanUndo,localCanRedo=reader.localCanRedo,
@@ -121,7 +142,7 @@ class MainActivity : ComponentActivity() {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/pdf"
             addFlags(
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
                     Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
             )
         })
@@ -155,7 +176,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         viewportView?.onViewportChanged = null
-        viewportView?.onHighlightTap=null
+        viewportView?.onHighlightTap=null;viewportView?.onFrameDrawn=null
         viewportView?.onPreviewDrag=null;viewportView?.onPreviewCancel=null;viewportView?.onPreviewAdjust=null
         viewportView?.onRenderViewport = null
         viewportView?.onRenderGesture = null

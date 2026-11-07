@@ -90,13 +90,13 @@ class HighlightInteractionInstrumentation:Instrumentation(){
             workspace.redo();workspace.maintain();check(state().edit.slot==3)
             val colored=state()
             val resized=edit(source,"Local highlight two.",3)
-            workspace.replace(colored,colored.copy(edit=colored.edit.copy(quotation=resized.quotation,quads=resized.quads),contents=resized.quotation),UUID.randomUUID().toString())
+            workspace.replace(colored,colored.copy(edit=colored.edit.copy(quotation=resized.quotation,quads=resized.quads,appearance=resized.appearance),contents=resized.quotation),UUID.randomUUID().toString())
             workspace.maintain();check(state().contents=="Local highlight two.")
             // Simulate an explicit manual Contents correction, then adjust geometry.
             val manual=state().copy(contents="e\u0301\nmanual correction",mode=TextMode.MANUAL)
             workspace.replace(state(),manual,UUID.randomUUID().toString());workspace.maintain()
             val corrected=state();check(corrected.mode==TextMode.MANUAL)
-            workspace.replace(corrected,corrected.copy(edit=corrected.edit.copy(quotation=a.quotation,quads=a.quads)),UUID.randomUUID().toString())
+            workspace.replace(corrected,corrected.copy(edit=corrected.edit.copy(quotation=a.quotation,quads=a.quads,appearance=a.appearance)),UUID.randomUUID().toString())
             workspace.maintain();check(state().contents==manual.contents)
             val beforeDelete=fileHash(workspace.currentFile())
             workspace.replace(state(),null,UUID.randomUUID().toString());workspace.maintain()
@@ -131,7 +131,7 @@ class HighlightInteractionInstrumentation:Instrumentation(){
             val foreignDoc=Document.openDocument(externalFile.absolutePath) as PDFDocument
             val foreign=try{NativeHighlightEdits.list(foreignDoc,0).single()}finally{foreignDoc.destroy()}
             check(foreign.mode==TextMode.MANUAL)
-            foreignWorkspace.replace(foreign,foreign.copy(edit=foreign.edit.copy(slot=5,quotation=resized.quotation,quads=resized.quads)),UUID.randomUUID().toString())
+            foreignWorkspace.replace(foreign,foreign.copy(edit=foreign.edit.copy(slot=5,quotation=resized.quotation,quads=resized.quads,appearance=resized.appearance)),UUID.randomUUID().toString())
             foreignWorkspace.maintain()
             val verify=Document.openDocument(foreignWorkspace.currentFile().absolutePath) as PDFDocument
             try{

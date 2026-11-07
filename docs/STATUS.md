@@ -1,3 +1,27 @@
+# Current increment — M3m faster feedback + source Save; runtime pending
+Accepted M3l user590 JVM/build/Lint/20 native suites/manual checks. M3m uses retained same-page
+text/metadata/count and960px first edit frames with adaptive refinement, retaining durability.
+Save targets opened original with explicit confirmation/write authorization, source SHA checks,
+verified before/after backups+owner intent and read-back. Saved-byte links preserve later UNSAVED
+edits on reopen. Source failure can leave partial original; no blind rollback/CAS/cloud/power
+loss guarantee. Unique verified recovery is labelled/detached with source Save disabled and
+Save As available; corrupt/ambiguous heads are not guessed. Backups retained, storage can grow.
+Expected630 JVM/21 native suites, author platform runtime unavailable. FIRST test a disposable
+Documents copy. See M3m-ACCEPTANCE.md. Notes/source autosave/retention browser still pending.
+
+## Prior status (historical)
+
+# Current increment — M3l appearance + editable Contents; acceptance pending
+User M3k corrected build/Lint/560 JVM and19 native suites PASS; main manual editing/export
+checks OK. Reopen "IJ" is not marked passed. New native row appearance separates exact glyph
+metadata from standard display quads; explicit Uniformiser updates legacy app highlights.
+Citation now edits manual Contents, with Undo/Redo and preservation on resize/export.
+Maintenance deferred after result delivery; measure delete stages, no instant-save promise.
+Expected590 JVM/20 native suites; author platform execution unavailable. See M3l acceptance.
+Original overwrite, notes and generic third-party editing remain pending. Save As unchanged.
+
+## Prior status (historical)
+
 # M3k — native fixture correction supplied; full device acceptance pending
 User: build/Lint/560 JVM tests and previous18 native suites PASS. New19th native suite failed
 at the first handle-restoration assertion. Its fixture used search-result geometry instead

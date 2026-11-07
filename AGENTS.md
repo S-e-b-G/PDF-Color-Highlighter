@@ -274,3 +274,26 @@ Third-party/unrecognized/locked annotation editing is deferred, not guessed. Pre
 Contents and existing dictionary fields. Undo/Redo restores checksummed full PDFs; pin all
 required history snapshots before maintenance, session-only16/64MiB with latest always kept.
 No original writes; M3j export code stays intact. Expected560/19,author runtime unavailable.
+
+## M3l appearance/Contents continuity
+M3k corrected user560/19/manual main workflow passed; reopen "IJ" not accepted. Native row
+appearance is now distinct from exact logical glyph quads. Persist/validate both private
+logical metadata and intended standard appearance; never derive handles from display bands.
+New/explicitly updated highlights get smooth native bands; no silent bulk migration. Uniformiser
+is an undoable selected-annotation action. Suppress completed native duplicate preview fill.
+Manual Contents editor preserves corrections on boundary changes; additional notes stay separate.
+Maintenance runs after result delivery; measure commit/render/cleanup timings, do not claim
+instant deletion or disable durability checks. Expected590/20,author runtime unavailable.
+
+
+## M3m continuation
+Use actual supplied M3l source. Only annotation-only same-page body text/count/metadata is
+reused;960px edit frame then refine, native coordinates/epochs still authoritative. No
+optimistic durable-save acknowledgement or removed hash/sync/validation. Save confirms the
+CURRENT opened URI, requests write grant, checks source SHA, publishes verified before/after
+backups+immutable checksummed owner intent before provider output, rechecks and reads back.
+Saved-byte link retains ORIGINAL owner namespace and later UNSAVED edits. No generic atomic
+provider CAS/cloud/power-loss guarantee. Never blind-rollback, guess URIs, silently Save As,
+or select an older/mixed/corrupt recovery head. Unique recovery is explicit/detached with
+source Save disabled; Save As works. Backups retained, retention/browser future. Manual Save
+blocks editing. Expected630/21, author runtime absent. Disposable-source acceptance required.

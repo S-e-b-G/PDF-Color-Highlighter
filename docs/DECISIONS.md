@@ -298,3 +298,22 @@ boundary; interim preview is never a write. App-managed native IDs restore inter
 reopen. In-place recolor/resize preserves unknown dictionary data; full-PDF checksummed undo
 restores deletion without reconstructing annotation metadata. Ambiguous overlap selection
 requires an exclusive hit. Keep source overwrite and generic imported editing out of scope.
+
+## 2026-11-02 — M3l separate logical and native appearance geometry
+Standard native row quads avoid per-character alpha overlap and selected word-space gaps.
+Dedicated native appearance policy replaces the previous one-glyph-one-native-quad decision;
+it does not reuse the UI-only preview type. Private bounded/versioned logical metadata retains
+exact handle geometry. Do not silently rewrite old highlights or exported files. Manual
+Contents is a deliberate durable edit, not automatic resynchronization. Keep durable delete
+semantics, remove maintenance from result-delivery critical path, and measure remaining work.
+
+
+## 2026-11-07 — M3m source Save and first edit frame
+Separate text identity/viewport geometry from annotation pixels. Annotation-only edits reuse
+unchanged body data and deliver a bounded first frame before sharpening. Keep all durability
+checks; measure native-request-to-onDraw separately from pre-request/physical-display latency.
+Source Save is confirmed replacement, not another Save As. Preserve verified before/after
+copies+owner link before output; exact saved bytes may rebind the same URI to its old edit
+namespace. An intent is not remote completion evidence. Provider interruption may leave a
+partial original; preserve local work, block retries until reopen, expose unique verified
+recovery for Save As and refuse ambiguous/corrupt heads. No hardware/atomic/CAS guarantee.

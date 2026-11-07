@@ -27,6 +27,7 @@ data class SmokeFrame(
     val properties: DocumentProperties,
     val pageWidth: Float,
     val pageHeight: Float,
+    val sourceDetached:Boolean=false,val sourceSaveBlocked:Boolean=false,
     val managedHighlights:List<org.sg.pdfcolorhighlighter.domain.ManagedHighlight> = emptyList(),
     val editAllowed:Boolean=false,val localRevision:Long=0L,
     val canUndoLocal:Boolean=false,val canRedoLocal:Boolean=false,
@@ -48,67 +49,65 @@ class SmokePdfSession(context: Context) {
     private var sourceUri: Uri? = null
     private var sourceSizeBytes = 0L
     private var documentProperties: DocumentProperties? = null
+    private val editRoot=java.io.File(app.noBackupFilesDir,"reader-highlight-checkpoints-v1")
+    private val sourceSaves=SourceSaveJournal(java.io.File(app.noBackupFilesDir,"source-save-journal-v1"))
+    private var expectedSourceHash:String?=null
+    private var sourceDetached=false
+    private var sourceSaveBlocked=false
+    private var cachedCountPage=-1
+    private var cachedCharCount:Int?=null
     private var displayedLocalRevision=0L
     private var localHighlights:LocalHighlightWorkspace?=null
     private var localEditNotice=org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE
 
-    fun open(uri: Uri, page: Int, callback: (Result<SmokeFrame>) -> Unit) {
-        if (closed.get()) return
-        cancelRefinement()
-        val request = generation.incrementAndGet()
-        worker.execute {
-            perform(request, callback) {
-                disposeDocument()
-                try {
-                    sourceUri = uri
-                    documentName = app.contentResolver.query(uri,
-                        arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                        if (cursor.moveToFirst()) cursor.getString(0) else null
-                    }
-                    val localWorkspace = try {
-                        workspaceStore.create(uri.toString(), documentName) {
-                            app.contentResolver.openInputStream(uri)
-                                ?: throw IllegalStateException("No input stream")
-                        }
-                    } catch (_: WorkspaceSizeLimit) { throw SmokeSizeLimit() }
-                    workspace = localWorkspace
-                    sourceSizeBytes = localWorkspace.baseline.fingerprint.sizeBytes
-                    val editing=LocalHighlightWorkspace(java.io.File(app.noBackupFilesDir,"reader-highlight-checkpoints-v1"),
-                        uri.toString(),localWorkspace.inputFile,localWorkspace.baseline.fingerprint.sha256)
-                    localHighlights=editing
-                    val recovered=try{editing.recoverExisting()}catch(_:Exception){null}
-                    localEditNotice=editing.notice
-                    val input=recovered ?: localWorkspace.inputFile
-                    sourceSizeBytes=input.length()
-                    val opened = Document.openDocument(input.absolutePath)
-                    document = opened
-                    displayedLocalRevision=editing.sequence
-                    if (opened.needsPassword()) throw PasswordRequired()
-                    require(opened.isPDF()) { "Not a PDF document" }
-                    val frame = render(page)
-                    try {
-                        workspaceStore.accept(localWorkspace)
-                    } catch (e: Exception) {
-                        frame.bitmap.recycle()
-                        throw e
-                    }
-                    // Maintenance failure must not invalidate an already rendered read-only document.
-                    val retained = try { workspaceStore.pruneReadOnly(localWorkspace) } catch (_: Exception) { false }
-                    if (!retained) android.util.Log.w("PdfWorkspace", "Read-only baseline retention cleanup incomplete")
-                    frame
-                } catch (e: Exception) {
-                    val failed = workspace
-                    disposeDocument()
-                    try { workspaceStore.discardCandidate(failed) } catch (_: Exception) { }
-                    throw e
-                } catch (e: LinkageError) {
-                    val failed = workspace
-                    disposeDocument()
-                    try { workspaceStore.discardCandidate(failed) } catch (_: Exception) { }
-                    throw e
-                }
+
+    private fun recoveryCopy(uri:Uri):Pair<java.io.File,String>{
+        val prefix=org.sg.pdfcolorhighlighter.domain.LocalEditIdentity.uriKey(uri.toString())+"-"
+        val dirs=editRoot.listFiles().orEmpty().filter{it.isDirectory && it.name.startsWith(prefix) &&
+            Regex("[0-9a-f]{64}-[0-9a-f]{64}").matches(it.name)}
+        require(dirs.size==1){"No unique local recovery namespace"}
+        val dir=dirs.single();require(dir.canonicalFile.parentFile==editRoot.canonicalFile)
+        val owner=dir.name.substringAfterLast('-');val store=DurablePdfRevisionStore(dir);val head=store.recover()
+        require(head.baselineSha256==owner)
+        return store.currentFile(head).also{NativePdfEditTransaction.validateEditable(it)} to owner
+    }
+    fun open(uri:Uri,page:Int,callback:(Result<SmokeFrame>)->Unit,recoveryOnly:Boolean=false){
+        if(closed.get())return
+        cancelRefinement();val request=generation.incrementAndGet()
+        worker.execute{perform(request,callback){
+            disposeDocument()
+            fun load(recovery:Boolean):SmokeFrame{
+                sourceUri=uri;val copy=if(recovery)recoveryCopy(uri)else null
+                sourceDetached=recovery;sourceSaveBlocked=recovery
+                documentName=if(recovery)app.getString(org.sg.pdfcolorhighlighter.R.string.reader_source_recovered_name)else
+                    app.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use{c->if(c.moveToFirst())c.getString(0)else null}
+                val local=try{workspaceStore.create(uri.toString(),documentName){
+                    copy?.first?.inputStream() ?: (app.contentResolver.openInputStream(uri) ?: error("No source input"))
+                }}catch(_:WorkspaceSizeLimit){throw SmokeSizeLimit()}
+                workspace=local;expectedSourceHash=if(recovery)null else local.baseline.fingerprint.sha256
+                val link=if(recovery)null else sourceSaves.ownerFor(uri.toString(),local.baseline.fingerprint.sha256)
+                val owner=copy?.second ?: link ?: local.baseline.fingerprint.sha256
+                if(copy!=null || link!=null)check(java.io.File(editRoot,
+                    org.sg.pdfcolorhighlighter.domain.LocalEditIdentity.key(uri.toString(),owner)).isDirectory)
+                val editing=LocalHighlightWorkspace(editRoot,uri.toString(),local.inputFile,owner);localHighlights=editing
+                val recovered=try{editing.recoverExisting()}catch(error:Exception){if(recovery)throw error else null}
+                localEditNotice=editing.notice;val input=recovered ?: local.inputFile;sourceSizeBytes=input.length()
+                val opened=Document.openDocument(input.absolutePath);document=opened;displayedLocalRevision=editing.sequence
+                if(opened.needsPassword())throw PasswordRequired()
+                require(opened.isPDF()){"Not a PDF document"}
+                val frame=render(page)
+                try{workspaceStore.accept(local)}catch(error:Exception){frame.bitmap.recycle();throw error}
+                runCatching{workspaceStore.pruneReadOnly(local)};return frame
             }
-        }
+            try{
+                if(recoveryOnly)load(true)else try{load(false)}catch(error:Exception){
+                    if(error is PasswordRequired || error is SmokeSizeLimit)throw error
+                    val failed=workspace;disposeDocument();runCatching{workspaceStore.discardCandidate(failed)}
+                    try{load(true)}catch(_:Exception){throw error}
+                }
+            }catch(error:Exception){val failed=workspace;disposeDocument();runCatching{workspaceStore.discardCandidate(failed)};throw error}
+             catch(error:LinkageError){val failed=workspace;disposeDocument();runCatching{workspaceStore.discardCandidate(failed)};throw error}
+        }}
     }
 
     fun renderPage(page: Int, callback: (Result<SmokeFrame>) -> Unit) {
@@ -172,7 +171,8 @@ class SmokePdfSession(context: Context) {
         }
     }
 
-    private fun render(requestedPage: Int): SmokeFrame {
+    private fun render(requestedPage: Int,editPreview:Boolean=false): SmokeFrame {
+        val renderStarted=android.os.SystemClock.elapsedRealtime()
         syncLocalReader()
         val doc = checkNotNull(document)
         val count = doc.countPages()
@@ -186,14 +186,20 @@ class SmokePdfSession(context: Context) {
             val height = bounds.y1 - bounds.y0
             require(width.isFinite() && height.isFinite() && width > 0 && height > 0)
             require(width / height in 0.01f..100f) { "Unsupported smoke-test page ratio" }
-            val chars = if (doc.hasPermission(Document.PERMISSION_COPY)) {
+            val countStarted=android.os.SystemClock.elapsedRealtime()
+            val chars = if(editPreview && cachedCountPage==index)cachedCharCount else if (doc.hasPermission(Document.PERMISSION_COPY)) {
                 val text = page.toStructuredText()
                 try {
                     val value = text.asText()
                     value.codePointCount(0, value.length)
                 } finally { text.destroy() }
             } else null
-            val bitmap = AndroidDrawDevice.drawPageFit(page, 1600, 1600)
+            cachedCountPage=index;cachedCharCount=chars
+            val rasterStarted=android.os.SystemClock.elapsedRealtime()
+            val edge=if(editPreview)org.sg.pdfcolorhighlighter.domain.EditFramePolicy.EDIT_EDGE else org.sg.pdfcolorhighlighter.domain.EditFramePolicy.READER_EDGE
+            val bitmap = AndroidDrawDevice.drawPageFit(page,edge,edge)
+            val rasterFinished=android.os.SystemClock.elapsedRealtime()
+            try{
             val editing=localHighlights
             val editable=try{
                 doc is com.artifex.mupdf.fitz.PDFDocument && !doc.needsPassword() && doc.isUnencryptedPDF() &&
@@ -201,9 +207,12 @@ class SmokePdfSession(context: Context) {
                     doc.hasPermission(Document.PERMISSION_ANNOTATE) &&
                     localEditNotice==org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE
             }catch(_:Exception){false}
-            return SmokeFrame(bitmap,index,count,documentName,chars,properties,width,height,
-                if(editable && doc is com.artifex.mupdf.fitz.PDFDocument)NativeHighlightEdits.list(doc,index)else emptyList(),
+            val highlights=if(editable && doc is com.artifex.mupdf.fitz.PDFDocument)NativeHighlightEdits.list(doc,index)else emptyList()
+            if(editPreview)android.util.Log.i("PdfEditDetail","beforeCountMs=${countStarted-renderStarted} countMs=${rasterStarted-countStarted} rasterMs=${rasterFinished-rasterStarted} listMs=${android.os.SystemClock.elapsedRealtime()-rasterFinished} edge=$edge")
+            return SmokeFrame(bitmap,index,count,documentName,chars,properties,width,height,sourceDetached,sourceSaveBlocked,
+                highlights,
                 editable,editing?.sequence ?: 0L,editing?.canUndo ?: false,editing?.canRedo ?: false,localEditNotice)
+            }catch(error:Throwable){bitmap.recycle();throw error}
         } finally { page.destroy() }
     }
 
@@ -270,19 +279,27 @@ class SmokePdfSession(context: Context) {
         if(closed.get())return
         cancelRefinement()
         val request=generation.incrementAndGet()
+        val requestedAt=android.os.SystemClock.elapsedRealtime()
         worker.execute {
             if(closed.get() || request!=generation.get())return@execute
+            val started=android.os.SystemClock.elapsedRealtime()
+            val queueMs=started-requestedAt
+            var commitMs=0L;var renderMs=0L
+            var maintenance:LocalHighlightWorkspace?=null
             val result:Result<LocalEditOutcome> =try{
                 check(sourceUri?.toString()==uri){"Document changed before edit"}
                 val editing=checkNotNull(localHighlights)
                 action(editing) // Durable commit completes BEFORE any live-document change.
+                commitMs=android.os.SystemClock.elapsedRealtime()-started
+                val renderStarted=android.os.SystemClock.elapsedRealtime()
                 val frame=try{
                     syncLocalReader()
-                    val updated=render(page)
-                    editing.maintain() // Previous native readers are now closed; current/previous slots stay.
+                    val updated=render(page,editPreview=true)
+                    maintenance=editing // Defer pruning/extra verification until feedback is delivered.
                     updated
                 }catch(_:Exception){null}
                  catch(_:OutOfMemoryError){null}
+                renderMs=android.os.SystemClock.elapsedRealtime()-renderStarted
                 Result.success(LocalEditOutcome(frame,frame==null,editing.sequence,editing.canUndo,editing.canRedo))
             }catch(error:Exception){Result.failure(error)}
              catch(error:LinkageError){Result.failure(error)}
@@ -290,6 +307,11 @@ class SmokePdfSession(context: Context) {
             main.post {
                 if(closed.get() || request!=generation.get())result.getOrNull()?.frame?.bitmap?.recycle()
                 else callback(result)
+                if(!closed.get())maintenance?.let{workspace->runCatching{worker.execute{
+                    val cleanupStarted=android.os.SystemClock.elapsedRealtime()
+                    workspace.maintain()
+                    android.util.Log.i("PdfEditTiming","queueMs=$queueMs commitMs=$commitMs renderMs=$renderMs cleanupMs=${android.os.SystemClock.elapsedRealtime()-cleanupStarted}")
+                }}}
             }
         }
     }
@@ -319,6 +341,30 @@ class SmokePdfSession(context: Context) {
         }
     }
 
+
+    fun saveSource(expectedUri:String,callback:(Result<VerifiedDocumentExport.Receipt>)->Unit){
+        if(closed.get())return
+        cancelRefinement();val request=generation.get()
+        worker.execute{
+            val result=runCatching{
+                check(!closed.get() && request==generation.get() && sourceUri?.toString()==expectedUri)
+                check(!sourceDetached && !sourceSaveBlocked && localEditNotice==org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE)
+                val uri=checkNotNull(sourceUri);require(uri.scheme=="content"){"SAF content URI required"}
+                check(app.checkUriPermission(uri,android.os.Process.myPid(),android.os.Process.myUid(),android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)==android.content.pm.PackageManager.PERMISSION_GRANTED){"Write permission required"}
+                if(DocumentsContract.isDocumentUri(app,uri))app.contentResolver.query(uri,arrayOf(DocumentsContract.Document.COLUMN_FLAGS),null,null,null)?.use{c->
+                    if(c.moveToFirst())require((c.getInt(0) and DocumentsContract.Document.FLAG_SUPPORTS_WRITE)!=0){"Provider is read-only"}}
+                check(checkNotNull(document).hasPermission(Document.PERMISSION_COPY)){"Copy permission required"}
+                val editing=checkNotNull(localHighlights)
+                sourceSaves.save(expectedUri,checkNotNull(expectedSourceHash),editing.sourceOwnerHash,editing.fileForSave(),
+                    {app.contentResolver.openInputStream(uri) ?: error("No source input")},
+                    {app.contentResolver.openOutputStream(uri,"wt") ?: error("No source output")},NativePdfEditTransaction::validateEditable)
+                    .also{expectedSourceHash=it.sha256;documentProperties=documentProperties?.copy(sourceModifiedMillis=null)}
+            }
+            if(result.isFailure){sourceSaveBlocked=true;documentProperties=documentProperties?.copy(sourceModifiedMillis=null)}
+            main.post{if(!closed.get() && request==generation.get())callback(result)}
+        }
+    }
+
     private fun syncLocalReader(){
         val editing=localHighlights ?: return
         if(editing.sequence==displayedLocalRevision)return
@@ -326,7 +372,7 @@ class SmokePdfSession(context: Context) {
         val next=Document.openDocument(file.absolutePath)
         val previous=document
         document=next;displayedLocalRevision=editing.sequence
-        documentProperties=null;sourceSizeBytes=file.length()
+        sourceSizeBytes=file.length();documentProperties=documentProperties?.copy(sizeBytes=sourceSizeBytes)
         previous?.destroy()
     }
 
@@ -340,6 +386,7 @@ class SmokePdfSession(context: Context) {
             sourceUri = null
             sourceSizeBytes = 0L
             documentProperties = null
+            expectedSourceHash=null;sourceDetached=false;sourceSaveBlocked=false;cachedCountPage=-1;cachedCharCount=null
             localHighlights=null;displayedLocalRevision=0L;localEditNotice=org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE
         }
     }

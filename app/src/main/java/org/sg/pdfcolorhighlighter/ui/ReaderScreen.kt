@@ -55,6 +55,7 @@ private val slotNames = listOf(R.string.reader_slot_1, R.string.reader_slot_2, R
 /** M2b.2: centered page-navigation group, page-jump dialog and fading press feedback. */
 @Composable
 fun ReaderScreen(
+    canSave:Boolean,onSave:()->Unit,canRecover:Boolean,onRecover:()->Unit,sourceDetached:Boolean,onFrameDrawn:(Long)->Unit,
     canExport:Boolean,onSaveAs:()->Unit,exportMessage:String?,
     bitmap: Bitmap?, documentName: String?, documentProperties: org.sg.pdfcolorhighlighter.domain.DocumentProperties?, page: Int, pageCount: Int, loading: Boolean,
     errorText: String?, grantWarning: Boolean, viewportState: PageViewportState,
@@ -69,6 +70,7 @@ fun ReaderScreen(
     onCommitHighlight:()->Unit,onUndoLocal:()->Unit,onRedoLocal:()->Unit,
     onChoosePreviewSlot: (Int)->Unit,
     onPreviewDrag: (TextPoint,TextPoint,Boolean)->Unit, onPreviewCancel: ()->Unit,
+    highlightContents:String?,highlightId:String?,onChangeContents:(String)->Unit,onSmoothHighlight:()->Unit,
     onHighlightTap:(TextPoint)->Boolean,
     onPreviewAdjust: (TextPoint,TextAddress,Boolean)->Unit,
     pageWidth: Float, pageHeight: Float, frameSerial: Long,
@@ -79,7 +81,10 @@ fun ReaderScreen(
     onRecent: (String) -> Unit, onRemoveRecent: (String) -> Unit,
     onViewportChanged: (PageViewportState) -> Unit,
 ) {
-    var quotationOpen by remember { mutableStateOf(false) }
+    var saveConfirm by rememberSaveable { mutableStateOf(false) }
+    var quotationOpen by rememberSaveable { mutableStateOf(false) }
+    var contentsDraft by rememberSaveable { mutableStateOf("") }
+    var contentsDraftId by rememberSaveable { mutableStateOf<String?>(null) }
     var diagnosticReport by remember { mutableStateOf<SelectionLayoutReport?>(null) }
     LaunchedEffect(textSnapshot) { diagnosticReport=null }
     val previewEnabled=!loading && textSnapshot?.status==PageTextStatus.READY &&
@@ -98,11 +103,11 @@ fun ReaderScreen(
                     when {
                         maxWidth >= 768.dp -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot)
-                            Spacer(Modifier.weight(1f)); Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs); Spacer(Modifier.weight(1f))
+                            Spacer(Modifier.weight(1f)); Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{saveConfirm=true}); Spacer(Modifier.weight(1f))
                             ColorTools(notes = true)
                         }
                         !tablet -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs) }; Row { ColorTools(notes = true) }
+                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{saveConfirm=true}) }; Row { ColorTools(notes = true) }
                         }
                         else -> Text(stringResource(R.string.reader_width_blocked),
                             Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
@@ -115,6 +120,8 @@ fun ReaderScreen(
                 if (storageWarning) Text(stringResource(R.string.reader_recent_storage_warning),
                     Modifier.background(barColor).padding(horizontal = 8.dp),
                     color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                if(sourceDetached)Text(stringResource(R.string.reader_source_detached),Modifier.padding(horizontal=8.dp),color=MaterialTheme.colorScheme.error)
+                if(canRecover)TextButton(onClick=onRecover){Text(stringResource(R.string.reader_source_recover))}
                 exportMessage?.let { Text(it, Modifier.background(barColor).padding(horizontal = 8.dp),
                     style = MaterialTheme.typography.bodySmall) }
                 errorText?.let { Text(it, Modifier.background(barColor).padding(horizontal = 8.dp),
@@ -127,7 +134,7 @@ fun ReaderScreen(
                                 it.contentDescription = description
                                 it.onViewportChanged = onViewportChanged
                                 it.onPreviewDrag=onPreviewDrag;it.onPreviewCancel=onPreviewCancel;it.onPreviewAdjust=onPreviewAdjust
-                                it.onHighlightTap=onHighlightTap
+                                it.onHighlightTap=onHighlightTap;it.onFrameDrawn=onFrameDrawn
                                 it.onRenderViewport = onRenderViewport
                                 it.onRenderGesture = onRenderGesture
                                 onViewportReady(it)
@@ -135,16 +142,17 @@ fun ReaderScreen(
                             update = { view ->
                                 view.onViewportChanged = onViewportChanged
                                 view.onPreviewDrag=onPreviewDrag;view.onPreviewCancel=onPreviewCancel;view.onPreviewAdjust=onPreviewAdjust
-                                view.onHighlightTap=onHighlightTap
+                                view.onHighlightTap=onHighlightTap;view.onFrameDrawn=onFrameDrawn
                                 view.onRenderViewport = onRenderViewport
                                 view.onRenderGesture = onRenderGesture
                                 view.setInteractionEnabled(!loading)
                                 view.show(bitmap, viewportState, pageWidth, pageHeight, frameSerial)
+                                view.setNativeSelectionActive(highlightContents!=null && previewCommitted)
                                 view.setSelectionPreview(textSnapshot,if(previewEnabled)previewSlot else null,previewSpan,previewCommitted)
                             },
                             onRelease = { view ->
                                 view.onViewportChanged = null
-                                view.onHighlightTap=null
+                                view.onHighlightTap=null;view.onFrameDrawn=null
                                 view.onPreviewDrag=null;view.onPreviewCancel=null;view.onPreviewAdjust=null
                                 view.onRenderViewport = null
                                 view.onRenderGesture = null
@@ -159,7 +167,13 @@ fun ReaderScreen(
                         Surface(Modifier.align(Alignment.TopEnd).padding(8.dp).zIndex(1f),
                             shape=RoundedCornerShape(8.dp),shadowElevation=2.dp) {
                             Row(verticalAlignment=Alignment.CenterVertically){
-                                TextButton(onClick={ quotationOpen=true },enabled=!loading) { Text(stringResource(R.string.selection_preview_quotation)) }
+                                TextButton(onClick={
+                                    if(highlightContents!=null && (contentsDraftId!=highlightId || localEditError==null)){
+                                        contentsDraft=highlightContents;contentsDraftId=highlightId
+                                    }
+                                    quotationOpen=true
+                                },enabled=!loading) { Text(stringResource(R.string.selection_preview_quotation)) }
+                                if(highlightContents!=null)TextButton(onClick=onSmoothHighlight,enabled=!loading){Text(stringResource(R.string.reader_smooth_highlight))}
                                 if(localEditError!=null)TextButton(onClick=onCommitHighlight,enabled=canCommitHighlight && !loading){Text(stringResource(R.string.reader_edit_retry))}
                             }
                         }
@@ -203,6 +217,13 @@ fun ReaderScreen(
                     onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = previewSlot==null || !previewEnabled)
             }
         }
+
+        if(saveConfirm){
+            AlertDialog(onDismissRequest={saveConfirm=false},title={Text(stringResource(R.string.reader_source_save_title))},
+                text={Text(stringResource(R.string.reader_source_save_warning,documentName ?: "PDF"))},
+                confirmButton={TextButton(onClick={saveConfirm=false;onSave()},enabled=canSave){Text(stringResource(R.string.reader_source_save_confirm))}},
+                dismissButton={TextButton(onClick={saveConfirm=false}){Text(stringResource(R.string.reader_contents_cancel))}})
+        }
         if (openMenu) {
             AlertDialog(
                 onDismissRequest = { openMenu = false },
@@ -229,7 +250,10 @@ fun ReaderScreen(
             )
         }
         diagnosticReport?.let { report -> SelectionDiagnosticDialog(report) { diagnosticReport=null } }
-        if (quotationOpen && previewSpan!=null) {
+        if(quotationOpen && highlightContents!=null){
+            HighlightContentsDialog(contentsDraft,{contentsDraft=it},onChangeContents){quotationOpen=false}
+        }
+        if (quotationOpen && previewSpan!=null && highlightContents==null) {
             AlertDialog(onDismissRequest={ quotationOpen=false },
                 title={ Text(stringResource(R.string.selection_preview_quotation_title)) },
                 text={ SelectionContainer {
@@ -420,8 +444,8 @@ private fun RowScope.ColorTools(notes: Boolean) {
     }
 }
 @Composable
-private fun RowScope.Actions(canUndo:Boolean,canRedo:Boolean,onUndo:()->Unit,onRedo:()->Unit,canExport:Boolean,onSaveAs:()->Unit) {
-    UnavailableIcon(R.drawable.reader_save, stringResource(R.string.reader_save))
+private fun RowScope.Actions(canUndo:Boolean,canRedo:Boolean,onUndo:()->Unit,onRedo:()->Unit,canExport:Boolean,onSaveAs:()->Unit,canSave:Boolean,onSave:()->Unit) {
+    PulseIcon(R.drawable.reader_save,stringResource(R.string.reader_save),canSave,onSave)
     PulseIcon(R.drawable.reader_undo,stringResource(R.string.reader_edit_undo),canUndo,onUndo)
     PulseIcon(R.drawable.reader_redo,stringResource(R.string.reader_edit_redo),canRedo,onRedo)
     PulseIcon(R.drawable.reader_save_as,stringResource(R.string.reader_save_as),canExport,onSaveAs)

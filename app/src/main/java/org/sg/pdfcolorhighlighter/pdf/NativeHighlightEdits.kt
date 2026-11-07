@@ -41,10 +41,19 @@ object NativeHighlightEdits {
         } ?: return null
         if(annotation.quadPointCount !in 1..25000)return null
         val native=annotation.quadPoints
-        val quads=native.map{q->GlyphQuad(TextPoint(q.ul_x,q.ul_y),TextPoint(q.ur_x,q.ur_y),TextPoint(q.ll_x,q.ll_y),TextPoint(q.lr_x,q.lr_y))}
+        val painted=native.map{q->GlyphQuad(TextPoint(q.ul_x,q.ul_y),TextPoint(q.ur_x,q.ur_y),TextPoint(q.ll_x,q.ll_y),TextPoint(q.lr_x,q.lr_y))}
+        val encoded=string(annotation,"SGCHGlyphQuads")
+        val quads=if(encoded==null)painted else HighlightGeometryCodec.decode(encoded)
+        if(encoded!=null){
+            val expected=HighlightGeometryCodec.decode(string(annotation,"SGCHAppearanceQuads") ?: return null)
+            if(expected.size!=painted.size)return null
+            fun points(q:GlyphQuad)=listOf(q.ul,q.ur,q.ll,q.lr)
+            if(expected.indices.any{i->val a=points(expected[i]);val b=points(painted[i])
+                a.indices.any{kotlin.math.abs(a[it].x-b[it].x)>.03f || kotlin.math.abs(a[it].y-b[it].y)>.03f}})return null
+        }
         val contents=annotation.contents ?: ""
         val automatic=mode==TextMode.AUTOMATIC.name && contents==synced
-        return ManagedHighlight(HighlightEdit(name,page,slot,quotation,quads),contents,
+        return ManagedHighlight(HighlightEdit(name,page,slot,quotation,quads,if(encoded==null)emptyList()else painted),contents,
             if(automatic)TextMode.AUTOMATIC else TextMode.MANUAL)
     }
     fun list(pdf:PDFDocument,index:Int):List<ManagedHighlight> {
@@ -79,13 +88,15 @@ object NativeHighlightEdits {
                 require(managed(annotation,before.edit.page)==before){"Stale highlight state"}
                 if(after==null)page.deleteAnnotation(annotation)
                 else{
-                    annotation.setQuadPoints(after.edit.quads.map{q->Quad(q.ul.x,q.ul.y,q.ur.x,q.ur.y,q.ll.x,q.ll.y,q.lr.x,q.lr.y)}.toTypedArray())
+                    annotation.setQuadPoints((after.edit.appearance.ifEmpty{NativeHighlightAppearance.forQuads(after.edit.quads)}).map{q->Quad(q.ul.x,q.ul.y,q.ur.x,q.ur.y,q.ll.x,q.ll.y,q.lr.x,q.lr.y)}.toTypedArray())
                     val c=colors[after.edit.slot]
                     annotation.setColor(floatArrayOf(((c shr 16) and 255)/255f,((c shr 8) and 255)/255f,(c and 255)/255f))
                     annotation.setContents(after.contents)
                     val obj=annotation.`object`
                     try{
                         obj.put("SGCHTextMode",after.mode.name)
+                        obj.put("SGCHGlyphQuads",HighlightGeometryCodec.encode(after.edit.quads))
+                        obj.put("SGCHAppearanceQuads",HighlightGeometryCodec.encode(after.edit.appearance.ifEmpty{NativeHighlightAppearance.forQuads(after.edit.quads)}))
                         for((key,value)in listOf("SGCHQuotation" to after.edit.quotation,"SGCHSyncedContents" to after.contents)){
                             val encoded=pdf.newByteString(PdfTextString.encode(value))
                             try{obj.put(key,encoded)}finally{encoded.destroy()}
@@ -106,7 +117,7 @@ object NativeHighlightEdits {
             try{require(existing.none{id(it)==edit.id}){"Highlight identity already exists"}}finally{existing.forEach{it.destroy()}}
             val annotation=page.createAnnotation(PDFAnnotation.TYPE_HIGHLIGHT)
             try {
-                annotation.setQuadPoints(edit.quads.map{q->Quad(q.ul.x,q.ul.y,q.ur.x,q.ur.y,q.ll.x,q.ll.y,q.lr.x,q.lr.y)}.toTypedArray())
+                annotation.setQuadPoints((edit.appearance.ifEmpty{NativeHighlightAppearance.forQuads(edit.quads)}).map{q->Quad(q.ul.x,q.ul.y,q.ur.x,q.ur.y,q.ll.x,q.ll.y,q.lr.x,q.lr.y)}.toTypedArray())
                 val color=colors[edit.slot]
                 annotation.setColor(floatArrayOf(((color shr 16) and 255)/255f,((color shr 8) and 255)/255f,(color and 255)/255f))
                 annotation.setOpacity(.5f)
@@ -115,6 +126,8 @@ object NativeHighlightEdits {
                 val obj=annotation.`object`
                 try {
                     obj.put("NM",edit.id);obj.put("SGCHTextMode",TextMode.AUTOMATIC.name)
+                    obj.put("SGCHGlyphQuads",HighlightGeometryCodec.encode(edit.quads))
+                    obj.put("SGCHAppearanceQuads",HighlightGeometryCodec.encode(edit.appearance.ifEmpty{NativeHighlightAppearance.forQuads(edit.quads)}))
                     for(key in listOf("SGCHQuotation","SGCHSyncedContents")){
                         val encoded=pdf.newByteString(PdfTextString.encode(edit.quotation))
                         try{obj.put(key,encoded)}finally{encoded.destroy()}

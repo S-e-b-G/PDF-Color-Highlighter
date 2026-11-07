@@ -34,6 +34,8 @@ class PdfViewportView(context: Context) : View(context) {
     private val selectionPaint=Paint(Paint.ANTI_ALIAS_FLAG)
     private val previewPalette=intArrayOf(0xFFFFAD5B.toInt(),0xFF00FF00.toInt(),0xFFFC3636.toInt(),
         0xFFFFFF00.toInt(),0xFFD1DFEB.toInt(),0xFFFCD7FB.toInt())
+    private var nativeSelectionActive=false
+    fun setNativeSelectionActive(value:Boolean){nativeSelectionActive=value;invalidate()}
     private var handlesEnabled=false
     private var activeHandle:SelectionHandleSide?=null
     private var handleBaseSpan:SelectionSpan?=null
@@ -45,6 +47,8 @@ class PdfViewportView(context: Context) : View(context) {
     private var handleMoved=false
     private val handlePaint=Paint(Paint.ANTI_ALIAS_FLAG)
     private val handleDensity get()=resources.displayMetrics.density
+    var onFrameDrawn:((Long)->Unit)?=null
+    private var lastDrawnKey=Long.MIN_VALUE
     var onHighlightTap: ((TextPoint)->Boolean)?=null
     private var touchOrigin=TextPoint(0f,0f)
     private var touchMoved=false
@@ -223,6 +227,7 @@ class PdfViewportView(context: Context) : View(context) {
         return coordinateMap()?.toPage(TextPoint(x,y))
     }
     private fun drawSelectionPreview(canvas: Canvas) {
+        if(nativeSelectionActive && handlesEnabled && activeHandle==null)return
         val slot=previewSlot ?: return
         if(previewSpan==null) return
         val mapping=coordinateMap() ?: return
@@ -283,6 +288,7 @@ class PdfViewportView(context: Context) : View(context) {
         } finally {
             canvas.restoreToCount(saved)
         }
+        if(lastDrawnKey!=logicalKey){lastDrawnKey=logicalKey;onFrameDrawn?.invoke(logicalKey)}
     }
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val action = event.actionMasked

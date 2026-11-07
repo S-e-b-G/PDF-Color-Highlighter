@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_smooth_highlight">Uniformiser</string>
+    <string name="reader_contents_title">Texte du surlignage</string>
+    <string name="reader_contents_label">Citation / Contents PDF</string>
+    <string name="reader_contents_explanation">Le texte corrigé sera conservé si les poignées sont déplacées. Les commentaires supplémentaires restent des notes séparées.</string>
+    <string name="reader_contents_apply">Appliquer</string>
+    <string name="reader_contents_cancel">Annuler</string>
+    <string name="reader_contents_too_long">Texte trop long (100 000 caractères maximum).</string>
+</resources>
