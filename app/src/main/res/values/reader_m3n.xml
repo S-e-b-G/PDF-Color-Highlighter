@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_unsaved_title">Modifications non enregistrées</string>
+    <string name="reader_unsaved_message">Enregistrer les modifications de « %1$s » avant de changer de document ? La copie locale reste conservée dans tous les cas.</string>
+    <string name="reader_unsaved_keep">Continuer sans enregistrer</string>
+    <string name="reader_replacement_title">Remplacer la source actuelle ?</string>
+    <string name="reader_replacement_warning">Cette copie locale provient d’une autre version de « %1$s », ou le précédent enregistrement reste non confirmé. Enregistrer remplacera le contenu actuel, y compris ses éventuelles modifications externes. Une sauvegarde vérifiée du contenu actuel sera conservée. Aucune fusion ni atomicité du fournisseur ne sont garanties. Évitez les modifications simultanées dans un autre logiciel.</string>
+    <string name="reader_replacement_unavailable">Source inaccessible, non vérifiable, protégée ou sans accès suffisant : aucun remplacement effectué. Copie locale conservée ; utilisez Enregistrer sous.</string>
+    <string name="reader_message_close">Fermer</string>
+</resources>

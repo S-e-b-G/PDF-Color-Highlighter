@@ -317,3 +317,11 @@ copies+owner link before output; exact saved bytes may rebind the same URI to it
 namespace. An intent is not remote completion evidence. Provider interruption may leave a
 partial original; preserve local work, block retries until reopen, expose unique verified
 recovery for Save As and refuse ambiguous/corrupt heads. No hardware/atomic/CAS guarantee.
+
+## 2026-11-07 M3n
+Recovered Save is an explicitly confirmed replacement of freshly inspected external bytes,
+not a generic source conflict bypass. Protect signed/encrypted/unreadable targets; use the same
+before/after intent protocol and content-bound owner identity. Same-byte save needs a link if
+owner differs and no link exists. Navigation decisions never delete durable local history.
+Separate page identity from edit/frame serial; avoid layout changes for quick edit progress.
+Canvas endpoint lens magnifies current pixels only, never allocates/renders native pages per move.

@@ -3,6 +3,11 @@ package org.sg.pdfcolorhighlighter
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,18 +20,13 @@ class MainActivity : ComponentActivity() {
     private lateinit var reader: ReaderViewModel
     private var viewportView: PdfViewportView? = null
 
-    private val picker = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val data = result.data
-            data?.data?.let { uri ->
-                reader.persistPickedGrant(uri, data.flags)
-                reader.openDocument(uri.toString())
-            }
-        }
+    private val picker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
+        val data=result.data;val uri=data?.data
+        if(result.resultCode==RESULT_OK && uri!=null && data!=null){
+            reader.persistPickedGrant(uri,data.flags)
+            reader.finishDocumentPicker(uri.toString())
+        }else reader.finishDocumentPicker(null)
     }
-
 
     private val exportPicker=registerForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")){uri->
         reader.finishExportPicker(uri)
@@ -72,8 +72,9 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            LaunchedEffect(reader.pickerRequest){if(reader.consumePickerLaunch())launchDocumentPicker()}
             ReaderScreen(
-                canSave=reader.canSave,onSave={saveOriginal()},
+                canSave=reader.canSave,onSave={saveOriginal()},needsReplacement=reader.needsReplacement,
                 canRecover=reader.canRecover,onRecover={reader.recoverLocal()},sourceDetached=reader.sourceDetached,
                 onFrameDrawn={reader.recordFrameDrawn(it)},
                 canExport=reader.canExport,onSaveAs={saveAs()},
@@ -83,7 +84,7 @@ class MainActivity : ComponentActivity() {
                 documentProperties = reader.properties,
                 page = reader.page,
                 pageCount = reader.pageCount,
-                loading = reader.loading || reader.editBusy || !reader.ready,
+                loading = reader.loading || !reader.ready,
                 errorText = reader.errorRes?.let { getString(it) }
                     ?: if (reader.renderWarning) getString(R.string.reader_render_warning) else null,
                 grantWarning = reader.grantWarning,
@@ -102,7 +103,7 @@ class MainActivity : ComponentActivity() {
                 editBusy=reader.editBusy,localRevision=reader.localRevision,localEditNotice=reader.localEditNotice,
                 localEditError=reader.localEditError?.let{getString(it)},
                 onCommitHighlight={reader.commitLocalHighlight()},onUndoLocal={reader.undoLocalHighlight()},onRedoLocal={reader.redoLocalHighlight()},
-                pageWidth = reader.pageWidth, pageHeight = reader.pageHeight, frameSerial = reader.frameSerial,
+                pageWidth = reader.pageWidth, pageHeight = reader.pageHeight, frameSerial = reader.frameSerial,pageIdentity=reader.pageIdentity,
                 onRenderViewport = { width, height, zoom -> reader.renderViewport(width, height, zoom) },
                 onRenderGesture = { reader.renderGesture(it) },
                 recentDocuments = reader.recents,
@@ -124,8 +125,25 @@ class MainActivity : ComponentActivity() {
                         reader.releaseRenderViewport()
                     }
                 },
+
                 onViewportChanged = { reader.viewportChanged(it) },
             )
+            if(reader.navigationPrompt){
+                AlertDialog(onDismissRequest={reader.cancelDocumentOpen()},
+                    title={Text(getString(R.string.reader_unsaved_title))},
+                    text={Text(getString(R.string.reader_unsaved_message,reader.documentName ?: "PDF"))},
+                    confirmButton={Column{
+                        TextButton(onClick={if(reader.saveBeforeOpen())saveOriginal()},enabled=reader.canSave){Text(getString(R.string.reader_save))}
+                        TextButton(onClick={reader.continueWithoutSaving()}){Text(getString(R.string.reader_unsaved_keep))}
+                    }},dismissButton={TextButton(onClick={reader.cancelDocumentOpen()}){Text(getString(R.string.reader_contents_cancel))}})
+            }
+            reader.replacementChallenge?.let{challenge->
+                AlertDialog(onDismissRequest={reader.cancelReplacement()},
+                    title={Text(getString(R.string.reader_replacement_title))},
+                    text={Text(getString(R.string.reader_replacement_warning,challenge.name ?: reader.activeUri ?: "PDF"))},
+                    confirmButton={TextButton(onClick={reader.confirmReplacement()}){Text(getString(R.string.reader_source_save_confirm))}},
+                    dismissButton={TextButton(onClick={reader.cancelReplacement()}){Text(getString(R.string.reader_contents_cancel))}})
+            }
         }
     }
 
@@ -135,17 +153,18 @@ class MainActivity : ComponentActivity() {
         reader.navigate(page, state)
     }
 
-    private fun pickDocument() {
+    private fun pickDocument(){reader.requestDocumentOpen(null)}
+    private fun launchDocumentPicker() {
         if (!reader.ready || reader.loading || reader.editBusy) return
         reader.checkpoint()
-        picker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+        try{picker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/pdf"
             addFlags(
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
                     Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
             )
-        })
+        })}catch(_:Exception){reader.finishDocumentPicker(null)}
     }
 
     override fun onStop() {

@@ -57,7 +57,7 @@ class SourceSaveJournal(directory:File){
         val r=DataInputStream(ByteArrayInputStream(body)).use{i->
             require(i.readInt()==0x53475356 && i.readInt()==1)
             SourceSaveIntent(i.readUTF(),i.readUTF(),i.readUTF(),i.readUTF(),i.readUTF(),i.readLong(),i.readLong()).also{require(i.available()==0)}}
-        validate(r);require(dir.name==r.id && dir.parentFile.name==r.uriKey);return r
+        validate(r);require(dir.name==r.id && requireNotNull(dir.parentFile).name==r.uriKey);return r
     }
     fun prepare(uri:String,expected:String,owner:String,local:File,openSource:()->InputStream):SourceSaveIntent{
         require(uri.isNotBlank() && hash.matches(expected) && hash.matches(owner))
@@ -91,7 +91,10 @@ class SourceSaveJournal(directory:File){
         require(uri.isNotBlank() && hash.matches(expected) && hash.matches(owner))
         if(sourceHash(readSource)!=expected)throw SourceSaveConflict()
         val localHash=local.inputStream().use{digest(it)}
-        if(localHash.second==expected)return@synchronized VerifiedDocumentExport.Receipt(localHash.first,localHash.second)
+        if(localHash.second==expected){
+            if(owner!=expected && ownerFor(uri,expected)!=owner)prepare(uri,expected,owner,local,readSource)
+            return@synchronized VerifiedDocumentExport.Receipt(localHash.first,localHash.second)
+        }
         val r=prepare(uri,expected,owner,local,readSource)
         check(r.afterHash==localHash.second && r.afterBytes==localHash.first){"Local checkpoint changed during backup"}
         val after=afterFile(uri,r);validatePdf(after);afterFile(uri,r)

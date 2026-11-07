@@ -69,7 +69,52 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private var saveBlocked by mutableStateOf(false)
     private var editFeedbackAt=0L
     private var editFeedbackSerial:Long?=null
-    val canSave:Boolean get()=canExport && editAllowed && !sourceDetached && !saveBlocked
+    val canSave:Boolean get()=canExport && editAllowed
+    val needsReplacement:Boolean get()=sourceDetached || saveBlocked
+    private var currentContentHash:String?=null
+    private var externallySavedHash:String?=null
+    val hasUnsavedContent:Boolean get()=SavedContentPolicy.needsSave(currentContentHash,externallySavedHash)
+    var replacementChallenge by mutableStateOf<SourceReplacementChallenge?>(null)
+        private set
+    var navigationPrompt by mutableStateOf(false)
+        private set
+    var pickerRequest by mutableStateOf(0L)
+        private set
+    private var pendingDestination:String?=null
+    private var hasPendingDestination=false
+    private var saveThenOpen=false
+    private var pickerLaunchPending=false
+    private var pickerAwaitingResult=false
+    fun requestDocumentOpen(uri:String?){
+        if(!ready || loading || editBusy || replacementChallenge!=null || navigationPrompt)return
+        if(uri!=null && uri==activeUri && !sourceDetached && !saveBlocked && localEditError==null && localEditNotice==LocalEditNotice.NONE)return
+        pendingDestination=uri;hasPendingDestination=true
+        if(hasUnsavedContent)navigationPrompt=true else executePendingOpen()
+    }
+    private fun executePendingOpen(){
+        if(!hasPendingDestination)return
+        val target=pendingDestination
+        pendingDestination=null;hasPendingDestination=false;navigationPrompt=false;saveThenOpen=false
+        if(target==null){pickerAwaitingResult=true;pickerLaunchPending=true;pickerRequest++}
+        else openDocumentNow(target)
+    }
+    fun consumePickerLaunch():Boolean{
+        if(!pickerLaunchPending)return false
+        pickerLaunchPending=false;return true
+    }
+    fun finishDocumentPicker(uri:String?){
+        if(!pickerAwaitingResult)return
+        pickerAwaitingResult=false
+        if(uri!=null)openDocumentNow(uri)
+    }
+    fun continueWithoutSaving(){if(navigationPrompt)executePendingOpen()}
+    fun cancelDocumentOpen(){
+        navigationPrompt=false;hasPendingDestination=false;pendingDestination=null;saveThenOpen=false
+    }
+    fun saveBeforeOpen():Boolean{
+        if(!navigationPrompt || !canSave)return false
+        navigationPrompt=false;saveThenOpen=true;return true
+    }
     val canRecover:Boolean get()=ready && !loading && !editBusy && !sourceDetached &&
         (activeUri!=null || unavailableUri!=null) && (bitmap==null || saveBlocked || localEditNotice!=LocalEditNotice.NONE)
     fun beginSave():android.net.Uri?{
@@ -79,16 +124,47 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
     fun hasWriteGrant(uri:android.net.Uri):Boolean=app.checkUriPermission(uri,android.os.Process.myPid(),android.os.Process.myUid(),
         Intent.FLAG_GRANT_WRITE_URI_PERMISSION)==android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    private fun cancelSave(message:Int){
+        savePendingUri=null;replacementChallenge=null;editBusy=false
+        cancelDocumentOpen();exportMessage=message;scheduleRefinement()
+    }
     fun finishSaveAuthorization(target:android.net.Uri?){
-        val expected=savePendingUri ?: return;savePendingUri=null
-        if(target==null){editBusy=false;scheduleRefinement();exportMessage=R.string.reader_source_save_cancelled;return}
-        if(target.toString()!=expected || activeUri!=expected){editBusy=false;scheduleRefinement();exportMessage=R.string.reader_source_save_wrong_target;return}
-        if(!hasWriteGrant(target)){editBusy=false;scheduleRefinement();exportMessage=R.string.reader_source_save_permission;return}
-        session.saveSource(expected){result->if(!cleared){
-            editBusy=false;scheduleRefinement();properties=properties?.copy(sourceModifiedMillis=null)
-            result.fold(onSuccess={saveBlocked=false;exportMessage=R.string.reader_source_save_ok},onFailure={error->
-                saveBlocked=true;exportMessage=if(error is SourceSaveConflict)R.string.reader_source_save_conflict else R.string.reader_source_save_failed})
-        }}
+        val expected=savePendingUri ?: return
+        if(target==null){cancelSave(R.string.reader_source_save_cancelled);return}
+        if(target.toString()!=expected || activeUri!=expected){cancelSave(R.string.reader_source_save_wrong_target);return}
+        if(!hasWriteGrant(target)){cancelSave(R.string.reader_source_save_permission);return}
+        if(needsReplacement){
+            session.inspectReplacement(expected){result->if(!cleared){
+                result.fold(onSuccess={replacementChallenge=it;exportMessage=null},onFailure={
+                    cancelSave(R.string.reader_replacement_unavailable)
+                })
+                // Keep the native view disabled behind the confirmation; no edit/picker race.
+            }}
+        }else performSourceSave(null)
+    }
+    fun cancelReplacement(){cancelSave(R.string.reader_source_save_cancelled)}
+    fun confirmReplacement(){
+        val challenge=replacementChallenge ?: return
+        replacementChallenge=null
+        performSourceSave(challenge)
+    }
+    private fun performSourceSave(challenge:SourceReplacementChallenge?){
+        val expected=savePendingUri ?: return
+        savePendingUri=null
+        session.saveSource(expected,{result->if(!cleared){
+            editBusy=false;properties=properties?.copy(sourceModifiedMillis=null)
+            result.fold(onSuccess={receipt->
+                sourceDetached=false;saveBlocked=false;externallySavedHash=receipt.sha256
+                if(challenge?.name!=null){documentName=challenge.name;properties=properties?.copy(displayName=challenge.name)}
+                exportMessage=R.string.reader_source_save_ok
+                if(saveThenOpen)executePendingOpen()
+            },onFailure={error->
+                saveBlocked=true;cancelDocumentOpen()
+                exportMessage=if(error is SourceSaveConflict)R.string.reader_source_save_conflict else R.string.reader_source_save_failed
+            })
+            scheduleRefinement()
+        }},challenge?.sha256)
     }
     fun recoverLocal(){
         if(!canRecover)return
@@ -122,6 +198,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         session.exportNewDocument(target,expected){result->
             if(!cleared){
                 editBusy=false;scheduleRefinement()
+                result.getOrNull()?.let{externallySavedHash=it.sha256}
                 exportMessage=if(result.isSuccess)R.string.reader_export_ok else R.string.reader_export_failed
             }
         }
@@ -194,6 +271,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         private set
     var pageHeight by mutableStateOf(1f)
         private set
+    var pageIdentity by mutableStateOf(0L)
+        private set
     var frameSerial by mutableStateOf(0L)
         private set
     var renderWarning by mutableStateOf(false)
@@ -260,7 +339,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         else open(uri, index, state)
     }
 
-    fun openDocument(uri: String) {
+    fun openDocument(uri:String){requestDocumentOpen(uri)}
+    private fun openDocumentNow(uri: String) {
         if (!ready || loading || editBusy) return
         val entry = recents.firstOrNull { it.uri == uri }
         open(uri, entry?.page ?: 0, entry?.viewport ?: PageViewportState())
@@ -268,7 +348,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun open(uri: String, index: Int, state: PageViewportState) {
         if (uri == activeUri && bitmap != null && !loading && !sourceDetached && !saveBlocked && localEditError==null && localEditNotice==LocalEditNotice.NONE) return
-        exportMessage=null;sourceDetached=false;saveBlocked=false;savePendingUri=null
+        exportMessage=null;sourceDetached=false;saveBlocked=false;savePendingUri=null;replacementChallenge=null
+        currentContentHash=null;externallySavedHash=null
         editAllowed=false;localRevision=0L;localCanUndo=false;localCanRedo=false
         localEditNotice=LocalEditNotice.NONE;localEditError=null
         pendingHighlight=null;pendingHighlightSpan=null;pendingHighlightSlot=null
@@ -315,13 +396,15 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         loading = false
         result.fold(
             onSuccess = { frame ->
+                currentContentHash=frame.contentHash
+                if(opening)externallySavedHash=frame.sourceHash
                 sourceDetached=frame.sourceDetached;saveBlocked=frame.sourceSaveBlocked
                 pageHighlights=frame.managedHighlights
                 editAllowed=frame.editAllowed;localRevision=frame.localRevision
                 localCanUndo=frame.canUndoLocal;localCanRedo=frame.canRedoLocal;localEditNotice=frame.editNotice
                 pageWidth = frame.pageWidth
                 pageHeight = frame.pageHeight
-                frameSerial++
+                frameSerial++;pageIdentity++
                 refinementBlocked = false
                 renderWarning = false
                 viewportState = pendingViewport
@@ -579,6 +662,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         result.fold(onSuccess={outcome->
             pendingHighlight=null;pendingHighlightSpan=null;pendingHighlightSlot=null
             localRevision=outcome.sequence;localCanUndo=outcome.canUndo;localCanRedo=outcome.canRedo
+            // Even a failed frame refresh follows a durable successful commit.
+            currentContentHash=outcome.frame?.contentHash ?: ("unrefreshed:"+outcome.sequence)
             val frame=outcome.frame
             if(frame!=null){
                 val retained=textSnapshot.takeIf{EditFramePolicy.retainText(page,frame.page,pageWidth,frame.pageWidth,
@@ -588,7 +673,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 localRevision=frame.localRevision;localCanUndo=frame.canUndoLocal;localCanRedo=frame.canRedoLocal
                 pageWidth=frame.pageWidth;pageHeight=frame.pageHeight;page=frame.page;pageCount=frame.pageCount
                 frameSerial++;editFeedbackSerial=frameSerial
-                viewportState=pendingViewport;bitmap=frame.bitmap;properties=frame.properties
+                bitmap=frame.bitmap;properties=frame.properties
                 refinementBlocked=false;renderWarning=false;opening=false;loading=false;localEditError=null
                 textSnapshot=retained;textLoading=false;textFailed=false
                 if(retained!=null)restoreEditedSelection(retained)else loadPageText()

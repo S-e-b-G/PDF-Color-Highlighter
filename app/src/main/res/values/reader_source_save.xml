@@ -11,6 +11,6 @@
     <string name="reader_source_save_conflict">Source modifiée depuis son ouverture : écriture refusée. Copie locale conservée ; utilisez Enregistrer sous ou rouvrez la source.</string>
     <string name="reader_source_save_failed">Enregistrement non confirmé. La source peut être partielle ; copie locale conservée. Utilisez Enregistrer sous. Après redémarrage, la récupération locale est possible si sa version est identifiable.</string>
     <string name="reader_source_recover">Ouvrir la copie locale de récupération</string>
-    <string name="reader_source_detached">Copie locale récupérée : source indisponible ou non vérifiable. Enregistrer dans la source est désactivé ; utilisez Enregistrer sous.</string>
+    <string name="reader_source_detached">Copie locale récupérée : correspondance avec la source non vérifiée. Enregistrer peut remplacer les modifications externes ; une confirmation sera demandée. Si la source est inaccessible ou protégée, utilisez Enregistrer sous.</string>
     <string name="reader_source_recovered_name">Copie locale récupérée</string>
 </resources>

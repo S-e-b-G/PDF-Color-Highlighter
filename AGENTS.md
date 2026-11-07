@@ -297,3 +297,18 @@ provider CAS/cloud/power-loss guarantee. Never blind-rollback, guess URIs, silen
 or select an older/mixed/corrupt recovery head. Unique recovery is explicit/detached with
 source Save disabled; Save As works. Backups retained, retention/browser future. Manual Save
 blocks editing. Expected630/21, author runtime absent. Disposable-source acceptance required.
+
+## M3n continuity
+Baseline actual M3m217-file export; expected654 JVM/22 native suites, runtime pending.
+Separate page identity from edit/frame serial. Same-page edits/refinement keep live geometry;
+never re-fit on raster quality. Fixed status height and overlay export messages avoid PDF
+layout jumps. Canvas lens follows active endpoint, not finger, and clears on gesture/lifecycle
+cancellation; no native/IO per move. Keep per-completed-edit durability.
+Unsaved navigation has Save/Keep local/Cancel. Hash content, not revision count. Never discard
+local checkpoints on any dialog choice. Save failure/cancel never executes pending navigation.
+Recovered Save obtains a fresh readable/editable external snapshot and an explicit confirmation
+bound to its SHA; retain existing provider permission/protection/backup/readback constraints.
+No automatic reapproval, merge, blind rollback, URI guessing or process-death write replay.
+No-op recovered Save may need an owner-binding intent even without output. Backups preserved.
+PowerShell uses source/payload SHA preflight, XML XPath/GetAttribute and no String.Replace.
+Actual author platform execution unavailable: do not claim runtime passes from static checks.

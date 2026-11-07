@@ -48,4 +48,5 @@
         android:targetPackage="${applicationId}" android:label="Continuous native appearance and logical geometry proof" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.SourceSaveInstrumentation"
         android:targetPackage="${applicationId}" android:label="Source Save fingerprint adoption, recovery and preview proof" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.EditViewportLensInstrumentation" android:targetPackage="${applicationId}" android:label="Stable edit viewport and endpoint lens" />
 </manifest>

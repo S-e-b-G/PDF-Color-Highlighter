@@ -32,7 +32,9 @@ data class SmokeFrame(
     val editAllowed:Boolean=false,val localRevision:Long=0L,
     val canUndoLocal:Boolean=false,val canRedoLocal:Boolean=false,
     val editNotice:org.sg.pdfcolorhighlighter.domain.LocalEditNotice=org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE,
+    val contentHash:String?=null,val sourceHash:String?=null,
 )
+data class SourceReplacementChallenge(val sha256:String,val name:String?)
 data class LocalEditOutcome(val frame:SmokeFrame?,val refreshFailed:Boolean,val sequence:Long,val canUndo:Boolean,val canRedo:Boolean)
 
 class SmokePdfSession(context: Context) {
@@ -211,7 +213,7 @@ class SmokePdfSession(context: Context) {
             if(editPreview)android.util.Log.i("PdfEditDetail","beforeCountMs=${countStarted-renderStarted} countMs=${rasterStarted-countStarted} rasterMs=${rasterFinished-rasterStarted} listMs=${android.os.SystemClock.elapsedRealtime()-rasterFinished} edge=$edge")
             return SmokeFrame(bitmap,index,count,documentName,chars,properties,width,height,sourceDetached,sourceSaveBlocked,
                 highlights,
-                editable,editing?.sequence ?: 0L,editing?.canUndo ?: false,editing?.canRedo ?: false,localEditNotice)
+                editable,editing?.sequence ?: 0L,editing?.canUndo ?: false,editing?.canRedo ?: false,localEditNotice,editing?.contentHash,expectedSourceHash)
             }catch(error:Throwable){bitmap.recycle();throw error}
         } finally { page.destroy() }
     }
@@ -342,23 +344,47 @@ class SmokePdfSession(context: Context) {
     }
 
 
-    fun saveSource(expectedUri:String,callback:(Result<VerifiedDocumentExport.Receipt>)->Unit){
+
+    /** Read-only challenge: validate a fresh copy of CURRENT external bytes before approval. */
+    fun inspectReplacement(expectedUri:String,callback:(Result<SourceReplacementChallenge>)->Unit){
+        if(closed.get())return
+        val request=generation.get()
+        worker.execute{
+            val result=runCatching{
+                check(!closed.get() && request==generation.get() && sourceUri?.toString()==expectedUri)
+                val uri=checkNotNull(sourceUri)
+                val candidate=workspaceStore.create(expectedUri,null){app.contentResolver.openInputStream(uri) ?: error("Cannot read source")}
+                try{
+                    NativePdfEditTransaction.validateEditable(candidate.inputFile)
+                    val name=app.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use{c->if(c.moveToFirst())c.getString(0)else null}
+                    SourceReplacementChallenge(candidate.baseline.fingerprint.sha256,name?.takeIf{it.isNotBlank()})
+                }finally{workspaceStore.discardCandidate(candidate)}
+            }
+            main.post{if(!closed.get() && request==generation.get())callback(result)}
+        }
+    }
+    fun saveSource(expectedUri:String,callback:(Result<VerifiedDocumentExport.Receipt>)->Unit,replacementHash:String?=null){
         if(closed.get())return
         cancelRefinement();val request=generation.get()
         worker.execute{
             val result=runCatching{
                 check(!closed.get() && request==generation.get() && sourceUri?.toString()==expectedUri)
-                check(!sourceDetached && !sourceSaveBlocked && localEditNotice==org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE)
+                check(localEditNotice==org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE)
+                check((!sourceDetached && !sourceSaveBlocked) || replacementHash!=null)
                 val uri=checkNotNull(sourceUri);require(uri.scheme=="content"){"SAF content URI required"}
                 check(app.checkUriPermission(uri,android.os.Process.myPid(),android.os.Process.myUid(),android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)==android.content.pm.PackageManager.PERMISSION_GRANTED){"Write permission required"}
                 if(DocumentsContract.isDocumentUri(app,uri))app.contentResolver.query(uri,arrayOf(DocumentsContract.Document.COLUMN_FLAGS),null,null,null)?.use{c->
                     if(c.moveToFirst())require((c.getInt(0) and DocumentsContract.Document.FLAG_SUPPORTS_WRITE)!=0){"Provider is read-only"}}
                 check(checkNotNull(document).hasPermission(Document.PERMISSION_COPY)){"Copy permission required"}
                 val editing=checkNotNull(localHighlights)
-                sourceSaves.save(expectedUri,checkNotNull(expectedSourceHash),editing.sourceOwnerHash,editing.fileForSave(),
+                sourceSaves.save(expectedUri,replacementHash ?: checkNotNull(expectedSourceHash),editing.sourceOwnerHash,editing.fileForSave(),
                     {app.contentResolver.openInputStream(uri) ?: error("No source input")},
                     {app.contentResolver.openOutputStream(uri,"wt") ?: error("No source output")},NativePdfEditTransaction::validateEditable)
-                    .also{expectedSourceHash=it.sha256;documentProperties=documentProperties?.copy(sourceModifiedMillis=null)}
+                    .also{
+                        expectedSourceHash=it.sha256;sourceDetached=false;sourceSaveBlocked=false
+                        documentName=runCatching{app.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use{c->if(c.moveToFirst())c.getString(0)else null}}.getOrNull() ?: documentName
+                        documentProperties=documentProperties?.copy(displayName=documentName,sourceModifiedMillis=null)
+                    }
             }
             if(result.isFailure){sourceSaveBlocked=true;documentProperties=documentProperties?.copy(sourceModifiedMillis=null)}
             main.post{if(!closed.get() && request==generation.get())callback(result)}

@@ -24,6 +24,12 @@ class PdfViewportView(context: Context) : View(context) {
     private var logicalPageWidth = 1f
     private var logicalPageHeight = 1f
     private var logicalKey = 0L
+    private var pageIdentity=0L
+    private var lensPoint:TextPoint?=null
+    private val lensPaint=Paint(Paint.ANTI_ALIAS_FLAG)
+    private val lensPath=android.graphics.Path()
+    fun viewportSnapshot():PageViewportState=geometry.state
+    fun endpointLensVisible():Boolean=lensPoint!=null
     private var previewText: PageTextSnapshot?=null
     private var previewSlot: Int?=null
     private var previewSpan: SelectionSpan?=null
@@ -111,19 +117,19 @@ class PdfViewportView(context: Context) : View(context) {
     }
     fun show(bitmap: Bitmap, restored: PageViewportState,
              pageWidth: Float = bitmap.width.toFloat(), pageHeight: Float = bitmap.height.toFloat(),
-             contentKey: Long = 0L) {
-        if (image === bitmap) return
+             contentKey: Long = 0L, pageKey:Long=contentKey) {
+        if (image === bitmap && logicalKey==contentKey && pageIdentity==pageKey) return
         require(pageWidth.isFinite() && pageWidth > 0f && pageHeight.isFinite() && pageHeight > 0f)
-        val samePage = image != null && logicalKey == contentKey &&
+        val samePage = image != null && pageIdentity == pageKey &&
             logicalPageWidth == pageWidth && logicalPageHeight == pageHeight
         if (samePage) {
-            image = bitmap
+            image = bitmap;logicalKey=contentKey
             invalidate() // Refinement never resets pointers, geometry or reading coordinates.
             return
         }
         resetInput("new-page")
         image = bitmap
-        logicalPageWidth = pageWidth; logicalPageHeight = pageHeight; logicalKey = contentKey
+        logicalPageWidth = pageWidth; logicalPageHeight = pageHeight; logicalKey = contentKey;pageIdentity=pageKey
         pendingState = restored
         configure()
         invalidate()
@@ -152,6 +158,8 @@ class PdfViewportView(context: Context) : View(context) {
         invalidate()
     }
     private fun clearHandleState(){
+        if(lensPoint!=null)invalidate()
+        lensPoint=null
         activeHandle=null;handleBaseSpan=null;handleLayout=null;handleFixed=null
         handleDownTouch=null;handlePointOffset=null;handleDelta=TextPoint(0f,0f);handleMoved=false
     }
@@ -191,6 +199,7 @@ class PdfViewportView(context: Context) : View(context) {
         val dx=x-down.x;val dy=y-down.y
         if(!handleMoved && dx*dx+dy*dy<=slop*slop)return
         handleMoved=true;handleDelta=TextPoint(dx,dy)
+        lensPoint=if(finished)null else TextPoint(x-offset.x,y-offset.y)
         nativeAt(x-offset.x,y-offset.y)?.let{onPreviewAdjust?.invoke(it,fixed,finished)}
         invalidate()
     }
@@ -274,6 +283,27 @@ class PdfViewportView(context: Context) : View(context) {
         resetInput("detached")
         super.onDetachedFromWindow()
     }
+
+    private fun drawEndpointLens(canvas:Canvas,bitmap:Bitmap){
+        val point=lensPoint ?: return
+        val bounds=EndpointLensGeometry.window(point,width.toFloat(),height.toFloat(),handleDensity) ?: return
+        val box=RectF(bounds.left,bounds.top,bounds.right,bounds.bottom)
+        val radius=6f*handleDensity
+        lensPaint.style=Paint.Style.FILL;lensPaint.color=Color.WHITE
+        canvas.drawRoundRect(box,radius,radius,lensPaint)
+        lensPath.reset();lensPath.addRoundRect(box,radius,radius,android.graphics.Path.Direction.CW)
+        val saved=canvas.save()
+        try{
+            canvas.clipPath(lensPath)
+            canvas.translate(box.centerX(),box.centerY())
+            canvas.scale(EndpointLensGeometry.ZOOM,EndpointLensGeometry.ZOOM)
+            canvas.translate(-point.x,-point.y)
+            canvas.drawBitmap(bitmap,null,target,paint)
+            drawSelectionPreview(canvas) // No handles/lens recursion in the magnified content.
+        }finally{canvas.restoreToCount(saved)}
+        lensPaint.style=Paint.Style.STROKE;lensPaint.strokeWidth=handleDensity;lensPaint.color=Color.GRAY
+        canvas.drawRoundRect(box,radius,radius,lensPaint)
+    }
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val bitmap = image ?: return
@@ -285,6 +315,7 @@ class PdfViewportView(context: Context) : View(context) {
             canvas.drawBitmap(bitmap, null, target, paint)
             drawSelectionPreview(canvas)
             drawSelectionHandles(canvas)
+            drawEndpointLens(canvas,bitmap)
         } finally {
             canvas.restoreToCount(saved)
         }

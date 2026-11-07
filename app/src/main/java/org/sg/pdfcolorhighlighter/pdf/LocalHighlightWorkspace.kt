@@ -82,6 +82,7 @@ class LocalHighlightWorkspace(root:File,uri:String,private val baseline:File,pri
     }
     fun undo(){val command=checkNotNull(history.undo);restore(command.before,command.beforeSha256);history.didUndo(command)}
     fun redo(){val command=checkNotNull(history.redo);restore(command.after,command.afterSha256);history.didRedo(command)}
+    val contentHash:String get()=revision?.sha256 ?: baselineHash
     val sourceOwnerHash:String get()=baselineHash
     fun fileForSave():File{ready();return currentFile()}
     fun currentFile():File=store.currentFile(checkNotNull(revision))

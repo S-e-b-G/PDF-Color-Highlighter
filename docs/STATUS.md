@@ -1,3 +1,12 @@
+# M3n — implemented source; runtime acceptance pending
+Actual baseline M3m user630 JVM/21 native suites passed; ordinary Save/editing manually OK.
+Implemented recovered overwrite confirmation, unsaved-navigation choices, stable page identity /
+progress layout, endpoint Canvas lens and nullable parent guard. Expected654 JVM/22 suites.
+No SDK/engine/dependency change; no source autosave, checkpoint batching or local data deletion.
+See M3n-ACCEPTANCE.md for complete tests, provider/recovery limitations and evidence boundaries.
+
+## Historical status
+
 # Current increment — M3m faster feedback + source Save; runtime pending
 Accepted M3l user590 JVM/build/Lint/20 native suites/manual checks. M3m uses retained same-page
 text/metadata/count and960px first edit frames with adaptive refinement, retaining durability.
