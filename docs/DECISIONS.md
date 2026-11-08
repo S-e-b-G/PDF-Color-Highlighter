@@ -337,3 +337,7 @@ Fork durable content into a new namespace instead of rebinding/deleting old work
 
 ## 2026-11-08 M3q
 Do not let one composite/narrow anomalous glyph force raw paint for an entire selection. Use local neighbor-bounded handling and preserve unsupported rotations separately. Preserve exact selection geometry and metadata; repair only the appearance layer. Add explicit one-Undo page repair rather than silent open-time rewrites. Native regression uses numeric geometry on a synthetic blank PDF, not the supplied page/copyright text/watermark. Correct outdated footer that promised source intact despite explicit Save. Real-font/selection extraction and external-reader behavior still need actual-file acceptance.
+
+
+## 2026-11-08 M3r
+Review before whole-document repair, stale-content guard and single atomic local transaction rather than per-page commits. Retain copied plan only on native worker; UI receives opaque review ID/counts. In-flight read-only scan cancellable at page boundaries; no approval persisted across process death. Full real PDF testing requires private fixture copied only into isolated clone. Keep originals/synthetic workflow privacy distinct; no reference screenshots/text exported. Working APK exclusion checked by path and exact PDF digest. Do not commit reference PDF or containing ZIP to public repositories.

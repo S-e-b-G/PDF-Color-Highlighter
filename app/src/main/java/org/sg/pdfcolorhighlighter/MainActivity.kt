@@ -104,6 +104,19 @@ class MainActivity : ComponentActivity() {
                     confirmButton={TextButton(onClick={reader.continueDisk()}){Text(getString(R.string.reader_copy_continue))}},
                     dismissButton={TextButton(onClick={reader.dismissRecovery()}){Text(getString(R.string.reader_contents_cancel))}})
             }
+
+            if(reader.documentRepairBusy || reader.documentRepairReview!=null){
+                val review=reader.documentRepairReview
+                AlertDialog(onDismissRequest={reader.cancelDocumentRepair()},
+                    title={Text(getString(R.string.reader_smooth_document))},
+                    text={Text(if(review==null)getString(R.string.reader_document_repair_scan)
+                        else if(review.highlights==0)getString(R.string.reader_document_repair_clean,review.totalPages)
+                        else getString(R.string.reader_document_repair_review,review.highlights,review.affectedPages,review.totalPages))},
+                    confirmButton={if(review!=null && review.highlights>0)TextButton(onClick={reader.confirmDocumentRepair()}){
+                        Text(getString(R.string.reader_document_repair_confirm))
+                    }},
+                    dismissButton={TextButton(onClick={reader.cancelDocumentRepair()}){Text(getString(R.string.reader_contents_cancel))}})
+            }
             LaunchedEffect(reader.pickerRequest){if(reader.consumePickerLaunch())launchDocumentPicker()}
             ReaderScreen(
                 canSave=reader.canSave,onSave={saveOriginal()},needsReplacement=reader.needsReplacement,
@@ -130,6 +143,7 @@ class MainActivity : ComponentActivity() {
                 highlightContents=reader.selectedHighlight?.contents,highlightId=reader.selectedHighlight?.edit?.id,
                 onChangeContents={reader.editHighlightContents(it)},onSmoothHighlight={reader.smoothHighlight()},
                 canSmoothPage=reader.canSmoothPage,onSmoothPage={reader.smoothPage()},
+                canReviewDocument=reader.canReviewDocument,onReviewDocument={reader.reviewDocumentRepair()},
                 onHighlightTap={reader.tapHighlight(it)},
                 onPreviewCancel={ reader.cancelPreviewSelection() },
                 canCommitHighlight=reader.canCommitHighlight,localCanUndo=reader.localCanUndo,localCanRedo=reader.localCanRedo,

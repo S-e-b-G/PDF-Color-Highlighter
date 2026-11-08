@@ -297,17 +297,48 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         val changes=pageHighlights.mapNotNull{before->
             val paint=NativeHighlightAppearance.forQuads(before.edit.quads)
             val after=before.copy(edit=before.edit.copy(appearance=paint))
-            if(after==before)null else before to after
+            if(NativeAppearanceEquivalence.same(before.edit.appearance,paint))null else before to after
         }
         if(changes.isEmpty())return
         startEditFeedback();editBusy=true;localEditError=null;stopRefinement();selectionQueue.cancel()
         pendingViewport=viewportState;reselectHighlightId=selectedHighlight?.edit?.id
         session.replaceLocalHighlights(page,changes,java.util.UUID.randomUUID().toString(),uri,::acceptLocalEdit)
     }
+
+    var documentRepairBusy by mutableStateOf(false)
+        private set
+    var documentRepairReview by mutableStateOf<DocumentAppearanceReview?>(null)
+        private set
+    val canReviewDocument:Boolean get()=!cleared && !loading && !editBusy && editAllowed && bitmap!=null && !navigationPrompt && !exitPrompt && !recoveryPrompt && replacementChallenge==null
+    fun reviewDocumentRepair(){
+        if(!canReviewDocument)return
+        val uri=activeUri ?: return
+        documentRepairReview=null;documentRepairBusy=true;editBusy=true;localEditError=null;stopRefinement()
+        session.inspectDocumentRepair(uri){result->if(!cleared){
+            documentRepairBusy=false
+            result.fold(onSuccess={documentRepairReview=it},onFailure={localEditError=R.string.reader_document_repair_failed})
+            // The review modal remains input-exclusive until confirmation/cancellation.
+            if(documentRepairReview==null){editBusy=false;scheduleRefinement()}
+        }}
+    }
+    fun cancelDocumentRepair(){
+        if(!documentRepairBusy && documentRepairReview==null)return
+        session.cancelDocumentRepair();documentRepairBusy=false;documentRepairReview=null;editBusy=false;scheduleRefinement()
+    }
+    fun confirmDocumentRepair(){
+        val review=documentRepairReview ?: return
+        if(documentRepairBusy || review.highlights==0)return
+        val uri=activeUri ?: return
+        documentRepairReview=null;startEditFeedback();editBusy=true;localEditError=null
+        stopRefinement();selectionQueue.cancel();pendingViewport=viewportState;reselectHighlightId=selectedHighlight?.edit?.id
+        session.commitDocumentRepair(review.id,page,uri,::acceptLocalEdit)
+    }
     fun smoothHighlight(){
         val before=selectedHighlight ?: return
         val span=previewSpan ?: return
-        changeHighlight(before,before.copy(edit=before.edit.copy(appearance=NativeHighlightAppearance.forSpan(span))))
+        val paint=NativeHighlightAppearance.forSpan(span)
+        if(NativeAppearanceEquivalence.same(before.edit.appearance,paint))return
+        changeHighlight(before,before.copy(edit=before.edit.copy(appearance=paint)))
     }
     private fun clearHighlightTarget(){selectedHighlight=null;reselectHighlightId=null}
 

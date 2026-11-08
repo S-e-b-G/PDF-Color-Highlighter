@@ -79,6 +79,28 @@ class LocalHighlightWorkspace(root:File,uri:String,private val baseline:File,pri
             it.first.contents==it.second.contents && it.first.mode==it.second.mode})
         remember{transact(operation){pdf->changes.forEach{(before,after)->NativeHighlightEdits.replace(pdf,before,after)}}}
     }
+
+    fun inspectDocumentRepair(checkCurrent:()->Unit={}):DocumentAppearancePlan{
+        checkCurrent();val file=fileForSave();val base=contentHash
+        val doc=com.artifex.mupdf.fitz.Document.openDocument(file.absolutePath)
+        try{
+            require(doc is com.artifex.mupdf.fitz.PDFDocument && doc.hasPermission(com.artifex.mupdf.fitz.Document.PERMISSION_COPY))
+            val count=doc.countPages();val items=mutableListOf<ManagedHighlight>()
+            for(page in 0 until count){
+                checkCurrent();items.addAll(NativeHighlightEdits.list(doc,page))
+                require(items.size<=DocumentAppearanceRepair.MAX_ITEMS){"Document repair review item limit exceeded"}
+            }
+            checkCurrent();return DocumentAppearanceRepair.plan(base,count,items)
+        }finally{doc.destroy()}
+    }
+    fun applyDocumentRepair(plan:DocumentAppearancePlan,operation:String){
+        DocumentAppearanceRepair.verify(plan,contentHash)
+        if(plan.changes.isEmpty())return
+        remember{transact(operation){pdf->
+            require(pdf.countPages()==plan.totalPages)
+            for((before,after)in plan.changes)NativeHighlightEdits.replace(pdf,before,after)
+        }}
+    }
     private fun restore(file:File,expectedSha256:String){
         require(CheckpointFingerprint.of(file)==expectedSha256){"Undo checkpoint fingerprint mismatch"}
         val expected=ready();val operation=UUID.randomUUID().toString()

@@ -516,3 +516,7 @@ Current disk bytes open first; explicit local chooser and persistent access; ind
 
 ## M3q — source implemented; platform acceptance pending
 Fix real-PDF geometry regression: heading38 glyph paint quads ->1 reference band; paragraph645 ->10 reference rows. Explicit undoable Uniformiser page repairs existing owned ink without changing source until Save.12 JVM tests,1 native geometry/pixel/batch suite,1 UI batch/Undo/Save case added =>710/23/48. All must pass. M3p previous accepted698/22/47 retained as baseline, not fresh M3q results.
+
+
+## M3r — source implemented; runtime acceptance pending
+Uniformiser document scans current working version, reports highlight/affected-page counts, confirms once and supports one whole-document Undo. No-op and Cancel do not create edit commands.14 pure planner JVM tests and2 synthetic UI review/commit cases added. Complete provided PDF now tests live native fonts/extraction/selection/render, multi-page repair and Undo/Redo in isolated app only; private fixture excluded from working APK/reports. Expected724/24/50 all PASS. Source unchanged until Save.

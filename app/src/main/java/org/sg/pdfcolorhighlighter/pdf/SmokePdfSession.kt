@@ -66,6 +66,8 @@ class SmokePdfSession(context: Context) {
     fun retainEditResolution(width:Int,height:Int){
         retainedEditEdge=org.sg.pdfcolorhighlighter.domain.EditFramePolicy.editEdge(width,height)
     }
+    private val repairEpoch=AtomicInteger(0)
+    private var pendingDocumentRepair:Pair<String,org.sg.pdfcolorhighlighter.domain.DocumentAppearancePlan>?=null
     private var displayedLocalRevision=0L
     private var localHighlights:LocalHighlightWorkspace?=null
     private var localEditNotice=org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE
@@ -294,6 +296,34 @@ class SmokePdfSession(context: Context) {
         require(changes.all{it.first.edit.page==page})
         localEdit(page,uri,{it.replaceMany(changes,operation)},callback)
     }
+
+    fun cancelDocumentRepair(){
+        repairEpoch.incrementAndGet()
+        if(!closed.get())worker.execute{pendingDocumentRepair=null}
+    }
+    fun inspectDocumentRepair(uri:String,callback:(Result<org.sg.pdfcolorhighlighter.domain.DocumentAppearanceReview>)->Unit){
+        if(closed.get())return
+        cancelRefinement();val request=generation.get();val ticket=repairEpoch.incrementAndGet()
+        worker.execute{
+            val result=runCatching{
+                pendingDocumentRepair=null
+                fun checkCurrent(){check(!closed.get() && request==generation.get() && ticket==repairEpoch.get()){"Repair inspection cancelled"}}
+                checkCurrent();check(sourceUri?.toString()==uri)
+                val plan=checkNotNull(localHighlights).inspectDocumentRepair(::checkCurrent)
+                checkCurrent();val id=java.util.UUID.randomUUID().toString();pendingDocumentRepair=id to plan
+                org.sg.pdfcolorhighlighter.domain.DocumentAppearanceReview(id,plan.totalPages,plan.highlights,plan.affectedPages)
+            }
+            main.post{if(!closed.get() && request==generation.get() && ticket==repairEpoch.get())callback(result)}
+        }
+    }
+    fun commitDocumentRepair(id:String,page:Int,uri:String,callback:(Result<LocalEditOutcome>)->Unit){
+        localEdit(page,uri,{editing->
+            val pending=checkNotNull(pendingDocumentRepair){"No retained repair review"}
+            check(pending.first==id){"Repair review changed"}
+            try{editing.applyDocumentRepair(pending.second,java.util.UUID.randomUUID().toString())}
+            finally{pendingDocumentRepair=null;repairEpoch.incrementAndGet()}
+        },callback)
+    }
     fun undoLocalHighlight(page:Int,uri:String,callback:(Result<LocalEditOutcome>)->Unit){
         localEdit(page,uri,{it.undo()},callback)
     }
@@ -440,6 +470,7 @@ class SmokePdfSession(context: Context) {
             documentProperties = null
             expectedSourceHash=null;sourceDetached=false;sourceSaveBlocked=false;cachedCountPage=-1;cachedCharCount=null
             branchRoot=null;recoveryListing=RecoveryListing(emptyList(),0)
+            repairEpoch.incrementAndGet();pendingDocumentRepair=null
             localHighlights=null;displayedLocalRevision=0L;localEditNotice=org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE
         }
     }

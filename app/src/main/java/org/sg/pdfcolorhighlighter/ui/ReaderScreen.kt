@@ -70,7 +70,7 @@ fun ReaderScreen(
     onCommitHighlight:()->Unit,onUndoLocal:()->Unit,onRedoLocal:()->Unit,
     onChoosePreviewSlot: (Int)->Unit,
     onPreviewDrag: (TextPoint,TextPoint,Boolean)->Unit, onPreviewCancel: ()->Unit,
-    highlightContents:String?,highlightId:String?,onChangeContents:(String)->Unit,onSmoothHighlight:()->Unit,canSmoothPage:Boolean,onSmoothPage:()->Unit,
+    highlightContents:String?,highlightId:String?,onChangeContents:(String)->Unit,onSmoothHighlight:()->Unit,canSmoothPage:Boolean,onSmoothPage:()->Unit,canReviewDocument:Boolean,onReviewDocument:()->Unit,
     onHighlightTap:(TextPoint)->Boolean,
     onPreviewAdjust: (TextPoint,TextAddress,Boolean)->Unit,
     pageWidth: Float, pageHeight: Float, frameSerial: Long,pageIdentity:Long,
@@ -126,6 +126,7 @@ fun ReaderScreen(
                     if(canRecover)TextButton(onClick=onRecover){Text(stringResource(R.string.reader_copy_manage))}
                     Spacer(Modifier.weight(1f))
                     TextButton(onClick=onSmoothPage,enabled=canSmoothPage){Text(stringResource(R.string.reader_smooth_page))}
+                    TextButton(onClick=onReviewDocument,enabled=canReviewDocument){Text(stringResource(R.string.reader_smooth_document))}
                 }
                 errorText?.let { Text(it, Modifier.background(barColor).padding(horizontal = 8.dp),
                     color = MaterialTheme.colorScheme.error) }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_smooth_document">Uniformiser document</string>
+    <string name="reader_document_repair_scan">Analyse des surlignages de l’application… Aucune modification du PDF à ce stade. Annuler interrompt l’analyse dès que possible.</string>
+    <string name="reader_document_repair_review">%1$d surlignage(s) à uniformiser sur %2$d page(s), parmi %3$d page(s) analysée(s). Une seule annulation rétablira tout le document. Le fichier source ne change pas avant Enregistrer.</string>
+    <string name="reader_document_repair_confirm">Uniformiser maintenant</string>
+    <string name="reader_document_repair_failed">Analyse du document impossible ; aucune réparation non confirmée n’a été appliquée.</string>
+    <string name="reader_document_repair_clean">Aucune apparence à modifier parmi %1$d page(s) analysée(s). Aucune opération Undo ajoutée.</string>
+</resources>
