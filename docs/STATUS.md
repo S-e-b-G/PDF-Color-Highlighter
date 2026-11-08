@@ -508,3 +508,7 @@ annotation UI before its gate. No external repository has been modified.
 ## M3o.1 — implemented source; runtime acceptance pending
 Sharp edit raster retention; Back Save/keep/cancel;1000-step/1GiB session history;65% managed native highlights, multiply preview; projected slight-skew row bands; Hand after pink.23 new JVM tests =>677 expected;22 native;40 full UI/integration/probe cases.
 Original source/save/recovery mechanisms remain. Disk-first editable recovery branches await separate storage increment. Existing old highlights are not automatically rewritten on open. Test first on isolated fixtures, then disposable Documents copy.
+
+
+## M3p — source implemented, runtime validation pending
+Current disk bytes open first; explicit local chooser and persistent access; independent v2 disk and recovered forks. Legacy folders/journal retained, no namespace migration/deletion.21 new JVM tests,7 added workflow cases;698/22/47 full gate. Actual platform result must come from Validate-M3p.ps1; synthetic success is not real SAF/provider acceptance.

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_copy_title">Copies locales disponibles</string>
+    <string name="reader_copy_continue">Continuer avec le fichier</string>
+    <string name="reader_copy_open">Ouvrir la copie locale</string>
+    <string name="reader_copy_manage">Copies locales…</string>
+    <string name="reader_copy_disk_first">Le fichier actuellement sur disque est affiché. Vous pouvez le modifier et l’enregistrer, ou ouvrir une copie locale conservée. Aucune ancienne copie n’est supprimée.</string>
+    <string name="reader_copy_active_local">Une copie locale est ouverte. Revenir au fichier relit sa version actuelle sur disque. Changer de version conserve le travail local terminé.</string>
+    <string name="reader_copy_unverified">%1$d espace(s) local(aux) non vérifiable(s) conservé(s) sans ouverture automatique.</string>
+    <string name="reader_copy_listing_failed">Impossible de vérifier les copies locales. Aucune copie n’a été supprimée.</string>
+    <string name="reader_copy_unavailable">La version demandée n’a pas pu être ouverte. Réessayez le fichier ou choisissez une copie locale ; son intégrité sera vérifiée avant ouverture.</string>
+</resources>

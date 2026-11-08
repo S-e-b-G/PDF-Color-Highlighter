@@ -86,13 +86,20 @@ class SourceSaveJournal(directory:File){
         val owners=matches.map{it.ownerHash}.distinct();require(owners.size==1){"Ambiguous saved-source owner"}
         matches.forEach{beforeFile(uri,it);afterFile(uri,it)};return owners.single()
     }
+    // Preserve the existing last-lambda public API used by legacy/native proofs.
     fun save(uri:String,expected:String,owner:String,local:File,readSource:()->InputStream,
-             writeSource:()->OutputStream,validatePdf:(File)->Unit):VerifiedDocumentExport.Receipt=synchronized(SAVE_LOCK){
+             writeSource:()->OutputStream,validatePdf:(File)->Unit):VerifiedDocumentExport.Receipt=
+        saveInternal(uri,expected,owner,local,readSource,writeSource,validatePdf,true)
+    fun saveBranch(uri:String,expected:String,owner:String,local:File,readSource:()->InputStream,
+             writeSource:()->OutputStream,validatePdf:(File)->Unit):VerifiedDocumentExport.Receipt=
+        saveInternal(uri,expected,owner,local,readSource,writeSource,validatePdf,false)
+    private fun saveInternal(uri:String,expected:String,owner:String,local:File,readSource:()->InputStream,
+             writeSource:()->OutputStream,validatePdf:(File)->Unit,bindOwner:Boolean):VerifiedDocumentExport.Receipt=synchronized(SAVE_LOCK){
         require(uri.isNotBlank() && hash.matches(expected) && hash.matches(owner))
         if(sourceHash(readSource)!=expected)throw SourceSaveConflict()
         val localHash=local.inputStream().use{digest(it)}
         if(localHash.second==expected){
-            if(owner!=expected && ownerFor(uri,expected)!=owner)prepare(uri,expected,owner,local,readSource)
+            if(bindOwner && owner!=expected && ownerFor(uri,expected)!=owner)prepare(uri,expected,owner,local,readSource)
             return@synchronized VerifiedDocumentExport.Receipt(localHash.first,localHash.second)
         }
         val r=prepare(uri,expected,owner,local,readSource)

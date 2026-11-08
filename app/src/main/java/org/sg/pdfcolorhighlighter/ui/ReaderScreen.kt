@@ -122,7 +122,7 @@ fun ReaderScreen(
                     Modifier.background(barColor).padding(horizontal = 8.dp),
                     color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 if(sourceDetached)Text(stringResource(R.string.reader_source_detached),Modifier.padding(horizontal=8.dp),color=MaterialTheme.colorScheme.error)
-                if(canRecover)TextButton(onClick=onRecover){Text(stringResource(R.string.reader_source_recover))}
+                if(canRecover)TextButton(onClick=onRecover){Text(stringResource(R.string.reader_copy_manage))}
                 errorText?.let { Text(it, Modifier.background(barColor).padding(horizontal = 8.dp),
                     color = MaterialTheme.colorScheme.error) }
                 Box(Modifier.fillMaxWidth().weight(1f).clipToBounds(), contentAlignment = Alignment.Center) {

@@ -329,3 +329,7 @@ Canvas endpoint lens magnifies current pixels only, never allocates/renders nati
 
 ## 2026-11-07 M3o.1
 Keep source/recovery namespace migration out of this bounded UI/render/history/style change. Protect current local copies. Higher-resolution edit raster may increase commit-to-visible latency; do not silently downsample to960px. Full-PDF history is bounded at1000 commands AND1GiB; large PDFs may retain fewer commands. Exit flag cleared on Save/auth/cancel failure; no finish before verified Save callback. Slight skew is handled by projection, not changed text selection/citation geometry. Native opacity applies to newly created/modified owned highlights, not arbitrary third-party entries.
+
+
+## 2026-11-08 M3p
+Fork durable content into a new namespace instead of rebinding/deleting old work. Use separate v2 source-save journal and keep legacy public save API unchanged. Metadata/size inspection only for fast chooser discovery; never use inspection as authorization to open/modify: full hash/native verification required at resolve/copy. Ordinary opening never resolves source-save aliases or silently restores a local head. Archived version storage remains unbounded; no automated deletion.

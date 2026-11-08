@@ -6,6 +6,9 @@ import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.Modifier
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -83,6 +86,23 @@ class MainActivity : ComponentActivity() {
                         TextButton(onClick={if(reader.saveAndExit())saveOriginal()},enabled=reader.canSave){Text(getString(R.string.reader_exit_save))}
                         TextButton(onClick={reader.leaveWithoutSaving()}){Text(getString(R.string.reader_exit_keep))}
                     }},dismissButton={TextButton(onClick={reader.cancelExit()}){Text(getString(R.string.reader_contents_cancel))}})
+            }
+
+            if(reader.recoveryPrompt){
+                AlertDialog(onDismissRequest={reader.dismissRecovery()},
+                    title={Text(getString(R.string.reader_copy_title))},
+                    text={Column(Modifier.verticalScroll(rememberScrollState())){
+                        Text(getString(if(reader.bitmap==null)R.string.reader_copy_unavailable else if(reader.sourceDetached)R.string.reader_copy_active_local else R.string.reader_copy_disk_first))
+                        if(reader.recoveryRejected>0)Text(getString(R.string.reader_copy_unverified,reader.recoveryRejected))
+                        reader.recoveryChoices.forEach{copy->
+                            val whenSaved=java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,java.text.DateFormat.SHORT).format(java.util.Date(copy.modified))
+                            TextButton(onClick={reader.chooseRecovery(copy)}){
+                                Text(getString(R.string.reader_copy_open)+" — "+whenSaved+" — "+copy.sha256.take(8))
+                            }
+                        }
+                    }},
+                    confirmButton={TextButton(onClick={reader.continueDisk()}){Text(getString(R.string.reader_copy_continue))}},
+                    dismissButton={TextButton(onClick={reader.dismissRecovery()}){Text(getString(R.string.reader_contents_cancel))}})
             }
             LaunchedEffect(reader.pickerRequest){if(reader.consumePickerLaunch())launchDocumentPicker()}
             ReaderScreen(

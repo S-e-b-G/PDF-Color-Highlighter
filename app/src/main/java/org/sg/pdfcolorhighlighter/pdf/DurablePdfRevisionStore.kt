@@ -80,7 +80,7 @@ class DurablePdfRevisionStore(
         val body=buffer.toByteArray();val result=body+MessageDigest.getInstance("SHA-256").digest(body)
         require(result.size<=MAX_MANIFEST);return result
     }
-    private fun readSlot(index:Int):PdfRevision? {
+    private fun readSlot(index:Int,verifyBytes:Boolean=true):PdfRevision? {
         val file=slot(index);if(!file.exists())return null
         require(file.isFile && file.length() in 33L..MAX_MANIFEST.toLong()){ "Invalid revision manifest" }
         val bytes=file.readBytes();val body=bytes.copyOfRange(0,bytes.size-32)
@@ -91,11 +91,13 @@ class DurablePdfRevisionStore(
             require(input.available()==0){"Trailing revision metadata"};r
         }
         validateRecord(revision);require(revision.sequence%2==index.toLong()){ "Revision slot mismatch" }
-        require(digest(owned(revision.fileName))==(revision.sizeBytes to revision.sha256)){"PDF revision fingerprint mismatch"}
+        val snapshot=owned(revision.fileName)
+        require(snapshot.isFile && snapshot.length()==revision.sizeBytes){"PDF revision size mismatch"}
+        if(verifyBytes)require(digest(snapshot)==(revision.sizeBytes to revision.sha256)){"PDF revision fingerprint mismatch"}
         return revision
     }
-    private fun records():List<PdfRevision> {
-        val all=listOfNotNull(readSlot(0),readSlot(1)).sortedBy{it.sequence}
+    private fun records(verifyBytes:Boolean=true):List<PdfRevision> {
+        val all=listOfNotNull(readSlot(0,verifyBytes),readSlot(1,verifyBytes)).sortedBy{it.sequence}
         check(all.isNotEmpty()){ "No complete revision checkpoint; preserve this directory" }
         if(all.size==2){
             require(all[0].sessionId==all[1].sessionId && all[0].baselineSha256==all[1].baselineSha256){"Mixed revision sessions"}
@@ -103,6 +105,8 @@ class DurablePdfRevisionStore(
         }
         return all
     }
+    /** Discovery only: checksummed manifests and sizes; NEVER sufficient to adopt/open a snapshot. */
+    fun inspect():PdfRevision=locked { records(false).last() }
     fun recover():PdfRevision=locked { records().last() }
     fun currentFile(expected:PdfRevision):File=locked {
         val head=records().last();if(head!=expected)throw StalePdfRevision();owned(head.fileName)

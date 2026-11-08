@@ -106,6 +106,15 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         private set
     var pickerRequest by mutableStateOf(0L)
         private set
+    var recoveryChoices by mutableStateOf<List<LocalRecoveryChoice>>(emptyList())
+        private set
+    var recoveryPrompt by mutableStateOf(false)
+        private set
+    var recoveryRejected by mutableStateOf(0)
+        private set
+    private var recoveryInitial=false
+    private var pendingRecovery:LocalRecoveryChoice?=null
+    private var pendingVersionSwitch=false
     private var pendingDestination:String?=null
     private var hasPendingDestination=false
     private var saveThenOpen=false
@@ -113,16 +122,17 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private var pickerAwaitingResult=false
     fun requestDocumentOpen(uri:String?){
         if(!ready || loading || editBusy || replacementChallenge!=null || navigationPrompt || exitPrompt)return
-        if(uri!=null && uri==activeUri && !sourceDetached && !saveBlocked && localEditError==null && localEditNotice==LocalEditNotice.NONE)return
         pendingDestination=uri;hasPendingDestination=true
         if(hasUnsavedContent)navigationPrompt=true else executePendingOpen()
     }
     private fun executePendingOpen(){
         if(!hasPendingDestination)return
         val target=pendingDestination
+        val copy=pendingRecovery;val version=pendingVersionSwitch
+        pendingRecovery=null;pendingVersionSwitch=false
         pendingDestination=null;hasPendingDestination=false;navigationPrompt=false;saveThenOpen=false
         if(target==null){pickerAwaitingResult=true;pickerLaunchPending=true;pickerRequest++}
-        else openDocumentNow(target)
+        else if(version)open(target,page,viewportState,copy)else openDocumentNow(target)
     }
     fun consumePickerLaunch():Boolean{
         if(!pickerLaunchPending)return false
@@ -137,13 +147,14 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     fun cancelDocumentOpen(){
         exitAfterSave=false;exitPrompt=false
         navigationPrompt=false;hasPendingDestination=false;pendingDestination=null;saveThenOpen=false
+        pendingRecovery=null;pendingVersionSwitch=false
     }
     fun saveBeforeOpen():Boolean{
         if(!navigationPrompt || !canSave)return false
         navigationPrompt=false;saveThenOpen=true;return true
     }
-    val canRecover:Boolean get()=ready && !loading && !editBusy && !sourceDetached &&
-        (activeUri!=null || unavailableUri!=null) && (bitmap==null || saveBlocked || localEditNotice!=LocalEditNotice.NONE)
+    val canRecover:Boolean get()=ready && !loading && !editBusy && recoveryChoices.isNotEmpty() &&
+        (activeUri!=null || unavailableUri!=null)
     fun beginSave():android.net.Uri?{
         if(!canSave)return null
         savePendingUri=activeUri;editBusy=true;exportMessage=R.string.reader_source_save_wait
@@ -193,12 +204,34 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
             scheduleRefinement()
         }},challenge?.sha256)
     }
+
+    fun dismissRecovery(){recoveryPrompt=false;recoveryInitial=false}
+    fun continueDisk(){
+        val reload=!recoveryInitial || sourceDetached || bitmap==null
+        recoveryPrompt=false;recoveryInitial=false
+        if(reload)queueVersion(null)
+    }
+    fun chooseRecovery(choice:LocalRecoveryChoice){
+        if(!recoveryChoices.contains(choice))return
+        recoveryPrompt=false;recoveryInitial=false;queueVersion(choice)
+    }
+    private fun queueVersion(choice:LocalRecoveryChoice?){
+        if(loading || editBusy || navigationPrompt || exitPrompt)return
+        val uri=activeUri ?: unavailableUri ?: return
+        pendingDestination=uri;hasPendingDestination=true;pendingRecovery=choice;pendingVersionSwitch=true
+        if(hasUnsavedContent)navigationPrompt=true else executePendingOpen()
+    }
     fun recoverLocal(){
         if(!canRecover)return
         val uri=activeUri ?: unavailableUri ?: return
-        checkpoint();stopRefinement();resetPageText();bitmap=null;loading=true;opening=true
-        activeUri=uri;exportMessage=null;errorRes=null;pendingViewport=viewportState
-        session.open(uri.toUri(),page,::accept,recoveryOnly=true)
+        recoveryInitial=false;editBusy=true;stopRefinement()
+        session.listRecoveries(uri.toUri()){result->if(!cleared){
+            editBusy=false
+            result.fold(onSuccess={listing->
+                recoveryChoices=listing.choices;recoveryRejected=listing.rejected;recoveryPrompt=true
+            },onFailure={exportMessage=R.string.reader_copy_listing_failed})
+            scheduleRefinement()
+        }}
     }
     fun recordFrameDrawn(serial:Long){
         if(editFeedbackSerial!=serial)return
@@ -375,8 +408,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         open(uri, entry?.page ?: 0, entry?.viewport ?: PageViewportState())
     }
 
-    private fun open(uri: String, index: Int, state: PageViewportState) {
-        if (uri == activeUri && bitmap != null && !loading && !sourceDetached && !saveBlocked && localEditError==null && localEditNotice==LocalEditNotice.NONE) return
+    private fun open(uri: String, index: Int, state: PageViewportState,copy:LocalRecoveryChoice?=null) {
+        recoveryPrompt=false;recoveryChoices=emptyList();recoveryRejected=0
         exportMessage=null;sourceDetached=false;saveBlocked=false;savePendingUri=null;replacementChallenge=null
         currentContentHash=null;externallySavedHash=null
         editAllowed=false;localRevision=0L;localCanUndo=false;localCanRedo=false
@@ -402,7 +435,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         } catch (_: SecurityException) {
             true
         }
-        session.open(uri.toUri(), index, ::accept)
+        session.open(uri.toUri(), index, ::accept,recoveryOnly=copy!=null,recoveryId=copy?.id,recoverySha=copy?.sha256)
     }
 
     fun navigate(index: Int, navigationState: PageViewportState) {
@@ -425,6 +458,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         loading = false
         result.fold(
             onSuccess = { frame ->
+                recoveryChoices=frame.recoveries.choices;recoveryRejected=frame.recoveries.rejected
+                if(opening && !frame.sourceDetached && (recoveryChoices.isNotEmpty() || recoveryRejected>0)){recoveryInitial=true;recoveryPrompt=true}
                 currentContentHash=frame.contentHash
                 if(opening)externallySavedHash=frame.sourceHash
                 sourceDetached=frame.sourceDetached;saveBlocked=frame.sourceSaveBlocked
@@ -464,6 +499,9 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 loadPageText()
             },
             onFailure = { error ->
+                if(error is RecoveryCopiesAvailable){
+                    recoveryChoices=error.listing.choices;recoveryRejected=error.listing.rejected;recoveryPrompt=true
+                }
                 errorRes = when (error) {
                     is PasswordRequired -> R.string.error_password
                     is SmokeSizeLimit -> R.string.error_limit
