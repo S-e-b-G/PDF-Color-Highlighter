@@ -5,7 +5,7 @@ import org.junit.Test
 class EditFramePolicyTest{
     private val snapshot=PageTextSnapshot(TextBounds(0f,0f,100f,200f),emptyList(),PageTextStatus.EMPTY)
     private fun keep(a:Int=0,b:Int=0,w:Float=100f,nw:Float=100f,h:Float=200f,nh:Float=200f,copy:Boolean=true,s:PageTextSnapshot?=snapshot)=EditFramePolicy.retainText(a,b,w,nw,h,nh,copy,s)
-    @Test fun lowerEditResolution(){assertTrue(EditFramePolicy.EDIT_EDGE<EditFramePolicy.READER_EDGE)}
+    @Test fun editResolutionMatchesReaderFloor(){assertEquals(EditFramePolicy.READER_EDGE,EditFramePolicy.EDIT_EDGE)}
     @Test fun readerResolutionUnchanged(){assertEquals(1600,EditFramePolicy.READER_EDGE)}
     @Test fun previewBounded(){assertTrue(EditFramePolicy.EDIT_EDGE in 640..1600)}
     @Test fun samePageRetained(){assertTrue(keep())}

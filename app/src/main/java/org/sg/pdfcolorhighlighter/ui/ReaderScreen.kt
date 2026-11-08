@@ -103,12 +103,12 @@ fun ReaderScreen(
                     val tablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
                     when {
                         maxWidth >= 768.dp -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot)
+                            PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand)
                             Spacer(Modifier.weight(1f)); Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true}); Spacer(Modifier.weight(1f))
                             ColorTools(notes = true)
                         }
                         !tablet -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true}) }; Row { ColorTools(notes = true) }
+                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true}) }; Row { ColorTools(notes = true) }
                         }
                         else -> Text(stringResource(R.string.reader_width_blocked),
                             Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
@@ -419,10 +419,10 @@ private fun PulseAction(enabled: Boolean, action: () -> Unit, modifier: Modifier
 
 
 @Composable
-private fun RowScope.PreviewColorTools(active: Int?, enabled: Boolean, choose: (Int)->Unit) {
+private fun RowScope.PreviewColorTools(active: Int?, enabled: Boolean, choose: (Int)->Unit,onHand:()->Unit) {
     palette.forEachIndexed { index,color ->
         val description=stringResource(R.string.selection_preview_tool,stringResource(slotNames[index]))
-        PulseAction(enabled,{ choose(index) },Modifier.size(48.dp),description,isSelected=active==index) {
+        PulseAction(enabled,{ choose(index) },Modifier.size(40.dp),description,isSelected=active==index) {
             Box(Modifier.size(26.dp).background(color,CircleShape).border(1.dp,Color.DarkGray,CircleShape)) {
                 if(active==index) Canvas(Modifier.fillMaxSize()) {
                     val ink=if(color.luminance()>0.179f) Color.Black else Color.White
@@ -434,6 +434,7 @@ private fun RowScope.PreviewColorTools(active: Int?, enabled: Boolean, choose: (
             }
         }
     }
+    PulseIcon(R.drawable.reader_hand,stringResource(if(active==null)R.string.reader_navigation_active else R.string.selection_preview_hand),enabled,onHand,isSelected=active==null)
 }
 
 @Composable

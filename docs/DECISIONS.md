@@ -325,3 +325,7 @@ before/after intent protocol and content-bound owner identity. Same-byte save ne
 owner differs and no link exists. Navigation decisions never delete durable local history.
 Separate page identity from edit/frame serial; avoid layout changes for quick edit progress.
 Canvas endpoint lens magnifies current pixels only, never allocates/renders native pages per move.
+
+
+## 2026-11-07 M3o.1
+Keep source/recovery namespace migration out of this bounded UI/render/history/style change. Protect current local copies. Higher-resolution edit raster may increase commit-to-visible latency; do not silently downsample to960px. Full-PDF history is bounded at1000 commands AND1GiB; large PDFs may retain fewer commands. Exit flag cleared on Save/auth/cancel failure; no finish before verified Save callback. Slight skew is handled by projection, not changed text selection/citation geometry. Native opacity applies to newly created/modified owned highlights, not arbitrary third-party entries.

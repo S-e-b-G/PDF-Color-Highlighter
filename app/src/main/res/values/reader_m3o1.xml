@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_exit_title">Quitter avec des modifications non enregistrées ?</string>
+    <string name="reader_exit_message">Enregistrer dans le fichier source avant de quitter ? Quitter sans enregistrer conserve les révisions locales de récupération.</string>
+    <string name="reader_exit_save">Enregistrer et quitter</string>
+    <string name="reader_exit_keep">Quitter sans enregistrer</string>
+</resources>

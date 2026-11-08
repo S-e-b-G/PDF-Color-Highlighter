@@ -58,6 +58,10 @@ class SmokePdfSession(context: Context) {
     private var sourceSaveBlocked=false
     private var cachedCountPage=-1
     private var cachedCharCount:Int?=null
+    @Volatile private var retainedEditEdge=org.sg.pdfcolorhighlighter.domain.EditFramePolicy.EDIT_EDGE
+    fun retainEditResolution(width:Int,height:Int){
+        retainedEditEdge=org.sg.pdfcolorhighlighter.domain.EditFramePolicy.editEdge(width,height)
+    }
     private var displayedLocalRevision=0L
     private var localHighlights:LocalHighlightWorkspace?=null
     private var localEditNotice=org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE
@@ -198,7 +202,7 @@ class SmokePdfSession(context: Context) {
             } else null
             cachedCountPage=index;cachedCharCount=chars
             val rasterStarted=android.os.SystemClock.elapsedRealtime()
-            val edge=if(editPreview)org.sg.pdfcolorhighlighter.domain.EditFramePolicy.EDIT_EDGE else org.sg.pdfcolorhighlighter.domain.EditFramePolicy.READER_EDGE
+            val edge=if(editPreview)retainedEditEdge else org.sg.pdfcolorhighlighter.domain.EditFramePolicy.READER_EDGE
             val bitmap = AndroidDrawDevice.drawPageFit(page,edge,edge)
             val rasterFinished=android.os.SystemClock.elapsedRealtime()
             try{

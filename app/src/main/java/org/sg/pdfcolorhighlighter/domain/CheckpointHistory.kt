@@ -17,7 +17,7 @@ object CheckpointFingerprint {
 }
 data class CheckpointChange(val before:File,val after:File,
     val beforeSha256:String=CheckpointFingerprint.of(before),val afterSha256:String=CheckpointFingerprint.of(after))
-class CheckpointHistory(private val maximum:Int=16,private val bytes:Long=64L*1024*1024) {
+class CheckpointHistory(private val maximum:Int=1000,private val bytes:Long=1024L*1024*1024) {
     init{require(maximum>0 && bytes>0)}
     private val done=mutableListOf<CheckpointChange>()
     private val undone=mutableListOf<CheckpointChange>()

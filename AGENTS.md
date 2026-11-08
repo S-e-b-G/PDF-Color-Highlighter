@@ -312,3 +312,10 @@ No automatic reapproval, merge, blind rollback, URI guessing or process-death wr
 No-op recovered Save may need an owner-binding intent even without output. Backups preserved.
 PowerShell uses source/payload SHA preflight, XML XPath/GetAttribute and no String.Replace.
 Actual author platform execution unavailable: do not claim runtime passes from static checks.
+
+
+## M3o.1 continuity
+Reader feature increment, not automation-only. Back has Save+exit / keep local+exit / Cancel; failed/cancelled Save must never signal exit. Exit event is consumed once, retained through rotation, not replayed after process death. Copy checkpoints remain per completed edit.
+Edit frames retain displayed raster edge (minimum1600); same-page identity stays stable. Larger session Undo:1000 actions,1GiB full-snapshot budget; not unlimited or cross-restart Undo. Native managed opacity65%, preview multiply166/255; third-party annotations remain untouched. Slight skew appearances projected into row coordinates then restored, exact editing quads/Contents remain unchanged. Top Hand follows pink; six color buttons40dp keep group width stable.
+Disk-first independent recovery-version storage is deliberately NOT implemented in this increment. Existing M3n source/recovery guards retained. No recovery data deletion, automatic appearance rewrite on open, new SDK or dependency.
+Full automation40 cases (three additional exit branches); focused two-case run is insufficient for acceptance. Production APK installation only after isolated full checks with zero failures/blocks. Author has no platform runtime: do not call static checks a compile/device pass.

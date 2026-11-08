@@ -504,3 +504,7 @@ Blockers:
 Next: run README steps, obtain host/device evidence, fix integration failures,
 then deliver the native annotation interoperability proof. Do not build the full
 annotation UI before its gate. No external repository has been modified.
+
+## M3o.1 — implemented source; runtime acceptance pending
+Sharp edit raster retention; Back Save/keep/cancel;1000-step/1GiB session history;65% managed native highlights, multiply preview; projected slight-skew row bands; Hand after pink.23 new JVM tests =>677 expected;22 native;40 full UI/integration/probe cases.
+Original source/save/recovery mechanisms remain. Disk-first editable recovery branches await separate storage increment. Existing old highlights are not automatically rewritten on open. Test first on isolated fixtures, then disposable Documents copy.

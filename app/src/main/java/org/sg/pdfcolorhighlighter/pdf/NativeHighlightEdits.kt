@@ -75,7 +75,7 @@ object NativeHighlightEdits {
             }finally{annotations.forEach{it.destroy()}}
         }finally{page.destroy()}
     }
-    /** Modify in place: preserve unrelated PDF dictionary entries, opacity and flags. */
+    /** Modify in place: preserve unrelated entries/flags; apply current app-owned highlight opacity. */
     fun replace(pdf:PDFDocument,before:ManagedHighlight,after:ManagedHighlight?) {
         require(pdf.hasPermission(Document.PERMISSION_COPY))
         require(after==null || after.edit.id==before.edit.id && after.edit.page==before.edit.page)
@@ -91,6 +91,7 @@ object NativeHighlightEdits {
                     annotation.setQuadPoints((after.edit.appearance.ifEmpty{NativeHighlightAppearance.forQuads(after.edit.quads)}).map{q->Quad(q.ul.x,q.ul.y,q.ur.x,q.ur.y,q.ll.x,q.ll.y,q.lr.x,q.lr.y)}.toTypedArray())
                     val c=colors[after.edit.slot]
                     annotation.setColor(floatArrayOf(((c shr 16) and 255)/255f,((c shr 8) and 255)/255f,(c and 255)/255f))
+                    annotation.setOpacity(.65f)
                     annotation.setContents(after.contents)
                     val obj=annotation.`object`
                     try{
@@ -120,7 +121,7 @@ object NativeHighlightEdits {
                 annotation.setQuadPoints((edit.appearance.ifEmpty{NativeHighlightAppearance.forQuads(edit.quads)}).map{q->Quad(q.ul.x,q.ul.y,q.ur.x,q.ur.y,q.ll.x,q.ll.y,q.lr.x,q.lr.y)}.toTypedArray())
                 val color=colors[edit.slot]
                 annotation.setColor(floatArrayOf(((color shr 16) and 255)/255f,((color shr 8) and 255)/255f,(color and 255)/255f))
-                annotation.setOpacity(.5f)
+                annotation.setOpacity(.65f)
                 annotation.setFlags(annotation.flags or PDFAnnotation.IS_PRINT)
                 annotation.setContents(edit.quotation)
                 val obj=annotation.`object`

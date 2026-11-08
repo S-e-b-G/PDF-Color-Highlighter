@@ -62,6 +62,32 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     var exportMessage by mutableStateOf<Int?>(null)
         private set
 
+
+    var exitPrompt by mutableStateOf(false)
+        private set
+    var exitSignal by mutableStateOf(0L)
+        private set
+    private var exitPending=false
+    private var exitAfterSave=false
+    private fun signalExit(){checkpoint();exitPending=true;exitSignal++}
+    fun consumeExitRequest():Boolean{
+        if(!exitPending)return false
+        exitPending=false;return true
+    }
+    fun requestExit(){
+        when(ReaderExitPolicy.decide(hasUnsavedContent,editBusy)){
+            ReaderExitDecision.WAIT->Unit // Never leave during an unconfirmed source write/edit.
+            ReaderExitDecision.CONFIRM->exitPrompt=true
+            ReaderExitDecision.LEAVE->signalExit()
+        }
+    }
+    fun cancelExit(){exitPrompt=false;exitAfterSave=false}
+    fun leaveWithoutSaving(){if(!exitPrompt || editBusy)return;exitPrompt=false;signalExit()}
+    fun saveAndExit():Boolean{
+        if(!exitPrompt || !canSave)return false
+        exitPrompt=false;exitAfterSave=true;return true
+    }
+
     private var exportPendingUri:String?=null
     private var savePendingUri:String?=null
     var sourceDetached by mutableStateOf(false)
@@ -86,7 +112,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private var pickerLaunchPending=false
     private var pickerAwaitingResult=false
     fun requestDocumentOpen(uri:String?){
-        if(!ready || loading || editBusy || replacementChallenge!=null || navigationPrompt)return
+        if(!ready || loading || editBusy || replacementChallenge!=null || navigationPrompt || exitPrompt)return
         if(uri!=null && uri==activeUri && !sourceDetached && !saveBlocked && localEditError==null && localEditNotice==LocalEditNotice.NONE)return
         pendingDestination=uri;hasPendingDestination=true
         if(hasUnsavedContent)navigationPrompt=true else executePendingOpen()
@@ -109,6 +135,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
     fun continueWithoutSaving(){if(navigationPrompt)executePendingOpen()}
     fun cancelDocumentOpen(){
+        exitAfterSave=false;exitPrompt=false
         navigationPrompt=false;hasPendingDestination=false;pendingDestination=null;saveThenOpen=false
     }
     fun saveBeforeOpen():Boolean{
@@ -158,7 +185,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 sourceDetached=false;saveBlocked=false;externallySavedHash=receipt.sha256
                 if(challenge?.name!=null){documentName=challenge.name;properties=properties?.copy(displayName=challenge.name)}
                 exportMessage=R.string.reader_source_save_ok
-                if(saveThenOpen)executePendingOpen()
+                if(exitAfterSave){exitAfterSave=false;signalExit()}else if(saveThenOpen)executePendingOpen()
             },onFailure={error->
                 saveBlocked=true;cancelDocumentOpen()
                 exportMessage=if(error is SourceSaveConflict)R.string.reader_source_save_conflict else R.string.reader_source_save_failed
@@ -178,7 +205,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         editFeedbackSerial=null
         android.util.Log.i("PdfEditFeedback","requestToDrawMs=${android.os.SystemClock.uptimeMillis()-editFeedbackAt}")
     }
-    private fun startEditFeedback(){editFeedbackAt=android.os.SystemClock.uptimeMillis();editFeedbackSerial=null;exportMessage=null}
+    private fun startEditFeedback(){bitmap?.let{session.retainEditResolution(it.width,it.height)};editFeedbackAt=android.os.SystemClock.uptimeMillis();editFeedbackSerial=null;exportMessage=null}
     val canExport:Boolean get()=!cleared && !loading && !editBusy && bitmap!=null &&
         activeUri!=null && localEditNotice==LocalEditNotice.NONE
     fun beginExport():String? {
@@ -235,14 +262,16 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         changeHighlight(before,before.copy(edit=before.edit.copy(appearance=NativeHighlightAppearance.forSpan(span))))
     }
     private fun clearHighlightTarget(){selectedHighlight=null;reselectHighlightId=null}
+
     private fun changeHighlight(before:ManagedHighlight,after:ManagedHighlight?){
         if(loading || editBusy || !editAllowed)return
         val uri=activeUri ?: return
-        if(before==after)return
+        val styled=after?.let{item->previewSpan?.let{span->item.copy(edit=item.edit.copy(appearance=NativeHighlightAppearance.forSpan(span)))} ?: item}
+        if(before==styled)return
         startEditFeedback()
         editBusy=true;localEditError=null;stopRefinement();selectionQueue.cancel();pendingViewport=viewportState
-        reselectHighlightId=after?.edit?.id
-        session.replaceLocalHighlight(before,after,java.util.UUID.randomUUID().toString(),uri,::acceptLocalEdit)
+        reselectHighlightId=styled?.edit?.id
+        session.replaceLocalHighlight(before,styled,java.util.UUID.randomUUID().toString(),uri,::acceptLocalEdit)
     }
     private var pendingHighlight:HighlightEdit?=null
     private var pendingHighlightSpan:SelectionSpan?=null

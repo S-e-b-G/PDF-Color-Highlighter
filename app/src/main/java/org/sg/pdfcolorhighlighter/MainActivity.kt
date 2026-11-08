@@ -3,6 +3,7 @@ package org.sg.pdfcolorhighlighter
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
@@ -72,6 +73,17 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            BackHandler { reader.requestExit() }
+            LaunchedEffect(reader.exitSignal){if(reader.consumeExitRequest())finish()}
+            if(reader.exitPrompt){
+                AlertDialog(onDismissRequest={reader.cancelExit()},
+                    title={Text(getString(R.string.reader_exit_title))},
+                    text={Text(getString(R.string.reader_exit_message))},
+                    confirmButton={Column{
+                        TextButton(onClick={if(reader.saveAndExit())saveOriginal()},enabled=reader.canSave){Text(getString(R.string.reader_exit_save))}
+                        TextButton(onClick={reader.leaveWithoutSaving()}){Text(getString(R.string.reader_exit_keep))}
+                    }},dismissButton={TextButton(onClick={reader.cancelExit()}){Text(getString(R.string.reader_contents_cancel))}})
+            }
             LaunchedEffect(reader.pickerRequest){if(reader.consumePickerLaunch())launchDocumentPicker()}
             ReaderScreen(
                 canSave=reader.canSave,onSave={saveOriginal()},needsReplacement=reader.needsReplacement,

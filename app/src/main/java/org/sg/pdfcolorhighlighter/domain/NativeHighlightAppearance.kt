@@ -11,17 +11,28 @@ data class NativeAppearanceBand(val left:Float,val top:Float,val right:Float,val
 }
 object NativeHighlightAppearance{
     private fun ellipsis(cp:Int)=cp==46 || cp==0x2026
+
     fun forSpan(span:SelectionSpan):List<GlyphQuad> {
-        if(span.glyphs.any{g->g.quad.area>=.000001 && (abs(g.quad.ul.y-g.quad.ur.y)>.03f || abs(g.quad.ll.y-g.quad.lr.y)>.03f)})return span.quads
-        return build(span.glyphs).map{b->
-        GlyphQuad(TextPoint(b.left,b.top),TextPoint(b.right,b.top),TextPoint(b.left,b.bottom),TextPoint(b.right,b.bottom))
-    }
+        val valid=span.glyphs.filter{it.quad.area>=.000001}
+        val first=valid.firstOrNull()
+        val dx=first?.let{it.quad.ur.x-it.quad.ul.x} ?: 1f
+        val dy=first?.let{it.quad.ur.y-it.quad.ul.y} ?: 0f
+        if(dx<=0f || abs(dy)>dx*.03f)return span.quads
+        val length=sqrt(dx*dx+dy*dy);val ux=dx/length;val uy=dy/length
+        if(valid.any{g->
+            val x=g.quad.ur.x-g.quad.ul.x;val y=g.quad.ur.y-g.quad.ul.y
+            x<=0f || abs(y)>x*.03f || abs(y*ux-x*uy)>sqrt(x*x+y*y)*.006f
+        })return span.quads
+        fun project(p:TextPoint)=TextPoint(p.x*ux+p.y*uy,-p.x*uy+p.y*ux)
+        fun inverse(p:TextPoint)=TextPoint(p.x*ux-p.y*uy,p.x*uy+p.y*ux)
+        fun mapped(q:GlyphQuad,transform:(TextPoint)->TextPoint)=GlyphQuad(transform(q.ul),transform(q.ur),transform(q.ll),transform(q.lr))
+        val projected=span.glyphs.map{it.copy(quad=mapped(it.quad,::project))}
+        return build(projected).map{r->mapped(GlyphQuad(TextPoint(r.left,r.top),TextPoint(r.right,r.top),
+            TextPoint(r.left,r.bottom),TextPoint(r.right,r.bottom)),::inverse)}
     }
     fun forQuads(quads:List<GlyphQuad>):List<GlyphQuad> {
         require(quads.isNotEmpty())
-        if(quads.any{kotlin.math.abs(it.ul.y-it.ur.y)>.03f || kotlin.math.abs(it.ll.y-it.lr.y)>.03f})return quads
-        return forSpan(SelectionSpan(TextAddress(0,0),TextAddress(0,quads.lastIndex),"","",
-        quads.map{TextGlyph(65,it)}))
+        return forSpan(SelectionSpan(TextAddress(0,0),TextAddress(0,quads.lastIndex),"","",quads.map{TextGlyph(65,it)}))
     }
     private fun build(glyphs:List<TextGlyph>):List<NativeAppearanceBand>{
         val result=mutableListOf<NativeAppearanceBand>()

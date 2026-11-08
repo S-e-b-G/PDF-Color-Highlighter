@@ -240,7 +240,8 @@ class PdfViewportView(context: Context) : View(context) {
         val slot=previewSlot ?: return
         if(previewSpan==null) return
         val mapping=coordinateMap() ?: return
-        selectionPaint.color=previewPalette[slot];selectionPaint.alpha=85
+        selectionPaint.color=previewPalette[slot];selectionPaint.alpha=166
+        selectionPaint.blendMode=android.graphics.BlendMode.MULTIPLY
         for (band in previewBands) {
             val a=mapping.toView(TextPoint(band.left,band.top))
             val b=mapping.toView(TextPoint(band.right,band.bottom))
