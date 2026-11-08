@@ -289,6 +289,21 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         if(contents==before.contents)return
         changeHighlight(before,before.copy(contents=contents,mode=TextMode.MANUAL))
     }
+
+    val canSmoothPage:Boolean get()=!cleared && !loading && !editBusy && editAllowed && pageHighlights.isNotEmpty()
+    fun smoothPage(){
+        if(!canSmoothPage)return
+        val uri=activeUri ?: return
+        val changes=pageHighlights.mapNotNull{before->
+            val paint=NativeHighlightAppearance.forQuads(before.edit.quads)
+            val after=before.copy(edit=before.edit.copy(appearance=paint))
+            if(after==before)null else before to after
+        }
+        if(changes.isEmpty())return
+        startEditFeedback();editBusy=true;localEditError=null;stopRefinement();selectionQueue.cancel()
+        pendingViewport=viewportState;reselectHighlightId=selectedHighlight?.edit?.id
+        session.replaceLocalHighlights(page,changes,java.util.UUID.randomUUID().toString(),uri,::acceptLocalEdit)
+    }
     fun smoothHighlight(){
         val before=selectedHighlight ?: return
         val span=previewSpan ?: return

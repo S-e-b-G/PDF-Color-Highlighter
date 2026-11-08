@@ -70,7 +70,7 @@ fun ReaderScreen(
     onCommitHighlight:()->Unit,onUndoLocal:()->Unit,onRedoLocal:()->Unit,
     onChoosePreviewSlot: (Int)->Unit,
     onPreviewDrag: (TextPoint,TextPoint,Boolean)->Unit, onPreviewCancel: ()->Unit,
-    highlightContents:String?,highlightId:String?,onChangeContents:(String)->Unit,onSmoothHighlight:()->Unit,
+    highlightContents:String?,highlightId:String?,onChangeContents:(String)->Unit,onSmoothHighlight:()->Unit,canSmoothPage:Boolean,onSmoothPage:()->Unit,
     onHighlightTap:(TextPoint)->Boolean,
     onPreviewAdjust: (TextPoint,TextAddress,Boolean)->Unit,
     pageWidth: Float, pageHeight: Float, frameSerial: Long,pageIdentity:Long,
@@ -122,7 +122,11 @@ fun ReaderScreen(
                     Modifier.background(barColor).padding(horizontal = 8.dp),
                     color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 if(sourceDetached)Text(stringResource(R.string.reader_source_detached),Modifier.padding(horizontal=8.dp),color=MaterialTheme.colorScheme.error)
-                if(canRecover)TextButton(onClick=onRecover){Text(stringResource(R.string.reader_copy_manage))}
+                if(bitmap!=null || canRecover)Row(Modifier.fillMaxWidth()){
+                    if(canRecover)TextButton(onClick=onRecover){Text(stringResource(R.string.reader_copy_manage))}
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick=onSmoothPage,enabled=canSmoothPage){Text(stringResource(R.string.reader_smooth_page))}
+                }
                 errorText?.let { Text(it, Modifier.background(barColor).padding(horizontal = 8.dp),
                     color = MaterialTheme.colorScheme.error) }
                 Box(Modifier.fillMaxWidth().weight(1f).clipToBounds(), contentAlignment = Alignment.Center) {

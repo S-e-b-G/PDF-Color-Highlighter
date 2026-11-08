@@ -13,22 +13,46 @@ object NativeHighlightAppearance{
     private fun ellipsis(cp:Int)=cp==46 || cp==0x2026
 
     fun forSpan(span:SelectionSpan):List<GlyphQuad> {
-        val valid=span.glyphs.filter{it.quad.area>=.000001}
-        val first=valid.firstOrNull()
-        val dx=first?.let{it.quad.ur.x-it.quad.ul.x} ?: 1f
-        val dy=first?.let{it.quad.ur.y-it.quad.ul.y} ?: 0f
-        if(dx<=0f || abs(dy)>dx*.03f)return span.quads
-        val length=sqrt(dx*dx+dy*dy);val ux=dx/length;val uy=dy/length
-        if(valid.any{g->
-            val x=g.quad.ur.x-g.quad.ul.x;val y=g.quad.ur.y-g.quad.ul.y
-            x<=0f || abs(y)>x*.03f || abs(y*ux-x*uy)>sqrt(x*x+y*y)*.006f
-        })return span.quads
+        val glyphs=span.glyphs
+        val slopes=glyphs.mapNotNull{g->
+            val q=g.quad;val dx=q.ur.x-q.ul.x;val dy=q.ur.y-q.ul.y
+            if(q.area>=.000001 && dx>0f && abs(dy)<=dx*.03f)dy/dx else null
+        }.sorted()
+        if(slopes.isEmpty())return span.quads
+        val slope=slopes[slopes.size/2];val ux=1f/sqrt(1f+slope*slope);val uy=slope*ux
         fun project(p:TextPoint)=TextPoint(p.x*ux+p.y*uy,-p.x*uy+p.y*ux)
         fun inverse(p:TextPoint)=TextPoint(p.x*ux-p.y*uy,p.x*uy+p.y*ux)
-        fun mapped(q:GlyphQuad,transform:(TextPoint)->TextPoint)=GlyphQuad(transform(q.ul),transform(q.ur),transform(q.ll),transform(q.lr))
-        val projected=span.glyphs.map{it.copy(quad=mapped(it.quad,::project))}
-        return build(projected).map{r->mapped(GlyphQuad(TextPoint(r.left,r.top),TextPoint(r.right,r.top),
-            TextPoint(r.left,r.bottom),TextPoint(r.right,r.bottom)),::inverse)}
+        fun mapped(q:GlyphQuad,fn:(TextPoint)->TextPoint)=GlyphQuad(fn(q.ul),fn(q.ur),fn(q.ll),fn(q.lr))
+        val projected=glyphs.map{it.copy(quad=mapped(it.quad,::project))}
+        val normal=glyphs.map{g->
+            val q=g.quad;val x=q.ur.x-q.ul.x;val y=q.ur.y-q.ul.y
+            q.area<.000001 || (x>0f && abs(y)<=x*.03f && abs(y*ux-x*uy)<=sqrt(x*x+y*y)*.006f)
+        }
+        fun fits(a:TextBounds,n:TextBounds):Boolean{
+            val h=max(a.height,n.height);val small=min(a.height,n.height)
+            return small>0f && h/small<=1.75f && min(a.bottom,n.bottom)-max(a.top,n.top)>=small*.6f &&
+                a.left<=n.right+2.5f*h && a.right>=n.left-2.5f*h
+        }
+        val result=mutableListOf<GlyphQuad>();val run=mutableListOf<TextGlyph>()
+        fun flush(){
+            for(r in build(run))result.add(mapped(GlyphQuad(TextPoint(r.left,r.top),TextPoint(r.right,r.top),
+                TextPoint(r.left,r.bottom),TextPoint(r.right,r.bottom)),::inverse))
+            run.clear()
+        }
+        for(i in glyphs.indices){
+            val q=projected[i].quad;val box=q.bounds
+            // An isolated composite accent/narrow glyph may have a misleading top-edge slope.
+            // Require normal neighbors on BOTH sides in the same local row. Other rotations stay raw.
+            val local=i>0 && i<glyphs.lastIndex && normal[i-1] && normal[i+1] &&
+                fits(box,projected[i-1].quad.bounds) && fits(box,projected[i+1].quad.bounds) &&
+                fits(projected[i-1].quad.bounds,projected[i+1].quad.bounds) &&
+                box.width<=max(projected[i-1].quad.bounds.height,projected[i+1].quad.bounds.height)*1.75f &&
+                abs(q.ur.y-q.ul.y)<=max(projected[i-1].quad.bounds.height,projected[i+1].quad.bounds.height)*.35f &&
+                abs(q.lr.y-q.ll.y)<=max(projected[i-1].quad.bounds.height,projected[i+1].quad.bounds.height)*.35f
+            if(normal[i] || local)run.add(projected[i])
+            else{flush();if(glyphs[i].quad.area>=.000001)result.add(glyphs[i].quad)}
+        }
+        flush();return result.toList()
     }
     fun forQuads(quads:List<GlyphQuad>):List<GlyphQuad> {
         require(quads.isNotEmpty())
@@ -58,6 +82,20 @@ object NativeHighlightAppearance{
                         }
                         break
                     }
+                }
+            }
+
+            // A tiny positive-area inline fragment (for example this PDF's short dash) must not
+            // reset a body-row band. Require containment plus a following full-height body glyph.
+            val bodyHeight=bottom-top
+            if(active && !borrowed && glyph.quad.area>=.000001 && bodyHeight>0f &&
+                y1-y0<=bodyHeight*.35f && y0>=top-.05f*bodyHeight && y1<=bottom+.05f*bodyHeight &&
+                b.left>=left-.15f*bodyHeight && b.left-right<=2.5f*bodyHeight){
+                val next=glyphs.getOrNull(index+1)?.quad?.bounds
+                if(next!=null && next.height>=bodyHeight*.7f && next.height<=bodyHeight*1.4f &&
+                    abs(next.top-top)<=bodyHeight*.35f && abs(next.bottom-bottom)<=bodyHeight*.35f &&
+                    next.left>=b.left-.15f*bodyHeight && next.left-b.right<=2.5f*bodyHeight){
+                    y0=top;y1=bottom;borrowed=true
                 }
             }
             val height=y1-y0

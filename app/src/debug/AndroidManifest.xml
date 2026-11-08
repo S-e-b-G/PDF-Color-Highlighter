@@ -49,4 +49,6 @@
     <instrumentation android:name="org.sg.pdfcolorhighlighter.SourceSaveInstrumentation"
         android:targetPackage="${applicationId}" android:label="Source Save fingerprint adoption, recovery and preview proof" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.EditViewportLensInstrumentation" android:targetPackage="${applicationId}" android:label="Stable edit viewport and endpoint lens" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.HighlightGeometryRegressionInstrumentation"
+        android:targetPackage="${applicationId}" android:label="Numeric real-PDF geometry and undoable page repair" />
 </manifest>

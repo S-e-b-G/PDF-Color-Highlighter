@@ -69,6 +69,16 @@ class LocalHighlightWorkspace(root:File,uri:String,private val baseline:File,pri
     fun replace(before:ManagedHighlight,after:ManagedHighlight?,operation:String){
         remember{transact(operation){NativeHighlightEdits.replace(it,before,after)}}
     }
+
+    /** One checkpoint and one Undo command for the explicit app-owned page appearance repair. */
+    fun replaceMany(changes:List<Pair<ManagedHighlight,ManagedHighlight>>,operation:String){
+        if(changes.isEmpty())return
+        require(changes.map{it.first.edit.id}.distinct().size==changes.size)
+        require(changes.all{it.first.edit.page==changes.first().first.edit.page &&
+            it.first.edit.id==it.second.edit.id && it.first.edit.quads==it.second.edit.quads &&
+            it.first.contents==it.second.contents && it.first.mode==it.second.mode})
+        remember{transact(operation){pdf->changes.forEach{(before,after)->NativeHighlightEdits.replace(pdf,before,after)}}}
+    }
     private fun restore(file:File,expectedSha256:String){
         require(CheckpointFingerprint.of(file)==expectedSha256){"Undo checkpoint fingerprint mismatch"}
         val expected=ready();val operation=UUID.randomUUID().toString()

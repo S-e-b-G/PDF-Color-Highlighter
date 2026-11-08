@@ -129,6 +129,7 @@ class MainActivity : ComponentActivity() {
                 onPreviewAdjust={ moving,fixed,finished -> reader.previewAdjustedSelection(moving,fixed,finished) },
                 highlightContents=reader.selectedHighlight?.contents,highlightId=reader.selectedHighlight?.edit?.id,
                 onChangeContents={reader.editHighlightContents(it)},onSmoothHighlight={reader.smoothHighlight()},
+                canSmoothPage=reader.canSmoothPage,onSmoothPage={reader.smoothPage()},
                 onHighlightTap={reader.tapHighlight(it)},
                 onPreviewCancel={ reader.cancelPreviewSelection() },
                 canCommitHighlight=reader.canCommitHighlight,localCanUndo=reader.localCanUndo,localCanRedo=reader.localCanRedo,

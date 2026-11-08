@@ -333,3 +333,7 @@ Keep source/recovery namespace migration out of this bounded UI/render/history/s
 
 ## 2026-11-08 M3p
 Fork durable content into a new namespace instead of rebinding/deleting old work. Use separate v2 source-save journal and keep legacy public save API unchanged. Metadata/size inspection only for fast chooser discovery; never use inspection as authorization to open/modify: full hash/native verification required at resolve/copy. Ordinary opening never resolves source-save aliases or silently restores a local head. Archived version storage remains unbounded; no automated deletion.
+
+
+## 2026-11-08 M3q
+Do not let one composite/narrow anomalous glyph force raw paint for an entire selection. Use local neighbor-bounded handling and preserve unsupported rotations separately. Preserve exact selection geometry and metadata; repair only the appearance layer. Add explicit one-Undo page repair rather than silent open-time rewrites. Native regression uses numeric geometry on a synthetic blank PDF, not the supplied page/copyright text/watermark. Correct outdated footer that promised source intact despite explicit Save. Real-font/selection extraction and external-reader behavior still need actual-file acceptance.

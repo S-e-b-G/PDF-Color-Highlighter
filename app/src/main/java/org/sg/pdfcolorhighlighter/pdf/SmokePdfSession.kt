@@ -288,6 +288,12 @@ class SmokePdfSession(context: Context) {
                               callback:(Result<LocalEditOutcome>)->Unit){
         localEdit(before.edit.page,uri,{it.replace(before,after,operation)},callback)
     }
+
+    fun replaceLocalHighlights(page:Int,changes:List<Pair<org.sg.pdfcolorhighlighter.domain.ManagedHighlight,org.sg.pdfcolorhighlighter.domain.ManagedHighlight>>,
+                               operation:String,uri:String,callback:(Result<LocalEditOutcome>)->Unit){
+        require(changes.all{it.first.edit.page==page})
+        localEdit(page,uri,{it.replaceMany(changes,operation)},callback)
+    }
     fun undoLocalHighlight(page:Int,uri:String,callback:(Result<LocalEditOutcome>)->Unit){
         localEdit(page,uri,{it.undo()},callback)
     }
