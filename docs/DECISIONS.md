@@ -341,3 +341,18 @@ Do not let one composite/narrow anomalous glyph force raw paint for an entire se
 
 ## 2026-11-08 M3r
 Review before whole-document repair, stale-content guard and single atomic local transaction rather than per-page commits. Retain copied plan only on native worker; UI receives opaque review ID/counts. In-flight read-only scan cancellable at page boundaries; no approval persisted across process death. Full real PDF testing requires private fixture copied only into isolated clone. Keep originals/synthetic workflow privacy distinct; no reference screenshots/text exported. Working APK exclusion checked by path and exact PDF digest. Do not commit reference PDF or containing ZIP to public repositories.
+
+
+## M3s — native notes and test continuity
+- Native Text annotations carry standard Contents, RGB color, Rect, printable flag,
+  stable UUID NM and SGCHNote=1 ownership marker. No note sidecar/overlay-only persistence.
+- First tap selects a recognized note; second tap or Modifier opens the editor.
+  Note-color taps recolor a selected note, never delete it. Delete is explicit/confirmed.
+- Blank-page note placement uses actual native page bounds, not a text snapshot.
+- Pinch, pan, cancellation and disabled input must never create a note.
+- Changes enter LocalHighlightWorkspace's existing PDF transactions/history; the historical
+  backend name is retained to avoid an unnecessary persistence migration.
+- Unconfirmed drafts are retained only in the live ViewModel, not durable document edits.
+- No general import adoption, moving-note UI, settings, autosave or fallback in this increment.
+- M3r-R2 private regression and all 50 older workflows are retained in an independent
+  packaged automation copy. The previous test directory is not rewritten or deleted.

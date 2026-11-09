@@ -56,6 +56,15 @@ class PdfViewportView(context: Context) : View(context) {
     var onFrameDrawn:((Long)->Unit)?=null
     private var lastDrawnKey=Long.MIN_VALUE
     var onHighlightTap: ((TextPoint)->Boolean)?=null
+    var onNoteTap: ((TextPoint)->Boolean)?=null
+    private var notePageBounds:TextBounds?=null
+    fun setNotePageBounds(bounds:TextBounds?){notePageBounds=bounds}
+    private fun noteNativeAt(x:Float,y:Float):TextPoint? {
+        val b=notePageBounds ?: return null
+        val p=geometry.placement
+        if(p.width<=0 || p.height<=0 || x !in p.left..(p.left+p.width) || y !in p.top..(p.top+p.height))return null
+        return PageCoordinateMap(b,p.left,p.top,p.width,p.height).toPage(TextPoint(x,y))
+    }
     private var touchOrigin=TextPoint(0f,0f)
     private var touchMoved=false
     var onPreviewAdjust: ((TextPoint,TextAddress,Boolean)->Unit)?=null
@@ -405,6 +414,12 @@ class PdfViewportView(context: Context) : View(context) {
                 val dx=event.x-touchOrigin.x;val dy=event.y-touchOrigin.y
                 val nativeTap=if(!touchMoved && dx*dx+dy*dy<=slop*slop && !hadMultiplePointers &&
                     !selectionPinchCancelled && activeHandle==null)nativeAt(event.x,event.y)else null
+                val deliberate=!touchMoved && dx*dx+dy*dy<=slop*slop && !hadMultiplePointers && !selectionPinchCancelled && activeHandle==null
+                val noteTap=if(deliberate)noteNativeAt(event.x,event.y)else null
+                if(noteTap!=null && onNoteTap?.invoke(noteTap)==true){
+                    selectionActive=false;selectionAnchor=null
+                    resetInput("note-tap",cancelScale=false);performClick();return true
+                }
                 // Route a deliberate tap before word-selection release; never intercept handle taps.
                 if(nativeTap!=null && onHighlightTap?.invoke(nativeTap)==true){
                     selectionActive=false;selectionAnchor=null

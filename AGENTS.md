@@ -331,3 +331,11 @@ Real saved PDF exposed whole-span fallback from isolated anomalous glyph quads p
 
 ## M3r
 Explicit whole-document appearance review before mutation. Native worker collects app-owned items, copies pure-data plan, binds to content SHA and opaque review ID. Cancel scan/review adds no Undo command; confirmation is one checkpoint/Undo across all pages. Scan cancellation uses epoch; no process-death approval replay. Keep logical quads, Contents/mode, quotation/slot/id, foreign annotations and provider source unchanged until explicit Save.5000 managed-item review cap. M3q page repair remains. Full supplied TestFile regression is isolated-profile only: private asset copied into clone from .validation/private-fixtures, no real PDF/text/page images in reports. Working APK checked for private asset path and exact original PDF digest before install. Private fixture/ZIP must not be committed publicly. Full724 JVM/24 native(including1 private)/50 synthetic workflow gate.
+
+
+## M3s continuity
+Native Text notes use NativeNoteEdits and the existing LocalHighlightWorkspace transaction,
+checkpoint/history/save/recovery system. Never introduce a parallel note sidecar. Do not loosen
+highlight geometry/stale-state/hash/save guards. Notes' unconfirmed drafts are live-session only.
+Acceptance: 754 JVM / 26 native / 58 workflow PASS, isolated package only until the gate passes.
+Keep private reference PDF out of production APKs, source archives and reports.

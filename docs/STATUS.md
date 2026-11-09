@@ -1,3 +1,34 @@
+# Current increment — M3s native notes (source supplied; execution pending)
+
+Accepted historical baseline: M3r-R2, 734 JVM tests / 24 native suites / 50 workflows,
+reported passing by the user on 2026-11-08. Not rerun by the author.
+
+M3s adds six direct native Text-note tools, placement/Confirm/Cancel, selection,
+editable Contents, recoloring and explicit confirmed deletion. Notes share immutable
+PDF checkpoints, session Undo/Redo, branch recovery and the existing Save/Save As paths.
+Touch mapping does not depend on extracted text. Imported/unrecognized/locked notes
+remain preserved, not generally editable. Drafts survive Activity recreation via the
+retained ViewModel; unconfirmed drafts do NOT have process-death durability.
+
+Gate: 754 JVM tests (734+20), 26 native suites (24+2), 58 workflows (50+8),
+all PASS, with working APK installation only after full isolated acceptance.
+The packaged automation is a new independent copy; the user's old live kit is untouched.
+Private TestFile regression remains in isolated test APK only, never in production APK.
+
+Executed author checks: export parsing, exact transformation anchors, source/resource
+cross-checks, XML parsing, test inventory and archive/hash consistency. Java/Kotlin,
+PowerShell, Gradle/JUnit/Lint, Android and downstream applications unavailable here.
+Run the supplied Apply/Validate scripts to obtain actual platform results.
+
+Next original requirements: settings + persistent dirty indicator + editable palette;
+timed autosave / automatic leave-save / authorized timestamped fallback;
+cross-column continuation and compatible imported annotation editing;
+Teclast API29/accessibility/performance/Docear/Obsidian production acceptance.
+
+Historical status follows; it is not evidence of fresh M3s execution.
+
+---
+
 # M3n — implemented source; runtime acceptance pending
 Actual baseline M3m user630 JVM/21 native suites passed; ordinary Save/editing manually OK.
 Implemented recovered overwrite confirmation, unsaved-navigation choices, stable page identity /

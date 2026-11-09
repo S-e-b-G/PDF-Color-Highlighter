@@ -34,6 +34,8 @@ data class SmokeFrame(
     val editNotice:org.sg.pdfcolorhighlighter.domain.LocalEditNotice=org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE,
     val contentHash:String?=null,val sourceHash:String?=null,
     val recoveries:RecoveryListing=RecoveryListing(emptyList(),0),
+    val managedNotes:List<org.sg.pdfcolorhighlighter.domain.ManagedNote> = emptyList(),
+    val nativeBounds:org.sg.pdfcolorhighlighter.domain.TextBounds?=null,
 )
 data class SourceReplacementChallenge(val sha256:String,val name:String?)
 data class LocalEditOutcome(val frame:SmokeFrame?,val refreshFailed:Boolean,val sequence:Long,val canUndo:Boolean,val canRedo:Boolean)
@@ -233,7 +235,9 @@ class SmokePdfSession(context: Context) {
             if(editPreview)android.util.Log.i("PdfEditDetail","beforeCountMs=${countStarted-renderStarted} countMs=${rasterStarted-countStarted} rasterMs=${rasterFinished-rasterStarted} listMs=${android.os.SystemClock.elapsedRealtime()-rasterFinished} edge=$edge")
             return SmokeFrame(bitmap,index,count,documentName,chars,properties,width,height,sourceDetached,sourceSaveBlocked,
                 highlights,
-                editable,editing?.sequence ?: 0L,editing?.canUndo ?: false,editing?.canRedo ?: false,localEditNotice,editing?.contentHash,expectedSourceHash,recoveryListing)
+                editable,editing?.sequence ?: 0L,editing?.canUndo ?: false,editing?.canRedo ?: false,localEditNotice,editing?.contentHash,expectedSourceHash,recoveryListing,
+                if(editable && doc is com.artifex.mupdf.fitz.PDFDocument)NativeNoteEdits.list(doc,index)else emptyList(),
+                org.sg.pdfcolorhighlighter.domain.TextBounds(bounds.x0,bounds.y0,bounds.x1,bounds.y1))
             }catch(error:Throwable){bitmap.recycle();throw error}
         } finally { page.destroy() }
     }
@@ -297,6 +301,13 @@ class SmokePdfSession(context: Context) {
         localEdit(page,uri,{it.replaceMany(changes,operation)},callback)
     }
 
+    fun createLocalNote(note:org.sg.pdfcolorhighlighter.domain.ManagedNote,uri:String,callback:(Result<LocalEditOutcome>)->Unit){
+        localEdit(note.page,uri,{it.addNote(note)},callback)
+    }
+    fun replaceLocalNote(before:org.sg.pdfcolorhighlighter.domain.ManagedNote,after:org.sg.pdfcolorhighlighter.domain.ManagedNote?,
+                         operation:String,uri:String,callback:(Result<LocalEditOutcome>)->Unit){
+        localEdit(before.page,uri,{it.replaceNote(before,after,operation)},callback)
+    }
     fun cancelDocumentRepair(){
         repairEpoch.incrementAndGet()
         if(!closed.get())worker.execute{pendingDocumentRepair=null}

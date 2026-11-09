@@ -59,6 +59,19 @@ class LocalHighlightWorkspace(root:File,uri:String,private val baseline:File,pri
         action()
         history.added(CheckpointChange(before,currentFile(),head.sha256,checkNotNull(revision).sha256))
     }
+    fun addNote(note:ManagedNote){
+        ready()
+        // Reject duplicate identities before starting another transaction; recovery reopens PDFs,
+        // it never replays note creation. Published-but-unacknowledged commits use transact recovery.
+        val doc=com.artifex.mupdf.fitz.Document.openDocument(currentFile().absolutePath)
+        try{require(NativeNoteEdits.list(doc as com.artifex.mupdf.fitz.PDFDocument,note.page).none{it.id==note.id}){"Note identity already exists"}}
+        finally{doc.destroy()}
+        remember{transact(note.id){NativeNoteEdits.add(it,note)}}
+    }
+    fun replaceNote(before:ManagedNote,after:ManagedNote?,operation:String){
+        if(before==after)return
+        remember{transact(operation){NativeNoteEdits.replace(it,before,after)}}
+    }
     fun add(edit:HighlightEdit){
         ready()
         val pdf=com.artifex.mupdf.fitz.Document.openDocument(currentFile().absolutePath)

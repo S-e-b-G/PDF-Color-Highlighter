@@ -55,6 +55,8 @@ private val slotNames = listOf(R.string.reader_slot_1, R.string.reader_slot_2, R
 /** M2b.2: centered page-navigation group, page-jump dialog and fading press feedback. */
 @Composable
 fun ReaderScreen(
+    noteSlot:Int?,canUseNotes:Boolean,noteBounds:TextBounds?,selectedNote:ManagedNote?,
+    onChooseNoteSlot:(Int)->Unit,onNoteTap:(TextPoint)->Boolean,onEditNote:()->Unit,onDeleteNote:()->Unit,
     canSave:Boolean,onSave:()->Unit,needsReplacement:Boolean,canRecover:Boolean,onRecover:()->Unit,sourceDetached:Boolean,onFrameDrawn:(Long)->Unit,
     canExport:Boolean,onSaveAs:()->Unit,exportMessage:String?,
     bitmap: Bitmap?, documentName: String?, documentProperties: org.sg.pdfcolorhighlighter.domain.DocumentProperties?, page: Int, pageCount: Int, loading: Boolean,
@@ -82,6 +84,7 @@ fun ReaderScreen(
     onViewportChanged: (PageViewportState) -> Unit,
 ) {
     var saveConfirm by rememberSaveable { mutableStateOf(false) }
+    var deleteNoteConfirm by rememberSaveable(selectedNote?.id) { mutableStateOf(false) }
     var exportDismissed by remember(exportMessage){mutableStateOf(false)}
     var quotationOpen by rememberSaveable { mutableStateOf(false) }
     var contentsDraft by rememberSaveable { mutableStateOf("") }
@@ -103,12 +106,12 @@ fun ReaderScreen(
                     val tablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
                     when {
                         maxWidth >= 768.dp -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand)
+                            PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null)
                             Spacer(Modifier.weight(1f)); Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true}); Spacer(Modifier.weight(1f))
-                            ColorTools(notes = true)
+                            NoteColorTools(noteSlot,canUseNotes,onChooseNoteSlot)
                         }
                         !tablet -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true}) }; Row { ColorTools(notes = true) }
+                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true}) }; Row { NoteColorTools(noteSlot,canUseNotes,onChooseNoteSlot) }
                         }
                         else -> Text(stringResource(R.string.reader_width_blocked),
                             Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
@@ -138,7 +141,7 @@ fun ReaderScreen(
                                 it.contentDescription = description
                                 it.onViewportChanged = onViewportChanged
                                 it.onPreviewDrag=onPreviewDrag;it.onPreviewCancel=onPreviewCancel;it.onPreviewAdjust=onPreviewAdjust
-                                it.onHighlightTap=onHighlightTap;it.onFrameDrawn=onFrameDrawn
+                                it.onNoteTap=onNoteTap;it.onHighlightTap=onHighlightTap;it.onFrameDrawn=onFrameDrawn
                                 it.onRenderViewport = onRenderViewport
                                 it.onRenderGesture = onRenderGesture
                                 onViewportReady(it)
@@ -146,7 +149,7 @@ fun ReaderScreen(
                             update = { view ->
                                 view.onViewportChanged = onViewportChanged
                                 view.onPreviewDrag=onPreviewDrag;view.onPreviewCancel=onPreviewCancel;view.onPreviewAdjust=onPreviewAdjust
-                                view.onHighlightTap=onHighlightTap;view.onFrameDrawn=onFrameDrawn
+                                view.onNoteTap=onNoteTap;view.setNotePageBounds(noteBounds);view.onHighlightTap=onHighlightTap;view.onFrameDrawn=onFrameDrawn
                                 view.onRenderViewport = onRenderViewport
                                 view.onRenderGesture = onRenderGesture
                                 view.setInteractionEnabled(!loading && !editBusy)
@@ -156,7 +159,7 @@ fun ReaderScreen(
                             },
                             onRelease = { view ->
                                 view.onViewportChanged = null
-                                view.onHighlightTap=null;view.onFrameDrawn=null
+                                view.onNoteTap=null;view.onHighlightTap=null;view.onFrameDrawn=null
                                 view.onPreviewDrag=null;view.onPreviewCancel=null;view.onPreviewAdjust=null
                                 view.onRenderViewport = null
                                 view.onRenderGesture = null
@@ -172,6 +175,14 @@ fun ReaderScreen(
                             Row(verticalAlignment=Alignment.CenterVertically){
                                 Text(message,Modifier.weight(1f).padding(6.dp).verticalScroll(rememberScrollState()),style=MaterialTheme.typography.bodySmall)
                                 TextButton(onClick={exportDismissed=true}){Text(stringResource(R.string.reader_message_close))}
+                            }
+                        }
+                    }
+                    if(selectedNote!=null){
+                        Surface(Modifier.align(Alignment.TopEnd).padding(8.dp).zIndex(2f),shape=RoundedCornerShape(8.dp)){
+                            Row{
+                                TextButton(onClick=onEditNote,enabled=canUseNotes){Text(stringResource(R.string.reader_note_edit))}
+                                TextButton(onClick={deleteNoteConfirm=true},enabled=canUseNotes){Text(stringResource(R.string.reader_note_delete))}
                             }
                         }
                     }
@@ -205,6 +216,7 @@ fun ReaderScreen(
                         localEditNotice==LocalEditNotice.RECOVERY_UNVERIFIED -> R.string.reader_edit_recovery_warning
                         localEditNotice==LocalEditNotice.OTHER_SOURCE_VERSION -> R.string.reader_edit_source_changed
                         loading -> R.string.loading
+                        noteSlot!=null -> R.string.reader_note_active
                         textLoading -> R.string.selection_preview_loading
                         textFailed -> R.string.selection_preview_unavailable
                         textSnapshot?.status==PageTextStatus.COPY_RESTRICTED -> R.string.selection_preview_restricted
@@ -225,10 +237,16 @@ fun ReaderScreen(
                 HorizontalDivider()
                 ReaderFooter(documentName, page, pageCount, loading, bitmap != null,
                     { openMenu = true }, onPrevious, onNext, onFit, onFitWidth, onHand,
-                    onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = previewSlot==null || !previewEnabled)
+                    onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = noteSlot==null && (previewSlot==null || !previewEnabled))
             }
         }
 
+        if(deleteNoteConfirm && selectedNote!=null){
+            AlertDialog(onDismissRequest={deleteNoteConfirm=false},title={Text(stringResource(R.string.reader_note_delete_title))},
+                text={Text(stringResource(R.string.reader_note_delete_confirm))},
+                confirmButton={TextButton(onClick={deleteNoteConfirm=false;onDeleteNote()},enabled=canUseNotes){Text(stringResource(R.string.reader_note_delete))}},
+                dismissButton={TextButton(onClick={deleteNoteConfirm=false}){Text(stringResource(R.string.reader_contents_cancel))}})
+        }
         if(saveConfirm){
             AlertDialog(onDismissRequest={saveConfirm=false},title={Text(stringResource(R.string.reader_source_save_title))},
                 text={Text(stringResource(R.string.reader_source_save_warning,documentName ?: "PDF"))},
@@ -424,7 +442,7 @@ private fun PulseAction(enabled: Boolean, action: () -> Unit, modifier: Modifier
 
 
 @Composable
-private fun RowScope.PreviewColorTools(active: Int?, enabled: Boolean, choose: (Int)->Unit,onHand:()->Unit) {
+private fun RowScope.PreviewColorTools(active: Int?, enabled: Boolean, choose: (Int)->Unit,onHand:()->Unit,noteActive:Boolean=false) {
     palette.forEachIndexed { index,color ->
         val description=stringResource(R.string.selection_preview_tool,stringResource(slotNames[index]))
         PulseAction(enabled,{ choose(index) },Modifier.size(40.dp),description,isSelected=active==index) {
@@ -439,19 +457,18 @@ private fun RowScope.PreviewColorTools(active: Int?, enabled: Boolean, choose: (
             }
         }
     }
-    PulseIcon(R.drawable.reader_hand,stringResource(if(active==null)R.string.reader_navigation_active else R.string.selection_preview_hand),enabled,onHand,isSelected=active==null)
+    PulseIcon(R.drawable.reader_hand,stringResource(if(active==null && !noteActive)R.string.reader_navigation_active else R.string.selection_preview_hand),enabled,onHand,isSelected=active==null && !noteActive)
 }
 
 @Composable
-private fun RowScope.ColorTools(notes: Boolean) {
-    palette.forEachIndexed { index, color ->
-        val name = stringResource(slotNames[index])
-        val description = stringResource(if (notes) R.string.reader_note_tool else R.string.reader_highlight_tool, name)
-        Box(Modifier.size(48.dp).semantics { contentDescription = description; disabled() }, contentAlignment = Alignment.Center) {
-            if (notes) Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
-                Icon(painterResource(R.drawable.reader_note), null, Modifier.size(28.dp), tint = Color.DarkGray)
-                Icon(painterResource(R.drawable.reader_note), null, Modifier.size(25.dp), tint = color)
-            } else Box(Modifier.size(26.dp).background(color, CircleShape).border(1.dp, Color.DarkGray, CircleShape))
+private fun RowScope.NoteColorTools(active:Int?,enabled:Boolean,choose:(Int)->Unit) {
+    palette.forEachIndexed{index,color->
+        val description=stringResource(R.string.reader_note_tool,stringResource(slotNames[index]))
+        PulseAction(enabled,{choose(index)},Modifier.size(48.dp),description,isSelected=active==index){
+            Box(Modifier.size(32.dp).then(if(active==index)Modifier.border(2.dp,MaterialTheme.colorScheme.primary,RoundedCornerShape(4.dp))else Modifier),contentAlignment=Alignment.Center){
+                Icon(painterResource(R.drawable.reader_note),null,Modifier.size(28.dp),tint=Color.DarkGray)
+                Icon(painterResource(R.drawable.reader_note),null,Modifier.size(25.dp),tint=color)
+            }
         }
     }
 }

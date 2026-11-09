@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_note_title">Note indépendante</string>
+    <string name="reader_note_contents">Texte de la note</string>
+    <string name="reader_note_confirm">Valider</string>
+    <string name="reader_note_edit">Modifier la note…</string>
+    <string name="reader_note_delete">Supprimer la note</string>
+    <string name="reader_note_delete_title">Suppression de la note</string>
+    <string name="reader_note_delete_confirm">Supprimer cette note ? Le bouton Annuler pourra la restaurer après suppression.</string>
+    <string name="reader_note_active">Note : touchez la page pour placer une note ; touchez une note pour la sélectionner.</string>
+    <string name="reader_note_overlap">Plusieurs notes se superposent ; aucune modification effectuée.</string>
+    <string name="reader_note_invalid">La note doit contenir de 1 à 100 000 caractères, sans caractère nul.</string>
+</resources>

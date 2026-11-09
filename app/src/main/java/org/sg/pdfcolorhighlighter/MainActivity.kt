@@ -77,6 +77,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             BackHandler { reader.requestExit() }
+            if(reader.noteEditorOpen){
+                org.sg.pdfcolorhighlighter.ui.NoteContentsDialog(
+                    reader.noteDraft,{reader.updateNoteDraft(it)},reader.editBusy,
+                    reader.localEditError?.let{getString(it)},
+                    {reader.confirmNoteEditor()},{reader.cancelNoteEditor()})
+            }
             LaunchedEffect(reader.exitSignal){if(reader.consumeExitRequest())finish()}
             if(reader.exitPrompt){
                 AlertDialog(onDismissRequest={reader.cancelExit()},
@@ -119,6 +125,9 @@ class MainActivity : ComponentActivity() {
             }
             LaunchedEffect(reader.pickerRequest){if(reader.consumePickerLaunch())launchDocumentPicker()}
             ReaderScreen(
+                noteSlot=reader.noteSlot,canUseNotes=reader.canUseNotes,noteBounds=reader.nativePageBounds,
+                selectedNote=reader.selectedNote,onChooseNoteSlot={reader.chooseNoteSlot(it)},onNoteTap={reader.tapNote(it)},
+                onEditNote={reader.openNoteEditor()},onDeleteNote={reader.deleteNote()},
                 canSave=reader.canSave,onSave={saveOriginal()},needsReplacement=reader.needsReplacement,
                 canRecover=reader.canRecover,onRecover={reader.recoverLocal()},sourceDetached=reader.sourceDetached,
                 onFrameDrawn={reader.recordFrameDrawn(it)},
@@ -242,7 +251,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         viewportView?.onViewportChanged = null
-        viewportView?.onHighlightTap=null;viewportView?.onFrameDrawn=null
+        viewportView?.onNoteTap=null;viewportView?.onHighlightTap=null;viewportView?.onFrameDrawn=null
         viewportView?.onPreviewDrag=null;viewportView?.onPreviewCancel=null;viewportView?.onPreviewAdjust=null
         viewportView?.onRenderViewport = null
         viewportView?.onRenderGesture = null

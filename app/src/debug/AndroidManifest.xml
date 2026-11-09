@@ -51,4 +51,6 @@
     <instrumentation android:name="org.sg.pdfcolorhighlighter.EditViewportLensInstrumentation" android:targetPackage="${applicationId}" android:label="Stable edit viewport and endpoint lens" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.HighlightGeometryRegressionInstrumentation"
         android:targetPackage="${applicationId}" android:label="Numeric real-PDF geometry and undoable page repair" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.NativeNotesInstrumentation" android:targetPackage="${applicationId}" android:label="Native notes workflow" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.NoteGestureInstrumentation" android:targetPackage="${applicationId}" android:label="Note gestures and empty text page" />
 </manifest>

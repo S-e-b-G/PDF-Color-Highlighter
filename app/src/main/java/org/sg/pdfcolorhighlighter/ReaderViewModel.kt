@@ -75,6 +75,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         exitPending=false;return true
     }
     fun requestExit(){
+        if(noteEditorOpen){cancelNoteEditor();return}
         when(ReaderExitPolicy.decide(hasUnsavedContent,editBusy)){
             ReaderExitDecision.WAIT->Unit // Never leave during an unconfirmed source write/edit.
             ReaderExitDecision.CONFIRM->exitPrompt=true
@@ -121,7 +122,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private var pickerLaunchPending=false
     private var pickerAwaitingResult=false
     fun requestDocumentOpen(uri:String?){
-        if(!ready || loading || editBusy || replacementChallenge!=null || navigationPrompt || exitPrompt)return
+        if(!ready || loading || editBusy || noteEditorOpen || replacementChallenge!=null || navigationPrompt || exitPrompt)return
         pendingDestination=uri;hasPendingDestination=true
         if(hasUnsavedContent)navigationPrompt=true else executePendingOpen()
     }
@@ -153,7 +154,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         if(!navigationPrompt || !canSave)return false
         navigationPrompt=false;saveThenOpen=true;return true
     }
-    val canRecover:Boolean get()=ready && !loading && !editBusy && recoveryChoices.isNotEmpty() &&
+    val canRecover:Boolean get()=ready && !loading && !editBusy && !noteEditorOpen && recoveryChoices.isNotEmpty() &&
         (activeUri!=null || unavailableUri!=null)
     fun beginSave():android.net.Uri?{
         if(!canSave)return null
@@ -239,7 +240,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         android.util.Log.i("PdfEditFeedback","requestToDrawMs=${android.os.SystemClock.uptimeMillis()-editFeedbackAt}")
     }
     private fun startEditFeedback(){bitmap?.let{session.retainEditResolution(it.width,it.height)};editFeedbackAt=android.os.SystemClock.uptimeMillis();editFeedbackSerial=null;exportMessage=null}
-    val canExport:Boolean get()=!cleared && !loading && !editBusy && bitmap!=null &&
+    val canExport:Boolean get()=!cleared && !loading && !editBusy && !noteEditorOpen && bitmap!=null &&
         activeUri!=null && localEditNotice==LocalEditNotice.NONE
     fun beginExport():String? {
         if(!canExport)return null
@@ -264,12 +265,96 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    var noteSlot by mutableStateOf<Int?>(null)
+        private set
+    var nativePageBounds by mutableStateOf<TextBounds?>(null)
+        private set
+    private var pageNotes:List<ManagedNote> = emptyList()
+    var selectedNote by mutableStateOf<ManagedNote?>(null)
+        private set
+    var noteEditorOpen by mutableStateOf(false)
+        private set
+    var noteDraft by mutableStateOf("")
+        private set
+    private var noteDraftPoint:TextPoint?=null
+    private var noteDraftId:String?=null
+    private var reselectNoteId:String?=null
+    val canUseNotes:Boolean get()=!cleared && !loading && !editBusy && editAllowed && bitmap!=null && !noteEditorOpen
+    fun chooseNoteSlot(slot:Int){
+        require(slot in 0..5)
+        if(!canUseNotes)return
+        val selected=selectedNote
+        if(selected!=null){
+            noteSlot=slot
+            // Same-color tap is not deletion: notes use an explicit Delete command.
+            if(selected.slot!=slot)changeNote(selected,selected.copy(slot=slot))
+        }else{stopPreview();noteSlot=slot}
+    }
+    fun tapNote(point:TextPoint):Boolean {
+        if(!canUseNotes)return false
+        val hits=NotePolicy.hits(pageNotes,point)
+        if(hits.size>1){localEditError=R.string.reader_note_overlap;return true}
+        if(hits.size==1){
+            val n=hits.single();val again=selectedNote?.id==n.id
+            stopPreview();selectedNote=n;noteSlot=n.slot;localEditError=null
+            if(again)openNoteEditor()
+            return true
+        }
+        selectedNote=null
+        if(noteSlot==null)return false
+        val sheet=nativePageBounds ?: return false
+        if(point.x !in sheet.left..sheet.right || point.y !in sheet.top..sheet.bottom)return false
+        noteDraftPoint=point;noteDraftId=java.util.UUID.randomUUID().toString()
+        noteDraft="";noteEditorOpen=true;localEditError=null
+        return true
+    }
+    fun openNoteEditor(){
+        if(!canUseNotes)return
+        val note=selectedNote ?: return
+        noteDraft=note.contents;noteDraftId=note.id;noteDraftPoint=null;noteEditorOpen=true;localEditError=null
+    }
+    fun updateNoteDraft(value:String){if(noteEditorOpen && !editBusy)noteDraft=value}
+    fun cancelNoteEditor(){if(editBusy)return;noteEditorOpen=false;noteDraft="";noteDraftId=null;noteDraftPoint=null}
+    fun confirmNoteEditor(){
+        if(!noteEditorOpen || loading || editBusy || !editAllowed)return
+        val before=selectedNote
+        val next=runCatching{
+            if(before!=null){require(noteDraftId==before.id);before.copy(contents=noteDraft)}
+            else NotePolicy.place(page,checkNotNull(noteSlot),checkNotNull(noteDraftPoint),checkNotNull(nativePageBounds),noteDraft,checkNotNull(noteDraftId))
+        }.getOrElse{localEditError=R.string.reader_note_invalid;return}
+        if(before==next){cancelNoteEditor();return}
+        changeNote(before,next)
+    }
+    fun deleteNote(){if(canUseNotes)selectedNote?.let{changeNote(it,null)}}
+    private fun changeNote(before:ManagedNote?,after:ManagedNote?){
+        if(loading || editBusy || !editAllowed)return
+        val uri=activeUri ?: return
+        startEditFeedback();editBusy=true;localEditError=null;stopRefinement();clearEditSelection()
+        reselectHighlightId=null;pendingViewport=viewportState;reselectNoteId=after?.id
+        val callback:(Result<LocalEditOutcome>)->Unit={result->
+            if(result.isSuccess){noteEditorOpen=false;noteDraft="";noteDraftId=null;noteDraftPoint=null}
+            acceptLocalEdit(result)
+        }
+        if(before==null)session.createLocalNote(checkNotNull(after),uri,callback)
+        else session.replaceLocalNote(before,after,java.util.UUID.randomUUID().toString(),uri,callback)
+    }
+    private fun acceptNotes(frame:SmokeFrame){
+        pageNotes=frame.managedNotes;nativePageBounds=frame.nativeBounds
+        selectedNote=pageNotes.singleOrNull{it.id==reselectNoteId};reselectNoteId=null
+    }
+    private fun clearNotes(preserveTool:Boolean=false){
+        if(!preserveTool)noteSlot=null
+        selectedNote=null;pageNotes=emptyList();nativePageBounds=null;reselectNoteId=null
+        noteEditorOpen=false;noteDraft="";noteDraftPoint=null;noteDraftId=null
+    }
     private var pageHighlights:List<ManagedHighlight> = emptyList()
     var selectedHighlight by mutableStateOf<ManagedHighlight?>(null)
         private set
     private var reselectHighlightId:String?=null
     fun tapHighlight(point:TextPoint):Boolean {
         if(loading || editBusy || !editAllowed)return false
+        if(noteSlot!=null)return false
+        selectedNote=null
         val snapshot=textSnapshot ?: return false
         val hits=ManagedHighlightSelection.hits(pageHighlights,point)
         if(hits.isEmpty())return false
@@ -485,7 +570,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun navigate(index: Int, navigationState: PageViewportState) {
-        if (loading || editBusy || bitmap == null || index !in 0 until pageCount || index == page) return
+        if (loading || editBusy || noteEditorOpen || bitmap == null || index !in 0 until pageCount || index == page) return
         resetPageText(preserveTool=true)
         stopRefinement()
         checkpoint()
@@ -509,7 +594,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 currentContentHash=frame.contentHash
                 if(opening)externallySavedHash=frame.sourceHash
                 sourceDetached=frame.sourceDetached;saveBlocked=frame.sourceSaveBlocked
-                pageHighlights=frame.managedHighlights
+                acceptNotes(frame);pageHighlights=frame.managedHighlights
                 editAllowed=frame.editAllowed;localRevision=frame.localRevision
                 localCanUndo=frame.canUndoLocal;localCanRedo=frame.canRedoLocal;localEditNotice=frame.editNotice
                 pageWidth = frame.pageWidth
@@ -634,6 +719,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
 
     private fun resetPageText(preserveTool:Boolean=false) {
+        clearNotes(preserveTool)
         selectedHighlight=null;pageHighlights=emptyList();reselectHighlightId=null
         val tool=PreviewContinuityPolicy.toolAfterPageChange(previewSlot,preserveTool)
         previewRetention.clear();previewSlot=tool
@@ -669,8 +755,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     fun choosePreviewSlot(slot: Int) {
         require(slot in 0..5)
         val snapshot=textSnapshot ?: return
-        if (loading || editBusy || snapshot.status!=PageTextStatus.READY) return
-
+        if (loading || editBusy || noteEditorOpen || snapshot.status!=PageTextStatus.READY) return
+        noteSlot=null;selectedNote=null
         val selected=selectedHighlight
         if(selected!=null){
             if(selected.edit.slot==slot)changeHighlight(selected,null)
@@ -682,7 +768,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         previewSpan=previewRetention.restore(textSnapshot)
         previewCommitted=previewSpan!=null;previewRejection=null
     }
-    fun stopPreview() { clearHighlightTarget();previewSlot=null;previewRetention.clear();cancelPreviewSelection() }
+    fun stopPreview() { noteSlot=null;selectedNote=null;clearHighlightTarget();previewSlot=null;previewRetention.clear();cancelPreviewSelection() }
     fun previewSelection(first:TextPoint,last:TextPoint,finished:Boolean) {
         if(!loading && !editBusy)localEditError=null
         if(selectedHighlight!=null){clearHighlightTarget();previewRetention.clear()}
@@ -753,18 +839,18 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         session.createLocalHighlight(edit,uri,::acceptLocalEdit)
     }
     fun undoLocalHighlight(){
-        if(cleared || loading || editBusy || !localCanUndo)return
+        if(cleared || loading || editBusy || noteEditorOpen || !localCanUndo)return
         val uri=activeUri ?: return
         startEditFeedback()
-        editBusy=true;localEditError=null;stopRefinement();clearHighlightTarget();clearEditSelection()
+        editBusy=true;localEditError=null;stopRefinement();selectedNote=null;clearHighlightTarget();clearEditSelection()
         pendingViewport=viewportState
         session.undoLocalHighlight(page,uri,::acceptLocalEdit)
     }
     fun redoLocalHighlight(){
-        if(cleared || loading || editBusy || !localCanRedo)return
+        if(cleared || loading || editBusy || noteEditorOpen || !localCanRedo)return
         val uri=activeUri ?: return
         startEditFeedback()
-        editBusy=true;localEditError=null;stopRefinement();clearHighlightTarget();clearEditSelection()
+        editBusy=true;localEditError=null;stopRefinement();selectedNote=null;clearHighlightTarget();clearEditSelection()
         pendingViewport=viewportState
         session.redoLocalHighlight(page,uri,::acceptLocalEdit)
     }
@@ -781,7 +867,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
             if(frame!=null){
                 val retained=textSnapshot.takeIf{EditFramePolicy.retainText(page,frame.page,pageWidth,frame.pageWidth,
                     pageHeight,frame.pageHeight,frame.textCodePoints!=null,it)}
-                clearEditSelection();pageHighlights=frame.managedHighlights;editAllowed=frame.editAllowed
+                clearEditSelection();acceptNotes(frame);pageHighlights=frame.managedHighlights;editAllowed=frame.editAllowed
                 localEditNotice=frame.editNotice;sourceDetached=frame.sourceDetached;saveBlocked=frame.sourceSaveBlocked
                 localRevision=frame.localRevision;localCanUndo=frame.canUndoLocal;localCanRedo=frame.canRedoLocal
                 pageWidth=frame.pageWidth;pageHeight=frame.pageHeight;page=frame.page;pageCount=frame.pageCount
@@ -793,7 +879,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 scheduleRefinement()
             }else{editAllowed=false;refinementBlocked=true;localEditError=R.string.reader_edit_refresh_failed}
         },onFailure={
-            editFeedbackSerial=null;reselectHighlightId=null;localEditError=R.string.reader_edit_failed
+            editFeedbackSerial=null;reselectNoteId=null;reselectHighlightId=null;localEditError=R.string.reader_edit_failed
             if(textSnapshot==null && bitmap!=null)loadPageText()
         })
     }
