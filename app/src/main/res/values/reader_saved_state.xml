@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_saved_no_document">Aucun document</string>
+    <string name="reader_saved_original">Original enregistré</string>
+    <string name="reader_saved_copy">Copie enregistrée ; original inchangé</string>
+    <string name="reader_saved_unsaved">Modifications non enregistrées</string>
+    <string name="reader_saved_recovered">Version locale ; original non remplacé</string>
+    <string name="reader_saved_failed">Dernière écriture échouée ; copie locale conservée</string>
+    <string name="reader_saved_unknown">État externe non confirmé</string>
+</resources>

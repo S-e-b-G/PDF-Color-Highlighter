@@ -128,6 +128,7 @@ class MainActivity : ComponentActivity() {
                 noteSlot=reader.noteSlot,canUseNotes=reader.canUseNotes,noteBounds=reader.nativePageBounds,
                 selectedNote=reader.selectedNote,onChooseNoteSlot={reader.chooseNoteSlot(it)},onNoteTap={reader.tapNote(it)},
                 onEditNote={reader.openNoteEditor()},onDeleteNote={reader.deleteNote()},
+                externalSaveState={reader.externalSaveState},unsavedContent=reader.hasUnsavedContent,
                 canSave=reader.canSave,onSave={saveOriginal()},needsReplacement=reader.needsReplacement,
                 canRecover=reader.canRecover,onRecover={reader.recoverLocal()},sourceDetached=reader.sourceDetached,
                 onFrameDrawn={reader.recordFrameDrawn(it)},

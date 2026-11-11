@@ -55,6 +55,7 @@ private val slotNames = listOf(R.string.reader_slot_1, R.string.reader_slot_2, R
 /** M2b.2: centered page-navigation group, page-jump dialog and fading press feedback. */
 @Composable
 fun ReaderScreen(
+    externalSaveState:()->ExternalSaveState,unsavedContent:Boolean,
     noteSlot:Int?,canUseNotes:Boolean,noteBounds:TextBounds?,selectedNote:ManagedNote?,
     onChooseNoteSlot:(Int)->Unit,onNoteTap:(TextPoint)->Boolean,onEditNote:()->Unit,onDeleteNote:()->Unit,
     canSave:Boolean,onSave:()->Unit,needsReplacement:Boolean,canRecover:Boolean,onRecover:()->Unit,sourceDetached:Boolean,onFrameDrawn:(Long)->Unit,
@@ -107,11 +108,11 @@ fun ReaderScreen(
                     when {
                         maxWidth >= 768.dp -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null)
-                            Spacer(Modifier.weight(1f)); Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true}); Spacer(Modifier.weight(1f))
+                            Spacer(Modifier.weight(1f)); Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true},unsavedContent); Spacer(Modifier.weight(1f))
                             NoteColorTools(noteSlot,canUseNotes,onChooseNoteSlot)
                         }
                         !tablet -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true}) }; Row { NoteColorTools(noteSlot,canUseNotes,onChooseNoteSlot) }
+                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true},unsavedContent) }; Row { NoteColorTools(noteSlot,canUseNotes,onChooseNoteSlot) }
                         }
                         else -> Text(stringResource(R.string.reader_width_blocked),
                             Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
@@ -233,6 +234,7 @@ fun ReaderScreen(
                     Text(stringResource(R.string.selection_status_version,stringResource(R.string.reader_increment),localEditError ?: stringResource(status)),Modifier.weight(1f).padding(vertical=2.dp),
                         style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines=1,overflow=TextOverflow.Ellipsis)
+                    ExternalSaveStatus(externalSaveState)
                 }
                 HorizontalDivider()
                 ReaderFooter(documentName, page, pageCount, loading, bitmap != null,
@@ -473,8 +475,12 @@ private fun RowScope.NoteColorTools(active:Int?,enabled:Boolean,choose:(Int)->Un
     }
 }
 @Composable
-private fun RowScope.Actions(canUndo:Boolean,canRedo:Boolean,onUndo:()->Unit,onRedo:()->Unit,canExport:Boolean,onSaveAs:()->Unit,canSave:Boolean,onSave:()->Unit) {
-    PulseIcon(R.drawable.reader_save,stringResource(R.string.reader_save),canSave,onSave)
+private fun RowScope.Actions(canUndo:Boolean,canRedo:Boolean,onUndo:()->Unit,onRedo:()->Unit,canExport:Boolean,onSaveAs:()->Unit,canSave:Boolean,onSave:()->Unit,unsaved:Boolean=false) {
+    Box(Modifier.size(48.dp)){
+        PulseIcon(R.drawable.reader_save,stringResource(R.string.reader_save),canSave,onSave)
+        if(unsaved)Text("*",Modifier.align(Alignment.TopEnd).padding(end=5.dp),
+            color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.titleMedium)
+    }
     PulseIcon(R.drawable.reader_undo,stringResource(R.string.reader_edit_undo),canUndo,onUndo)
     PulseIcon(R.drawable.reader_redo,stringResource(R.string.reader_edit_redo),canRedo,onRedo)
     PulseIcon(R.drawable.reader_save_as,stringResource(R.string.reader_save_as),canExport,onSaveAs)

@@ -356,3 +356,9 @@ Review before whole-document repair, stale-content guard and single atomic local
 - No general import adoption, moving-note UI, settings, autosave or fallback in this increment.
 - M3r-R2 private regression and all 50 older workflows are retained in an independent
   packaged automation copy. The previous test directory is not rewritten or deleted.
+
+
+## M3t
+Separate source-save and export hashes for presentation only; retain existing externallySavedHash
+dirty/exit semantics. All three hash fields are observable Compose state. Never label Save As
+as updating the source. No new persistence engine or autosave behavior.

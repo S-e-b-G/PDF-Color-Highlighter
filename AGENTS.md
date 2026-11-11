@@ -339,3 +339,8 @@ checkpoint/history/save/recovery system. Never introduce a parallel note sidecar
 highlight geometry/stale-state/hash/save guards. Notes' unconfirmed drafts are live-session only.
 Acceptance: 754 JVM / 26 native / 58 workflow PASS, isolated package only until the gate passes.
 Keep private reference PDF out of production APKs, source archives and reports.
+
+
+## M3t continuity
+ExternalSavePresentation is presentation only. Keep dirty/exit/recovery decisions unchanged.
+Expected full gate770 JVM/26 native/62 workflows. Parent M3s package is read-only.

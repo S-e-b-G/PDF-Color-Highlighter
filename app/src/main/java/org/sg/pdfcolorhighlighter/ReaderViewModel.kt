@@ -98,8 +98,14 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private var editFeedbackSerial:Long?=null
     val canSave:Boolean get()=canExport && editAllowed
     val needsReplacement:Boolean get()=sourceDetached || saveBlocked
-    private var currentContentHash:String?=null
-    private var externallySavedHash:String?=null
+    private var currentContentHash by mutableStateOf<String?>(null)
+    private var externallySavedHash by mutableStateOf<String?>(null)
+    private var sourceSavedContentHash by mutableStateOf<String?>(null)
+    private var exportedContentHash by mutableStateOf<String?>(null)
+    private var lastExternalWriteFailed by mutableStateOf(false)
+    val externalSaveState:ExternalSaveState get()=ExternalSavePresentation.state(
+        bitmap!=null && !loading,currentContentHash,sourceSavedContentHash,exportedContentHash,
+        sourceDetached,lastExternalWriteFailed)
     val hasUnsavedContent:Boolean get()=SavedContentPolicy.needsSave(currentContentHash,externallySavedHash)
     var replacementChallenge by mutableStateOf<SourceReplacementChallenge?>(null)
         private set
@@ -195,11 +201,12 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
             editBusy=false;properties=properties?.copy(sourceModifiedMillis=null)
             result.fold(onSuccess={receipt->
                 sourceDetached=false;saveBlocked=false;externallySavedHash=receipt.sha256
+                sourceSavedContentHash=receipt.sha256;lastExternalWriteFailed=false
                 if(challenge?.name!=null){documentName=challenge.name;properties=properties?.copy(displayName=challenge.name)}
                 exportMessage=R.string.reader_source_save_ok
                 if(exitAfterSave){exitAfterSave=false;signalExit()}else if(saveThenOpen)executePendingOpen()
             },onFailure={error->
-                saveBlocked=true;cancelDocumentOpen()
+                lastExternalWriteFailed=true;saveBlocked=true;cancelDocumentOpen()
                 exportMessage=if(error is SourceSaveConflict)R.string.reader_source_save_conflict else R.string.reader_source_save_failed
             })
             scheduleRefinement()
@@ -259,7 +266,9 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         session.exportNewDocument(target,expected){result->
             if(!cleared){
                 editBusy=false;scheduleRefinement()
-                result.getOrNull()?.let{externallySavedHash=it.sha256}
+                result.fold(onSuccess={
+                    externallySavedHash=it.sha256;exportedContentHash=it.sha256;lastExternalWriteFailed=false
+                },onFailure={lastExternalWriteFailed=true})
                 exportMessage=if(result.isSuccess)R.string.reader_export_ok else R.string.reader_export_failed
             }
         }
@@ -543,6 +552,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         recoveryPrompt=false;recoveryChoices=emptyList();recoveryRejected=0
         exportMessage=null;sourceDetached=false;saveBlocked=false;savePendingUri=null;replacementChallenge=null
         currentContentHash=null;externallySavedHash=null
+        sourceSavedContentHash=null;exportedContentHash=null;lastExternalWriteFailed=false
         editAllowed=false;localRevision=0L;localCanUndo=false;localCanRedo=false
         localEditNotice=LocalEditNotice.NONE;localEditError=null
         pendingHighlight=null;pendingHighlightSpan=null;pendingHighlightSlot=null
@@ -592,7 +602,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 recoveryChoices=frame.recoveries.choices;recoveryRejected=frame.recoveries.rejected
                 if(opening && !frame.sourceDetached && (recoveryChoices.isNotEmpty() || recoveryRejected>0)){recoveryInitial=true;recoveryPrompt=true}
                 currentContentHash=frame.contentHash
-                if(opening)externallySavedHash=frame.sourceHash
+                if(opening){externallySavedHash=frame.sourceHash;sourceSavedContentHash=frame.sourceHash}
                 sourceDetached=frame.sourceDetached;saveBlocked=frame.sourceSaveBlocked
                 acceptNotes(frame);pageHighlights=frame.managedHighlights
                 editAllowed=frame.editAllowed;localRevision=frame.localRevision

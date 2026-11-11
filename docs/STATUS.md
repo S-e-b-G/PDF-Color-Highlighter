@@ -551,3 +551,9 @@ Fix real-PDF geometry regression: heading38 glyph paint quads ->1 reference band
 
 ## M3r — source implemented; runtime acceptance pending
 Uniformiser document scans current working version, reports highlight/affected-page counts, confirms once and supports one whole-document Undo. No-op and Cancel do not create edit commands.14 pure planner JVM tests and2 synthetic UI review/commit cases added. Complete provided PDF now tests live native fonts/extraction/selection/render, multi-page repair and Undo/Redo in isolated app only; private fixture excluded from working APK/reports. Expected724/24/50 all PASS. Source unchanged until Save.
+
+
+## M3t — external-save presentation; platform acceptance pending
+Persistent saved/copy/unsaved/recovered/failure/unknown label and observable Save asterisk.
+M3s accepted754/26/58; M3t expected770/26/62, not executed by author.
+See M3t-ACCEPTANCE.md. Settings/palette/autosave remain pending.

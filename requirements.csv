@@ -62,3 +62,4 @@
 "NOTE-01","Six direct native note tools; place/edit/recolor/confirmed delete","M3s","Source supplied; platform acceptance pending","New eight workflow cases; NativeNotesInstrumentation"
 "NOTE-02","Notes share highlight history/save/export/recovery","M3s","Source supplied; platform acceptance pending","Mixed-history workflow and native immutable PDF round-trip"
 "NOTE-03","No placement after pinch/pan/cancel; empty text page supported","M3s","Source supplied; platform acceptance pending","NoteGestureInstrumentation; note-pinch-never-places workflow"
+"SAVE-STATUS-01","Persistent original/copy/unsaved/recovered/failure state and Save asterisk","M3t","Source supplied; platform acceptance pending","ExternalSavePresentationTest and four save-indicator workflows"
