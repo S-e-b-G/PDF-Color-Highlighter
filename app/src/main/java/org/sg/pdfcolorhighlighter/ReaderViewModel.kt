@@ -444,7 +444,11 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         startEditFeedback()
         editBusy=true;localEditError=null;stopRefinement();selectionQueue.cancel();pendingViewport=viewportState
         reselectHighlightId=styled?.edit?.id
-        session.replaceLocalHighlight(before,styled,java.util.UUID.randomUUID().toString(),uri,::acceptLocalEdit)
+        session.replaceLocalHighlight(before,styled,java.util.UUID.randomUUID().toString(),uri){result->
+            // Enter Hand only after the durable deletion succeeded; a failed edit is not a deletion.
+            if(styled==null && result.isSuccess)stopPreview()
+            acceptLocalEdit(result)
+        }
     }
     private var pendingHighlight:HighlightEdit?=null
     private var pendingHighlightSpan:SelectionSpan?=null
