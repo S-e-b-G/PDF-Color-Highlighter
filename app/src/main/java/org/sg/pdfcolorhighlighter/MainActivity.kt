@@ -124,7 +124,16 @@ class MainActivity : ComponentActivity() {
                     dismissButton={TextButton(onClick={reader.cancelDocumentRepair()}){Text(getString(R.string.reader_contents_cancel))}})
             }
             LaunchedEffect(reader.pickerRequest){if(reader.consumePickerLaunch())launchDocumentPicker()}
+            if(reader.settingsOpen){
+                org.sg.pdfcolorhighlighter.ui.PaletteSettingsDialog(reader.paletteDraft,reader.paletteBusy,reader.paletteWarning,
+                    {i,value->reader.updatePaletteDraft(i,value)},{reader.resetPaletteSlot(it)},{reader.resetPalette()},
+                    {reader.applyPalette()},{reader.closeSettings()})
+            }
             ReaderScreen(
+                highlightEditorRequest=reader.highlightEditorRequest,highlightEditorCloseSerial=reader.highlightEditorCloseSerial,
+                annotationPalette=reader.palette,selectedHighlightColor=reader.selectedHighlight?.edit?.color,
+                canOpenSettings=reader.canOpenSettings,onSettings={reader.openSettings()},
+                onDeleteHighlight={reader.deleteSelectedHighlight()},
                 noteSlot=reader.noteSlot,canUseNotes=reader.canUseNotes,noteBounds=reader.nativePageBounds,
                 selectedNote=reader.selectedNote,onChooseNoteSlot={reader.chooseNoteSlot(it)},onNoteTap={reader.tapNote(it)},
                 onEditNote={reader.openNoteEditor()},onDeleteNote={reader.deleteNote()},

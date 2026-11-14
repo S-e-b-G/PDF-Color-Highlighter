@@ -38,8 +38,6 @@ class PdfViewportView(context: Context) : View(context) {
     private var selectionActive=false
     private var selectionPinchCancelled=false
     private val selectionPaint=Paint(Paint.ANTI_ALIAS_FLAG)
-    private val previewPalette=intArrayOf(0xFFFFAD5B.toInt(),0xFF00FF00.toInt(),0xFFFC3636.toInt(),
-        0xFFFFFF00.toInt(),0xFFD1DFEB.toInt(),0xFFFCD7FB.toInt())
     private var nativeSelectionActive=false
     fun setNativeSelectionActive(value:Boolean){nativeSelectionActive=value;invalidate()}
     private var handlesEnabled=false
@@ -59,6 +57,12 @@ class PdfViewportView(context: Context) : View(context) {
     var onNoteTap: ((TextPoint)->Boolean)?=null
     private var notePageBounds:TextBounds?=null
     fun setNotePageBounds(bounds:TextBounds?){notePageBounds=bounds}
+    private var paletteColors=AnnotationPalette.DEFAULT.colors
+    private var selectedRgb:Int?=null
+    fun setPalette(colors:List<Int>,selected:Int?){
+        if(paletteColors!=colors || selectedRgb!=selected){paletteColors=colors.toList();selectedRgb=selected;invalidate()}
+    }
+    private fun previewColor(slot:Int)=(0xff000000.toInt() or (selectedRgb ?: paletteColors[slot]))
     private fun noteNativeAt(x:Float,y:Float):TextPoint? {
         val b=notePageBounds ?: return null
         val p=geometry.placement
@@ -228,7 +232,7 @@ class PdfViewportView(context: Context) : View(context) {
             val cx=h.center.x+delta.x;val cy=h.center.y+delta.y
             handlePaint.alpha=255;handlePaint.style=Paint.Style.STROKE;handlePaint.strokeWidth=2f*density
             handlePaint.color=Color.DKGRAY;canvas.drawLine(ax,ay,cx,cy,handlePaint)
-            handlePaint.style=Paint.Style.FILL;handlePaint.color=previewPalette[checkNotNull(previewSlot)]
+            handlePaint.style=Paint.Style.FILL;handlePaint.color=previewColor(checkNotNull(previewSlot))
             canvas.drawCircle(cx,cy,layout.radius,handlePaint)
             handlePaint.style=Paint.Style.STROKE;handlePaint.color=Color.DKGRAY
             canvas.drawCircle(cx,cy,layout.radius,handlePaint)
@@ -249,7 +253,7 @@ class PdfViewportView(context: Context) : View(context) {
         val slot=previewSlot ?: return
         if(previewSpan==null) return
         val mapping=coordinateMap() ?: return
-        selectionPaint.color=previewPalette[slot];selectionPaint.alpha=204
+        selectionPaint.color=previewColor(slot);selectionPaint.alpha=204
         selectionPaint.blendMode=android.graphics.BlendMode.MULTIPLY
         for (band in previewBands) {
             val a=mapping.toView(TextPoint(band.left,band.top))
@@ -445,3 +449,4 @@ class PdfViewportView(context: Context) : View(context) {
     }
     override fun performClick(): Boolean { super.performClick(); return true }
 }
+

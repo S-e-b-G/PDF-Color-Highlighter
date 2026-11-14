@@ -19,12 +19,15 @@ object NativeNoteEdits {
         if((a.flags and ((1 shl 0) or (1 shl 1) or (1 shl 5) or (1 shl 6) or (1 shl 7) or (1 shl 9)))!=0)return null
         val rgb=a.color
         if(rgb.size!=3)return null
-        val slot=(0..5).singleOrNull{s->val c=NotePolicy.color(s)
+        val legacySlot=(0..5).singleOrNull{s->val c=NotePolicy.color(s)
             abs(rgb[0]-((c shr 16) and 255)/255f)<.002f &&
             abs(rgb[1]-((c shr 8) and 255)/255f)<.002f && abs(rgb[2]-(c and 255)/255f)<.002f
-        } ?: return null
+        }
+        val slot=string(a,"SGCHSlot")?.toIntOrNull()?.takeIf{it in 0..5} ?: legacySlot ?: return null
+        if(rgb.any{!it.isFinite() || it !in 0f..1f})return null
+        val actual=(kotlin.math.round(rgb[0]*255).toInt() shl 16) or (kotlin.math.round(rgb[1]*255).toInt() shl 8) or kotlin.math.round(rgb[2]*255).toInt()
         val r=a.bounds
-        return ManagedNote(id(a),page,slot,TextBounds(r.x0,r.y0,r.x1,r.y1),a.contents ?: "")
+        return ManagedNote(id(a),page,slot,TextBounds(r.x0,r.y0,r.x1,r.y1),a.contents ?: "",AnnotationPalette.storedColor(actual,slot))
     }
     fun list(pdf:PDFDocument,index:Int):List<ManagedNote> {
         val page=pdf.loadPage(index) as PDFPage
@@ -45,8 +48,10 @@ object NativeNoteEdits {
         }finally{page.destroy()}
     }
     private fun style(a:PDFAnnotation,n:ManagedNote) {
-        val c=NotePolicy.color(n.slot)
+        val c=n.color
         a.setColor(floatArrayOf(((c shr 16) and 255)/255f,((c shr 8) and 255)/255f,(c and 255)/255f))
+        val obj=a.`object`
+        try{obj.put("SGCHSlot",n.slot.toString())}finally{obj.destroy()}
         a.setContents(n.contents);a.update()
     }
     fun add(pdf:PDFDocument,n:ManagedNote) {
@@ -82,3 +87,4 @@ object NativeNoteEdits {
         }finally{page.destroy()}
     }
 }
+

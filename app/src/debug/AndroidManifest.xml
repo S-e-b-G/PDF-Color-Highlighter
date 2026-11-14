@@ -53,4 +53,6 @@
         android:targetPackage="${applicationId}" android:label="Numeric real-PDF geometry and undoable page repair" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.NativeNotesInstrumentation" android:targetPackage="${applicationId}" android:label="Native notes workflow" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.NoteGestureInstrumentation" android:targetPackage="${applicationId}" android:label="Note gestures and empty text page" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.NativePaletteInstrumentation" android:targetPackage="${applicationId}" android:label="Native palette proof" />
 </manifest>
+

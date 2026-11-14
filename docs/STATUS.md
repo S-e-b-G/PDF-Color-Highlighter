@@ -1,3 +1,14 @@
+# Current increment — M3v persistent palette; platform acceptance pending
+
+Expected790 JVM/27 native/68 workflows. Six editable shared presets with validated persisted
+HEX settings; native RGB preserved independently of preset slots. New palette/old annotation
+coverage added without removing accepted M3u770/26/62 cases or R1/R3/R4 repairs.
+M3u80 percent opacity and deletion -> Hand retained. B/C satisfied by accepted recovery/exit
+warning behavior; no external autosave timer. See M3v-ACCEPTANCE.md for scope and remaining work.
+Author did not run PowerShell/Kotlin/Android; no accepted M3v runtime claim yet.
+
+## Historical status below
+
 # Current increment — M3s native notes (source supplied; execution pending)
 
 Accepted historical baseline: M3r-R2, 734 JVM tests / 24 native suites / 50 workflows,
@@ -557,3 +568,4 @@ Uniformiser document scans current working version, reports highlight/affected-p
 Persistent saved/copy/unsaved/recovered/failure/unknown label and observable Save asterisk.
 M3s accepted754/26/58; M3t expected770/26/62, not executed by author.
 See M3t-ACCEPTANCE.md. Settings/palette/autosave remain pending.
+

@@ -27,6 +27,48 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private val store = RecentDocumentsStore(
         File(application.filesDir, "reader-recents-v1.bin")
     )
+
+    private val paletteStore=org.sg.pdfcolorhighlighter.data.PaletteStore(File(application.filesDir,"reader-palette-v1.bin"))
+    var palette by mutableStateOf(AnnotationPalette.DEFAULT)
+        private set
+    var settingsOpen by mutableStateOf(false)
+        private set
+    var paletteDraft by mutableStateOf(AnnotationPalette.DEFAULT.colors.map{AnnotationPalette.hex(it)})
+        private set
+    var paletteBusy by mutableStateOf(false)
+        private set
+    var paletteWarning by mutableStateOf(false)
+        private set
+    private var paletteLoaded=false
+    val canOpenSettings:Boolean get()=ready && paletteLoaded && !loading && !editBusy && !paletteBusy && !noteEditorOpen &&
+        !navigationPrompt && !exitPrompt && !recoveryPrompt && replacementChallenge==null && !documentRepairBusy && documentRepairReview==null
+    fun openSettings(){
+        if(!canOpenSettings)return
+        stopPreview();paletteDraft=palette.colors.map{AnnotationPalette.hex(it)};settingsOpen=true
+    }
+    fun closeSettings(){if(!paletteBusy)settingsOpen=false}
+    fun updatePaletteDraft(slot:Int,text:String){
+        if(!settingsOpen || paletteBusy || slot !in 0..5)return
+        paletteDraft=paletteDraft.mapIndexed{i,s->if(i==slot)text.take(16)else s}
+    }
+    fun resetPaletteSlot(slot:Int){updatePaletteDraft(slot,AnnotationPalette.hex(AnnotationPalette.DEFAULT[slot]))}
+    fun resetPalette(){if(settingsOpen && !paletteBusy)paletteDraft=AnnotationPalette.DEFAULT.colors.map{AnnotationPalette.hex(it)}}
+    fun applyPalette(){
+        if(!settingsOpen || paletteBusy)return
+        val next=AnnotationPalette.draft(paletteDraft) ?: return
+        if(next==palette && !paletteWarning){settingsOpen=false;return}
+        paletteBusy=true
+        io.execute{
+            val result=runCatching{paletteStore.write(next)}
+            main.post{if(!cleared){
+                paletteBusy=false
+                result.fold(onSuccess={palette=next;paletteWarning=false;settingsOpen=false;stopPreview()},
+                    onFailure={paletteWarning=true})
+            }}
+        }
+    }
+    fun deleteSelectedHighlight(){if(!settingsOpen && !paletteBusy && !noteEditorOpen)selectedHighlight?.let{changeHighlight(it,null)}}
+
     private val selectionWorker=Executors.newSingleThreadExecutor()
     private val selectionQueue=SelectionPreviewQueue()
     private val previewRetention=PreviewRetentionState()
@@ -75,6 +117,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         exitPending=false;return true
     }
     fun requestExit(){
+        if(settingsOpen){closeSettings();return}
         if(noteEditorOpen){cancelNoteEditor();return}
         when(ReaderExitPolicy.decide(hasUnsavedContent,editBusy)){
             ReaderExitDecision.WAIT->Unit // Never leave during an unconfirmed source write/edit.
@@ -128,7 +171,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private var pickerLaunchPending=false
     private var pickerAwaitingResult=false
     fun requestDocumentOpen(uri:String?){
-        if(!ready || loading || editBusy || noteEditorOpen || replacementChallenge!=null || navigationPrompt || exitPrompt)return
+        if(!ready || loading || editBusy || settingsOpen || noteEditorOpen || replacementChallenge!=null || navigationPrompt || exitPrompt)return
         pendingDestination=uri;hasPendingDestination=true
         if(hasUnsavedContent)navigationPrompt=true else executePendingOpen()
     }
@@ -247,7 +290,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         android.util.Log.i("PdfEditFeedback","requestToDrawMs=${android.os.SystemClock.uptimeMillis()-editFeedbackAt}")
     }
     private fun startEditFeedback(){bitmap?.let{session.retainEditResolution(it.width,it.height)};editFeedbackAt=android.os.SystemClock.uptimeMillis();editFeedbackSerial=null;exportMessage=null}
-    val canExport:Boolean get()=!cleared && !loading && !editBusy && !noteEditorOpen && bitmap!=null &&
+    val canExport:Boolean get()=!cleared && !loading && !editBusy && !settingsOpen && !noteEditorOpen && bitmap!=null &&
         activeUri!=null && localEditNotice==LocalEditNotice.NONE
     fun beginExport():String? {
         if(!canExport)return null
@@ -288,7 +331,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private var noteDraftPoint:TextPoint?=null
     private var noteDraftId:String?=null
     private var reselectNoteId:String?=null
-    val canUseNotes:Boolean get()=!cleared && !loading && !editBusy && editAllowed && bitmap!=null && !noteEditorOpen
+    val canUseNotes:Boolean get()=!cleared && !settingsOpen && !loading && !editBusy && editAllowed && bitmap!=null && !noteEditorOpen
     fun chooseNoteSlot(slot:Int){
         require(slot in 0..5)
         if(!canUseNotes)return
@@ -296,7 +339,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         if(selected!=null){
             noteSlot=slot
             // Same-color tap is not deletion: notes use an explicit Delete command.
-            if(selected.slot!=slot)changeNote(selected,selected.copy(slot=slot))
+            if(selected.color!=palette[slot])changeNote(selected,selected.copy(slot=slot,rgb=AnnotationPalette.storedColor(palette[slot],slot)))
         }else{stopPreview();noteSlot=slot}
     }
     fun tapNote(point:TextPoint):Boolean {
@@ -329,7 +372,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         val before=selectedNote
         val next=runCatching{
             if(before!=null){require(noteDraftId==before.id);before.copy(contents=noteDraft)}
-            else NotePolicy.place(page,checkNotNull(noteSlot),checkNotNull(noteDraftPoint),checkNotNull(nativePageBounds),noteDraft,checkNotNull(noteDraftId))
+            else NotePolicy.place(page,checkNotNull(noteSlot),checkNotNull(noteDraftPoint),checkNotNull(nativePageBounds),noteDraft,checkNotNull(noteDraftId)).let{it.copy(rgb=AnnotationPalette.storedColor(palette[it.slot],it.slot))}
         }.getOrElse{localEditError=R.string.reader_note_invalid;return}
         if(before==next){cancelNoteEditor();return}
         changeNote(before,next)
@@ -359,6 +402,10 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private var pageHighlights:List<ManagedHighlight> = emptyList()
     var selectedHighlight by mutableStateOf<ManagedHighlight?>(null)
         private set
+    var highlightEditorRequest by mutableStateOf(0L)
+        private set
+    var highlightEditorCloseSerial by mutableStateOf(0L)
+        private set
     private var reselectHighlightId:String?=null
     fun tapHighlight(point:TextPoint):Boolean {
         if(loading || editBusy || !editAllowed)return false
@@ -369,19 +416,24 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         if(hits.isEmpty())return false
         if(hits.size!=1){localEditError=R.string.reader_highlight_overlap;return true}
         val item=hits.single()
+        val openEditor=HighlightCommentPolicy.openOnTap(selectedHighlight?.edit?.id,item.edit.id)
         val span=ManagedHighlightSelection.span(snapshot,item)
         if(span==null){localEditError=R.string.reader_highlight_unresolved;return true}
         selectionQueue.cancel();selectedHighlight=item;previewSlot=item.edit.slot
         previewSpan=span;previewCommitted=true;previewRejection=null;previewRetention.commit(snapshot,span)
         localEditError=null
+        if(openEditor)highlightEditorRequest++
         return true
     }
 
     fun editHighlightContents(contents:String){
         val before=selectedHighlight ?: return
-        if(contents.length>100000){localEditError=R.string.reader_contents_too_long;return}
-        if(contents==before.contents)return
-        changeHighlight(before,before.copy(contents=contents,mode=TextMode.MANUAL))
+        when(HighlightCommentPolicy.submission(contents,before.contents,loading || editBusy)){
+            CommentSubmission.WAIT->return
+            CommentSubmission.INVALID->{localEditError=R.string.reader_contents_too_long;return}
+            CommentSubmission.UNCHANGED->{highlightEditorCloseSerial++;return}
+            CommentSubmission.COMMIT->changeHighlight(before,before.copy(contents=contents,mode=TextMode.MANUAL),true)
+        }
     }
 
     val canSmoothPage:Boolean get()=!cleared && !loading && !editBusy && editAllowed && pageHighlights.isNotEmpty()
@@ -436,7 +488,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
     private fun clearHighlightTarget(){selectedHighlight=null;reselectHighlightId=null}
 
-    private fun changeHighlight(before:ManagedHighlight,after:ManagedHighlight?){
+    private fun changeHighlight(before:ManagedHighlight,after:ManagedHighlight?,closeEditor:Boolean=false){
         if(loading || editBusy || !editAllowed)return
         val uri=activeUri ?: return
         val styled=after?.let{item->previewSpan?.let{span->item.copy(edit=item.edit.copy(appearance=NativeHighlightAppearance.forSpan(span)))} ?: item}
@@ -447,6 +499,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         session.replaceLocalHighlight(before,styled,java.util.UUID.randomUUID().toString(),uri){result->
             // Enter Hand only after the durable deletion succeeded; a failed edit is not a deletion.
             if(styled==null && result.isSuccess)stopPreview()
+            if(closeEditor && HighlightCommentPolicy.closeAfterResult(result.isSuccess))highlightEditorCloseSerial++
             acceptLocalEdit(result)
         }
     }
@@ -515,6 +568,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     init {
         io.execute {
+            val paletteResult=runCatching{paletteStore.read()}
             val result = runCatching { store.read() }
             main.post {
                 if (!cleared) {
@@ -528,6 +582,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                             storageWarning = true
                         },
                     )
+                    paletteResult.fold(onSuccess={palette=it},onFailure={paletteWarning=true})
+                    paletteLoaded=true
                     ready = true
                     pendingRestore?.let { (uri, index, state) ->
                         pendingRestore = null
@@ -769,12 +825,12 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     fun choosePreviewSlot(slot: Int) {
         require(slot in 0..5)
         val snapshot=textSnapshot ?: return
-        if (loading || editBusy || noteEditorOpen || snapshot.status!=PageTextStatus.READY) return
+        if (loading || editBusy || settingsOpen || noteEditorOpen || snapshot.status!=PageTextStatus.READY) return
         noteSlot=null;selectedNote=null
         val selected=selectedHighlight
         if(selected!=null){
-            if(selected.edit.slot==slot)changeHighlight(selected,null)
-            else changeHighlight(selected,selected.copy(edit=selected.edit.copy(slot=slot)))
+            if(selected.edit.color==palette[slot])changeHighlight(selected,null)
+            else changeHighlight(selected,selected.copy(edit=selected.edit.copy(slot=slot,rgb=AnnotationPalette.storedColor(palette[slot],slot))))
         }else if(previewSlot==slot)stopPreview() else previewSlot=slot
     }
     fun cancelPreviewSelection() {
@@ -844,7 +900,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         if(selected!=null){changeHighlight(selected,selected.resized(span));return}
         val edit=try{
             if(pendingHighlightSpan===span && pendingHighlightSlot==slot)checkNotNull(pendingHighlight)
-            else HighlightEdit.from(page,slot,span).also{pendingHighlight=it;pendingHighlightSpan=span;pendingHighlightSlot=slot}
+            else HighlightEdit.from(page,slot,span).copy(rgb=AnnotationPalette.storedColor(palette[slot],slot)).also{pendingHighlight=it;pendingHighlightSpan=span;pendingHighlightSlot=slot}
         }catch(_:Exception){localEditError=R.string.reader_edit_failed;return}
         startEditFeedback()
         editBusy=true;localEditError=null;stopRefinement();selectionQueue.cancel()

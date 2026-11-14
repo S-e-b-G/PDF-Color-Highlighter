@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="palette_explanation">Couleurs partagées des outils de surlignage et de note. Modifier un préréglage ne recolore pas les annotations existantes. Les versions locales et l’avertissement de sortie restent actifs ; aucun enregistrement automatique externe n’est ajouté.</string>
+    <string name="palette_storage_error">Lecture ou enregistrement des préférences non confirmé. Vos annotations ne sont pas modifiées. Réessayez ou annulez.</string>
+    <string name="palette_hex_hint">RGB : six chiffres hexadécimaux, avec ou sans #.</string>
+    <string name="palette_duplicate">Chaque couleur doit être différente.</string>
+    <string name="palette_reset_slot">Défaut</string>
+    <string name="palette_reset_all">Rétablir les six couleurs par défaut</string>
+    <string name="palette_apply">Appliquer la palette</string>
+    <string name="palette_delete_highlight">Supprimer le surlignage</string>
+</resources>

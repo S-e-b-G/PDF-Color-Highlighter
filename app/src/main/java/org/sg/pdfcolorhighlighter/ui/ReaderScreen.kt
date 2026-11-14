@@ -47,14 +47,14 @@ import org.sg.pdfcolorhighlighter.domain.PageJumpInput
 import org.sg.pdfcolorhighlighter.domain.*
 import org.sg.pdfcolorhighlighter.domain.RecentDocument
 
-private val palette = listOf(Color(0xFFFFAD5B), Color(0xFF00FF00), Color(0xFFFC3636),
-    Color(0xFFFFFF00), Color(0xFFD1DFEB), Color(0xFFFCD7FB))
 private val slotNames = listOf(R.string.reader_slot_1, R.string.reader_slot_2, R.string.reader_slot_3,
     R.string.reader_slot_4, R.string.reader_slot_5, R.string.reader_slot_6)
 
 /** M2b.2: centered page-navigation group, page-jump dialog and fading press feedback. */
 @Composable
 fun ReaderScreen(
+    highlightEditorRequest:Long,highlightEditorCloseSerial:Long,
+    annotationPalette:AnnotationPalette,selectedHighlightColor:Int?,canOpenSettings:Boolean,onSettings:()->Unit,onDeleteHighlight:()->Unit,
     externalSaveState:()->ExternalSaveState,unsavedContent:Boolean,
     noteSlot:Int?,canUseNotes:Boolean,noteBounds:TextBounds?,selectedNote:ManagedNote?,
     onChooseNoteSlot:(Int)->Unit,onNoteTap:(TextPoint)->Boolean,onEditNote:()->Unit,onDeleteNote:()->Unit,
@@ -84,12 +84,27 @@ fun ReaderScreen(
     onRecent: (String) -> Unit, onRemoveRecent: (String) -> Unit,
     onViewportChanged: (PageViewportState) -> Unit,
 ) {
+    val palette=annotationPalette.colors.map{Color(0xff000000.toInt() or it)}
+    val activeHighlight=if(highlightId!=null)selectedHighlightColor?.let{annotationPalette.match(it)}else previewSlot
+    val activeNote=if(selectedNote!=null)annotationPalette.match(selectedNote.color)else noteSlot
+    var helpOpen by rememberSaveable { mutableStateOf(false) }
     var saveConfirm by rememberSaveable { mutableStateOf(false) }
     var deleteNoteConfirm by rememberSaveable(selectedNote?.id) { mutableStateOf(false) }
     var exportDismissed by remember(exportMessage){mutableStateOf(false)}
     var quotationOpen by rememberSaveable { mutableStateOf(false) }
     var contentsDraft by rememberSaveable { mutableStateOf("") }
     var contentsDraftId by rememberSaveable { mutableStateOf<String?>(null) }
+    var handledEditorRequest by rememberSaveable { mutableStateOf(0L) }
+    var handledEditorClose by rememberSaveable { mutableStateOf(0L) }
+    LaunchedEffect(highlightEditorRequest,highlightId){
+        if(highlightEditorRequest>handledEditorRequest){
+            handledEditorRequest=highlightEditorRequest
+            if(highlightContents!=null){contentsDraft=highlightContents;contentsDraftId=highlightId;quotationOpen=true}
+        }
+    }
+    LaunchedEffect(highlightEditorCloseSerial){
+        if(highlightEditorCloseSerial>handledEditorClose){handledEditorClose=highlightEditorCloseSerial;quotationOpen=false}
+    }
     var diagnosticReport by remember { mutableStateOf<SelectionLayoutReport?>(null) }
     LaunchedEffect(textSnapshot) { diagnosticReport=null }
     val previewEnabled=!loading && textSnapshot?.status==PageTextStatus.READY &&
@@ -107,12 +122,12 @@ fun ReaderScreen(
                     val tablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
                     when {
                         maxWidth >= 768.dp -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null)
+                            PreviewColorTools(palette,activeHighlight, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null || selectedNote!=null || highlightId!=null)
                             Spacer(Modifier.weight(1f)); Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true},unsavedContent); Spacer(Modifier.weight(1f))
-                            NoteColorTools(noteSlot,canUseNotes,onChooseNoteSlot)
+                            NoteColorTools(palette,activeNote,canUseNotes,onChooseNoteSlot)
                         }
                         !tablet -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row { PreviewColorTools(previewSlot, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true},unsavedContent) }; Row { NoteColorTools(noteSlot,canUseNotes,onChooseNoteSlot) }
+                            Row { PreviewColorTools(palette,activeHighlight, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null || selectedNote!=null || highlightId!=null) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true},unsavedContent) }; Row { NoteColorTools(palette,activeNote,canUseNotes,onChooseNoteSlot) }
                         }
                         else -> Text(stringResource(R.string.reader_width_blocked),
                             Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
@@ -153,6 +168,7 @@ fun ReaderScreen(
                                 view.onNoteTap=onNoteTap;view.setNotePageBounds(noteBounds);view.onHighlightTap=onHighlightTap;view.onFrameDrawn=onFrameDrawn
                                 view.onRenderViewport = onRenderViewport
                                 view.onRenderGesture = onRenderGesture
+                                view.setPalette(annotationPalette.colors,selectedHighlightColor)
                                 view.setInteractionEnabled(!loading && !editBusy)
                                 view.show(bitmap, viewportState, pageWidth, pageHeight, frameSerial,pageIdentity)
                                 view.setNativeSelectionActive(highlightContents!=null && previewCommitted)
@@ -197,6 +213,7 @@ fun ReaderScreen(
                                     }
                                     quotationOpen=true
                                 },enabled=!loading) { Text(stringResource(R.string.selection_preview_quotation)) }
+                                if(highlightContents!=null && activeHighlight==null)TextButton(onClick=onDeleteHighlight,enabled=!loading && !editBusy){Text(stringResource(R.string.palette_delete_highlight))}
                                 if(highlightContents!=null)TextButton(onClick=onSmoothHighlight,enabled=!loading){Text(stringResource(R.string.reader_smooth_highlight))}
                                 if(localEditError!=null)TextButton(onClick=onCommitHighlight,enabled=canCommitHighlight && !loading){Text(stringResource(R.string.reader_edit_retry))}
                             }
@@ -239,10 +256,12 @@ fun ReaderScreen(
                 HorizontalDivider()
                 ReaderFooter(documentName, page, pageCount, loading, bitmap != null,
                     { openMenu = true }, onPrevious, onNext, onFit, onFitWidth, onHand,
-                    onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = noteSlot==null && (previewSlot==null || !previewEnabled))
+                    onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = selectedNote==null && noteSlot==null && (previewSlot==null || !previewEnabled),
+                    onSettings=onSettings,canOpenSettings=canOpenSettings,onHelp={helpOpen=true},canOpenHelp=!loading && !editBusy)
             }
         }
 
+        if(helpOpen) ReaderHelpDialog { helpOpen=false }
         if(deleteNoteConfirm && selectedNote!=null){
             AlertDialog(onDismissRequest={deleteNoteConfirm=false},title={Text(stringResource(R.string.reader_note_delete_title))},
                 text={Text(stringResource(R.string.reader_note_delete_confirm))},
@@ -282,7 +301,7 @@ fun ReaderScreen(
         }
         diagnosticReport?.let { report -> SelectionDiagnosticDialog(report) { diagnosticReport=null } }
         if(quotationOpen && highlightContents!=null){
-            HighlightContentsDialog(contentsDraft,{contentsDraft=it},onChangeContents){quotationOpen=false}
+            HighlightContentsDialog(contentsDraft,{contentsDraft=it},onChangeContents,editBusy,localEditError){quotationOpen=false}
         }
         if (quotationOpen && previewSpan!=null && highlightContents==null) {
             AlertDialog(onDismissRequest={ quotationOpen=false },
@@ -341,7 +360,7 @@ private fun ReaderFooter(
     documentName: String?, page: Int, pageCount: Int, loading: Boolean, hasPage: Boolean,
     onOpen: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit, onFit: () -> Unit,
     onFitWidth: () -> Unit, onHand: () -> Unit, onPageNumber: () -> Unit, onProperties: () -> Unit,
-    navigationActive: Boolean,
+    navigationActive: Boolean,onSettings:()->Unit,canOpenSettings:Boolean,onHelp:()->Unit,canOpenHelp:Boolean,
 ) {
     val barColor = MaterialTheme.colorScheme.surface.copy(alpha = 1f)
     BoxWithConstraints(Modifier.fillMaxWidth().background(barColor).zIndex(1f)) {
@@ -357,7 +376,8 @@ private fun ReaderFooter(
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End) {
                     NavigationButton(loading, hasPage, onHand, navigationActive)
-                    UnavailableIcon(R.drawable.reader_settings, stringResource(R.string.reader_settings))
+                    PulseIcon(R.drawable.reader_settings, stringResource(R.string.reader_settings),canOpenSettings,onSettings)
+                    PulseIcon(R.drawable.reader_help,stringResource(R.string.reader_help),canOpenHelp,onHelp)
                 }
             }
         } else {
@@ -365,7 +385,8 @@ private fun ReaderFooter(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Open(loading, onOpen); DocumentLabel(documentName, !loading && hasPage, onProperties)
                     NavigationButton(loading, hasPage, onHand, navigationActive)
-                    UnavailableIcon(R.drawable.reader_settings, stringResource(R.string.reader_settings))
+                    PulseIcon(R.drawable.reader_settings, stringResource(R.string.reader_settings),canOpenSettings,onSettings)
+                    PulseIcon(R.drawable.reader_help,stringResource(R.string.reader_help),canOpenHelp,onHelp)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically) {
@@ -444,7 +465,7 @@ private fun PulseAction(enabled: Boolean, action: () -> Unit, modifier: Modifier
 
 
 @Composable
-private fun RowScope.PreviewColorTools(active: Int?, enabled: Boolean, choose: (Int)->Unit,onHand:()->Unit,noteActive:Boolean=false) {
+private fun RowScope.PreviewColorTools(palette:List<Color>,active: Int?, enabled: Boolean, choose: (Int)->Unit,onHand:()->Unit,noteActive:Boolean=false) {
     palette.forEachIndexed { index,color ->
         val description=stringResource(R.string.selection_preview_tool,stringResource(slotNames[index]))
         PulseAction(enabled,{ choose(index) },Modifier.size(40.dp),description,isSelected=active==index) {
@@ -463,7 +484,7 @@ private fun RowScope.PreviewColorTools(active: Int?, enabled: Boolean, choose: (
 }
 
 @Composable
-private fun RowScope.NoteColorTools(active:Int?,enabled:Boolean,choose:(Int)->Unit) {
+private fun RowScope.NoteColorTools(palette:List<Color>,active:Int?,enabled:Boolean,choose:(Int)->Unit) {
     palette.forEachIndexed{index,color->
         val description=stringResource(R.string.reader_note_tool,stringResource(slotNames[index]))
         PulseAction(enabled,{choose(index)},Modifier.size(48.dp),description,isSelected=active==index){

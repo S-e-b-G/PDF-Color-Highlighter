@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_comment_dismiss_hint">Touchez hors de la fenêtre (ou Retour) pour appliquer. Annuler abandonne le brouillon. En cas d’échec, la fenêtre reste ouverte pour réessayer.</string>
+</resources>

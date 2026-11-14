@@ -4,16 +4,17 @@ package org.sg.pdfcolorhighlighter.domain
 import java.util.UUID
 
 /** Copied app-owned native Text state, never a native handle or a sidecar. */
-data class ManagedNote(val id:String,val page:Int,val slot:Int,val bounds:TextBounds,val contents:String) {
+data class ManagedNote(val id:String,val page:Int,val slot:Int,val bounds:TextBounds,val contents:String,val rgb:Int?=null) {
+    val color:Int get()=rgb ?: AnnotationPalette.DEFAULT[slot]
     init {
+        require(rgb==null || rgb in 0..0xffffff)
         require(Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").matches(id))
         require(page>=0 && slot in 0..5 && bounds.width>0f && bounds.height>0f)
         require(NotePolicy.validText(contents))
     }
 }
 object NotePolicy {
-    private val palette=intArrayOf(0xFFAD5B,0x00FF00,0xFC3636,0xFFFF00,0xD1DFEB,0xFCD7FB)
-    fun color(slot:Int):Int { require(slot in 0..5);return palette[slot] }
+    fun color(slot:Int):Int { require(slot in 0..5);return AnnotationPalette.DEFAULT[slot] }
     fun validText(text:String)=text.isNotBlank() && text.length<=100000 && '\u0000' !in text
     fun place(page:Int,slot:Int,point:TextPoint,sheet:TextBounds,contents:String,id:String=UUID.randomUUID().toString()):ManagedNote {
         require(sheet.width>0f && sheet.height>0f)
@@ -27,3 +28,4 @@ object NotePolicy {
         point.x in it.bounds.left..it.bounds.right && point.y in it.bounds.top..it.bounds.bottom
     }
 }
+
