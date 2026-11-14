@@ -41,11 +41,18 @@ object ManagedHighlightSelection {
         }
         if(matches.isEmpty())return null
         fun center(g:TextGlyph):TextPoint {val b=g.quad.bounds;return TextPoint((b.left+b.right)/2,(b.top+b.bottom)/2)}
-        val attempt=PageTextSelector.select(snapshot,center(matches.first().second),center(matches.last().second),false)
+        // Stored glyph-quad order is reading order; native extraction may interleave columns.
+        val begin=matches.firstOrNull{close(it.second.quad,item.edit.quads.first())} ?: return null
+        val finish=matches.lastOrNull{close(it.second.quad,item.edit.quads.last())} ?: return null
+        val attempt=PageTextSelector.select(snapshot,center(begin.second),center(finish.second),false)
         val span=(attempt as? TextSelectionAttempt.Selected)?.span ?: return null
         // Sparse/disjoint or unsupported native ranges must not become a broader editable span.
         if(span.glyphs.filter{it.quad.area>=.000001}.any{it !in accepted})return null
         if(matched.size!=item.edit.quads.size)return null
+        val selected=span.quads.groupBy{bucket(it)}
+        if(item.edit.quads.any{q->val key=bucket(q)
+            (-1..1).none{dx->(-1..1).any{dy->selected[key.first+dx to key.second+dy].orEmpty().any{close(it,q)}}}
+        })return null
         return span
     }
 }

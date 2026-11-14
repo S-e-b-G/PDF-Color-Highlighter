@@ -54,5 +54,5 @@
     <instrumentation android:name="org.sg.pdfcolorhighlighter.NativeNotesInstrumentation" android:targetPackage="${applicationId}" android:label="Native notes workflow" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.NoteGestureInstrumentation" android:targetPackage="${applicationId}" android:label="Note gestures and empty text page" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.NativePaletteInstrumentation" android:targetPackage="${applicationId}" android:label="Native palette proof" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.ColumnContinuationInstrumentation" android:targetPackage="${applicationId}" android:label="Cross-column native selection and persistence" />
 </manifest>
-

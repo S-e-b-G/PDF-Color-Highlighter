@@ -42,5 +42,5 @@ object TextFlowResolver {
 
     /** Paragraphs, native IDs, font changes and vertical gaps are not selection boundaries. */
     fun path(snapshot:PageTextSnapshot,firstLine:Int,lastLine:Int):List<Int>? =
-        ColumnFlowRows.path(snapshot,firstLine,lastLine)
+        ColumnFlowRows.path(snapshot,firstLine,lastLine) ?: ColumnContinuationRows.path(snapshot,firstLine,lastLine)
 }
