@@ -4,7 +4,8 @@ import java.io.ByteArrayOutputStream
 
 /** Self-authored public synthetic fixture, no supplied/private PDF content. */
 object ColumnContinuationFixture {
-    fun bytes():ByteArray {
+    fun bytes(referenceLike:Boolean=false):ByteArray {
+        if(referenceLike)return ReferenceLikeColumnsFixture.bytes()
         val content=buildString{
             for(i in 0 until 6){val c=('A'.code+i).toChar();val y=740-i*24
                 append("BT /F1 12 Tf 1 0 0 1 50 $y Tm (LEFT $c body words for continuation.) Tj ET\n")

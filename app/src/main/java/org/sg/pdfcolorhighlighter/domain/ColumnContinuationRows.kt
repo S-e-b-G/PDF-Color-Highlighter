@@ -18,7 +18,7 @@ object ColumnContinuationRows {
         val sorted=ids.sortedWith(compareBy<Int>{s.lines[it].bounds.top}.thenBy{s.lines[it].bounds.left})
         val groups=mutableListOf<MutableList<Int>>();var bottom=Float.NEGATIVE_INFINITY
         for(i in sorted){val r=s.lines[i].bounds
-            if(groups.isEmpty() || r.top-bottom>h*6f)groups.add(mutableListOf())
+            if(groups.isEmpty() || r.top-bottom>h*3f)groups.add(mutableListOf())
             groups.last().add(i);bottom=if(groups.last().size==1)r.bottom else max(bottom,r.bottom)
         }
         return groups.firstOrNull{seed in it}.orEmpty()
@@ -34,12 +34,17 @@ object ColumnContinuationRows {
         if(s.status!=PageTextStatus.READY || s.lines.size>MAX_LINES || a !in s.lines.indices || b !in s.lines.indices || a==b)return null
         val li=if(s.lines[a].bounds.left<s.lines[b].bounds.left)a else b
         val ri=if(li==a)b else a
-        val l=s.lines[li].bounds;val r=s.lines[ri].bounds;val h=max(l.height,r.height)
-        if(!h.isFinite() || h<=0f || !l.width.isFinite() || !r.width.isFinite() || l.width<=0f || r.width<=0f || r.left-l.right<3f*h)return null
+        val l=s.lines[li].bounds;val r=s.lines[ri].bounds
+        // A title-sized endpoint must not widen the gutter/body-gap thresholds.
+        val heights=s.lines.asSequence().filter{it.horizontal}.map{it.bounds}
+            .filter{it.height.isFinite() && it.height>0f && it.width.isFinite() && it.width>=3f*it.height}
+            .map{it.height}.sorted().toList()
+        val h=heights.getOrNull(heights.size/2) ?: return null
+        if(!l.width.isFinite() || !r.width.isFinite() || l.width<=0f || r.width<=0f || r.left-l.right<3f*h)return null
         if(!s.lines[li].horizontal || !s.lines[ri].horizontal || rtl(s.lines[li]) || rtl(s.lines[ri]))return null
         val left=mutableListOf<Int>();val right=mutableListOf<Int>()
         for(i in s.lines.indices){val line=s.lines[i];val q=line.bounds
-            if(!line.horizontal || q.height<=0f || q.width<=0f || max(q.height,h)/min(q.height,h)>1.8f)continue
+            if(!line.horizontal || !q.height.isFinite() || !q.width.isFinite() || q.height<=0f || q.width<=0f)continue
             val x=overlap(q,l);val y=overlap(q,r)
             if(x && !y)left.add(i)
             if(y && !x)right.add(i)
@@ -52,11 +57,13 @@ object ColumnContinuationRows {
         val lt=lb.minOf{it.top};val botL=lb.maxOf{it.bottom};val rt=rb.minOf{it.top};val botR=rb.maxOf{it.bottom}
         if(min(botL,botR)-max(lt,rt)<max(2f*h,min(botL-lt,botR-rt)*.5f))return null
         val top=min(lt,rt);val bottom=max(botL,botR)
+        val corridorLeft=lb.minOf{it.left};val corridorRight=rb.maxOf{it.right}
         val known=(lc+rc).toHashSet()
-        // A heading, caption, marginal fragment, rotated run or third column inside this band
-        // requires a reading-order decision we cannot justify. Outside-band material is untouched.
+        // Refuse unexplained material INSIDE the two-column corridor. A rotated margin
+        // notice wholly outside that corridor is not part of the requested reading flow.
+        // Spanning text, intruding rotated text and third lanes remain refusals.
         for(i in s.lines.indices){val q=s.lines[i].bounds
-            if(q.bottom>top && q.top<bottom && i !in known)return null
+            if(q.bottom>top && q.top<bottom && q.right>corridorLeft && q.left<corridorRight && i !in known)return null
         }
         if(known.any{rtl(s.lines[it])})return null
         fun lane(ids:List<Int>):List<Int>? {
