@@ -122,7 +122,7 @@ object RecentDocumentsCodec {
         val v = entry.viewport
         require(v.zoom.isFinite() && v.zoom >= 1f)
         require(v.centerX.isFinite())
-        require(v.centerY.isFinite() && v.centerY in 0f..1f)
+        require(v.centerY.isFinite()) // Finite short-axis off-sheet reading anchors are clamped by geometry, like centerX.
         require(
             v.navigationHorizontalFraction == null ||
                 (v.navigationHorizontalFraction.isFinite() &&

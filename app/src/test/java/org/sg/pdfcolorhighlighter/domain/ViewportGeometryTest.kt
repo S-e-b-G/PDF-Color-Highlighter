@@ -23,8 +23,9 @@ class ViewportGeometryTest {
     }
     @Test fun panCannotLoseThePage() {
         val v = square(); v.zoomBy(2f, 400f, 400f); v.pan(100000f, -100000f)
-        assertEquals(0f, v.placement.left, 0.001f)
-        assertEquals(-800f, v.placement.top, 0.001f)
+        // Zoomed limits retain half the viewport of page instead of pinning edges to the screen.
+        assertEquals(400f, v.placement.left, 0.001f)
+        assertEquals(-1200f, v.placement.top, 0.001f)
     }
     @Test fun coordinateRoundTripAfterPanAndZoom() {
         val v = square(); v.zoomBy(3f, 400f, 400f); v.pan(-100f, 70f)

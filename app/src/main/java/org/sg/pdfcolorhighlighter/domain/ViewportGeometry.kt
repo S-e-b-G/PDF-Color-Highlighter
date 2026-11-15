@@ -26,6 +26,10 @@ class ViewportGeometry {
         get() = place(state)
     private fun fitScale() = min(viewWidth / pageWidth, viewHeight / pageHeight)
     private fun widthZoom() = (viewWidth / (pageWidth * fitScale())).coerceAtLeast(1f)
+    private fun extraPan(zoom:Float)=zoom>1.00001f
+    private fun panLimits(viewport:Float,content:Float,zoom:Float):Pair<Float,Float> =
+        if(extraPan(zoom)) min(0f,viewport/2f-content) to max(viewport/2f,viewport-content)
+        else min(0f,viewport-content) to max(0f,viewport-content)
 
     fun configure(pageWidth: Float, pageHeight: Float, viewWidth: Float, viewHeight: Float,
                   restored: PageViewportState = state) {
@@ -43,24 +47,27 @@ class ViewportGeometry {
         val rawX = restored.centerX.takeIf { it.isFinite() } ?: 0.5f
         val x = if (fraction != null) {
             val width = pageWidth * fitScale() * zoom
-            val minimum = min(0f, viewWidth - width)
-            val maximum = max(0f, viewWidth - width)
+            val (minimum,maximum) = panLimits(viewWidth,width,zoom)
             val left = minimum + fraction * (maximum - minimum)
             (viewWidth / 2f - left) / width
         } else if (freeX) rawX else rawX.coerceIn(0f, 1f)
-        val y = restored.centerY.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.5f
+        val rawY=restored.centerY.takeIf{it.isFinite()} ?: 0.5f
+        val y=if(extraPan(zoom))rawY else rawY.coerceIn(0f,1f)
         apply(PageViewportState(zoom, x, y, freeX, restored.startAtTop, fraction))
     }
-    private fun clampAxis(offset: Float, viewport: Float, content: Float, freeSmall: Boolean = false): Float =
-        if (content <= viewport) {
+    private fun clampAxis(offset: Float, viewport: Float, content: Float, freeSmall: Boolean = false, zoom:Float=1f): Float =
+        if(extraPan(zoom) && (content>viewport || freeSmall)){
+            val (low,high)=panLimits(viewport,content,zoom)
+            offset.coerceIn(low,high)
+        }else if (content <= viewport) {
             if (freeSmall) offset.coerceIn(0f, viewport - content) else (viewport - content) / 2f
         } else offset.coerceIn(viewport - content, 0f)
     private fun place(value: PageViewportState): PagePlacement {
         val scale = fitScale() * value.zoom
         val width = pageWidth * scale; val height = pageHeight * scale
         return PagePlacement(
-            clampAxis(viewWidth / 2f - value.centerX * width, viewWidth, width, value.freeHorizontalPan),
-            if (value.startAtTop) 0f else clampAxis(viewHeight / 2f - value.centerY * height, viewHeight, height),
+            clampAxis(viewWidth / 2f - value.centerX * width, viewWidth, width, value.freeHorizontalPan,value.zoom),
+            if (value.startAtTop) 0f else clampAxis(viewHeight / 2f - value.centerY * height, viewHeight, height,extraPan(value.zoom),value.zoom),
             width, height)
     }
     private fun apply(value: PageViewportState) {
@@ -70,8 +77,7 @@ class ViewportGeometry {
     }
     fun forPageNavigation(): PageViewportState {
         val p = placement
-        val minimum = min(0f, viewWidth - p.width)
-        val maximum = max(0f, viewWidth - p.width)
+        val (minimum,maximum)=panLimits(viewWidth,p.width,state.zoom)
         val span = maximum - minimum
         val fraction = if (span > 0.001f) ((p.left - minimum) / span).coerceIn(0f, 1f) else 0.5f
         return state.copy(centerY = 0f, startAtTop = true, navigationHorizontalFraction = fraction)
@@ -87,7 +93,10 @@ class ViewportGeometry {
     fun pan(dx: Float, dy: Float) {
         if (!dx.isFinite() || !dy.isFinite()) return
         val p = placement
-        val keepTop = state.startAtTop && (p.height <= viewHeight || dy == 0f)
+        // Keep the established horizontal-drag/jitter behavior on a short navigated page,
+        // but let a deliberate vertical drag release its top pin while zoomed.
+        val keepTop = state.startAtTop && (dy==0f || (p.height<=viewHeight &&
+            (!extraPan(state.zoom) || abs(dy)<abs(dx)*.5f)))
         apply(state.copy(centerX = (viewWidth / 2f - p.left - dx) / p.width,
             centerY = (viewHeight / 2f - p.top - dy) / p.height,
             freeHorizontalPan = state.freeHorizontalPan || dx != 0f,
@@ -102,7 +111,7 @@ class ViewportGeometry {
         val width = old.width * ratio; val height = old.height * ratio
         apply(state.copy(zoom = zoom, centerX = (viewWidth / 2f - focusX + x * width) / width,
             centerY = (viewHeight / 2f - focusY + y * height) / height,
-            startAtTop = state.startAtTop && height <= viewHeight, navigationHorizontalFraction = null))
+            startAtTop = state.startAtTop && !extraPan(zoom) && height <= viewHeight, navigationHorizontalFraction = null))
     }
     fun viewToPage(x: Float, y: Float): Pair<Float, Float> {
         val p = placement

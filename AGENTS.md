@@ -1,6 +1,82 @@
 # Project workflow
+
+## Active state and precedence — 2026-11-14, M3z / M3z-R1 repair
+
+This active section and the binding rules below supersede historical milestone status,
+read-only restrictions, old UI dimensions/style values and old test totals later in this file.
+Historical safety, ownership, privacy and persistence rules remain binding unless explicitly
+superseded by a documented accepted change. Never implement from an obsolete milestone alone.
+
+- Source increment: M3z, bounded extra Hand panning while zoomed. The app version is NOT
+  M3z-R1: R1 is an automation/documentation repair, not a new runtime app increment.
+- Last confirmed installed/accepted working baseline before this repair: M3y-R1,
+  826 JVM / 28 native / 82 workflows, user evidence. Data preserved by install-r.
+- Observed M3z FULL run: 846 JVM, zero failures/errors/skips; all29 native suites PASS;
+  85/86 workflows PASS. The Help scrolling workflow failed during create() fixture setup
+  with a durable-edit timeout, BEFORE Help traversal. All4 new margin workflows passed.
+  The installer correctly refused replacement. Do NOT call M3z accepted from these results.
+- M3z-R1 synchronizes synthetic create gestures with the actual current rendered page,
+  snapshot, tool and window and records structural diagnostics. It does not waive/retry
+  away a failed edit, raise acceptance timeouts, or establish that an app defect is absent.
+  Runtime app sources/verified M3z backup and the original failed report stay unchanged.
+- Required gate remains FULL846 JVM /29 native /86 distinct workflows, all PASS with no
+  errors/skips/blocks/known gaps, AFTER the focused real Help workflow passes. Focused
+  acceptance alone never authorizes a working install. Keep strengthened private TestFile
+  cross-column tests, margin tests, Save-switch and Help tests; do not remove failures.
+- Repair-time status is written to .validation/M3z-R1-status.json. Determine CURRENT
+  acceptance/installation from its referenced full summary.json and M3z-installation.json:
+  matching source version, complete all-PASS FULL gate and workingInstalled=true are required.
+  This file records the pre-repair evidence honestly; do not infer a later pass from its
+  presence or from a generated APK. A failed focused/full run leaves the older working app.
+- Author has not executed PowerShell/Kotlin/Gradle/Android for this repair. Static/reference
+  checks are not a compile or device pass. Runtime results belong to the actual host/device.
+
+### Current implemented scope
+
+- Native app-managed Highlights and Text notes, Contents editing, recolor/delete, handles,
+  Undo/Redo, verified Source Save / Save As, durable local independent versions, disk-first
+  opening and exit/switch warnings are implemented within their accepted scope. Do not
+  revert to the old read-only UI or claim arbitrary imported-annotation editing is complete.
+- M3v: persistent editable6-slot palette; explicit off-palette managed annotation behavior.
+  M3w: selected-highlight quotation editor supports deliberate second tap and outside-submit.
+  M3x: offline French Help next to Settings; preserve underlying document/tool/save state.
+- M3y-R1: conservative same-page LTR two-column continuation. Use copied real glyphs,
+  body-scale geometry and a bounded column corridor; allow headings in their own column,
+  ignore only wholly external margin notices, keep footers out of body components. Preserve
+  Unicode/copy/RTL/ambiguity guards. Actual private TestFile intervals are mandatory regression.
+- M3z source: while zoomed, Hand can bring all4 edges to the PDF-viewport centre, with grey
+  outside and bounded page visibility; Fit resets. Small-page centering, navigation,
+  normalized restore, rotation and finite recent-location anchors remain protected. Panning
+  is not a PDF edit and must not change dirty state or detach notes/highlights from text.
+- User decisions B/C are SATISFIED by accepted durable local recovery and exit/switch
+  warnings. Do not reintroduce an external autosave timer or automatic save-on-leaving task.
+- Authorized timestamped external fallback and compatible imported-annotation editing remain
+  separate implementation work. Real provider/cloud/SD authorization, final production-PDF
+  downstream interoperability, other-device/Android10, accessibility/resource stress and
+  final documentation/licensing/production packaging acceptance remain explicit open work.
+  Clone-only same-UID tests and pixel probes do not prove these real-world guarantees.
+
+### Mandatory handoff/update procedure
+
+- EVERY new app increment, repair or automation/docs successor MUST update root AGENTS.md
+  in the delivered package, using a preflight canonical hash, verified exact-byte backup and
+  post-write hash verification. Preserve unrelated project instructions and historical evidence.
+- Also maintain docs/STATUS.md and requirements.csv when their scope changes. Never silently
+  overwrite locally edited documentation: stop on a hash mismatch and request a narrow diff.
+- Record source/applied version, expected gate, observed gate, installed version and pending
+  manual/open requirements separately. Preserve failed evidence; never pre-mark acceptance.
+  Read the latest verified receipts, and refresh observed acceptance in the next handoff.
+- Do not reapply an application installer after a failed gate. Use the appropriate guarded
+  validator/repair. Preserve immutable parent packages, app/source backups and private fixtures.
+- Include a truthful commit-message suggestion; never run Git commit/push or remote writes
+  automatically. Do not indiscriminately stage SG-INFOS, private PDFs, recovery/app data,
+  local paths/configuration, signing material, validation packages/backups/reports or fixture assets.
+- Keep code/comments/docs/communication English and runtime UI French. Keep versionName and
+  reader_increment synchronized for RUNTIME app increments; automation-only repair need not bump.
+
+## Binding project rules
 - Communication, code, comments and documents: English. Runtime UI: French resources.
-- Current accepted increment: M3a read-only structured-text/selection proof. Do not claim interactive annotation or save completion.
+- Current source, accepted scope and installation evidence are defined by the active section above, not historical M3a notes.
 - Android 10 minimum: API 29. Validate Lenovo Android 11 and Teclast Android 10 separately.
 - One MuPDF engine, pinned at 1.28.5. Engine changes, second engines and paid dependencies require approval.
 - Serialize native operations; never dispose a native document while a queued operation is using it.
@@ -9,11 +85,16 @@
 - Manual Contents must survive geometry edits. Never silently resynchronize corrected text.
 - Tablets: one primary toolbar row in both orientations; all 12 color tools directly visible.
 - Do not hide colors, scroll the primary toolbar, shrink touch targets, or move primary actions without approval.
-- The accepted read-only reader is not an annotation editor. Keep mutation controls unavailable until annotation interoperability and safe completed-edit persistence are implemented.
+- Keep the accepted native editor/save/history/recovery controls available within their verified scope; retain all mutation, identity, permission and persistence gates.
 - Complete files, small increments, real tests; no fabricated output or empty feature handlers.
 - Do not commit private PDFs, local paths, signing keys, or unrelated changes.
 - Update docs/STATUS.md and requirements.csv at each increment; distinguish host results from user/device results and do not claim Teclast acceptance without evidence.
 
+
+## Historical milestone record — not current status
+
+Older milestone paragraphs below are retained as evidence. Their status/totals/UI values
+do not override the active section or current validated source.
 
 ## Current addendum — M2b.2
 Supersedes older milestone/toolbar status, not safety/licensing constraints.
