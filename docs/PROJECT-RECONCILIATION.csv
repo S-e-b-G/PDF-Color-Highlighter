@@ -1,0 +1,19 @@
+requirement_group,current_state,evidence,finish_action
+Open/50 recents/location,IMPLEMENTED_ACCEPTED_M3z,PDFreader-01/02; current source;846/29/86,Real provider revocation remains final verification
+Single-page navigation/pinch/Hand/Fit,IMPLEMENTED_ACCEPTED_M3z,PDFreader-01..04; current source; margin workflows,No continuous scrolling/stylus specialization required
+Direct12 colors and editable palette,IMPLEMENTED_ACCEPTED_M3z,Original6 semantic roles; later approved toolbar; M3v,Keep current layout; do not restore obsolete48dp layouts
+"Native highlights/notes, manual Contents, Undo/Redo",IMPLEMENTED_ACCEPTED_M3z_MANAGED_SUBSET,PDFreader-02 correction; M3s/M3w; current source,Foreign objects not generally editable
+Save/SaveAs/recovery/status/warnings,IMPLEMENTED_ACCEPTED_M3z,PDFreader-05/06 and later M3m..M3z results,No generic atomic cloud/power-loss guarantee
+Timer and automatic leaving-save B/C,SATISFIED_BY_LATER_USER_DECISION,Current conversation: local durable recovery + exit warning accepted,Do not reintroduce timers/settings for waived behavior
+Automatic authorized timestamped fallback,OPEN_NOW_IMPLEMENTED_IN_M4a_SOURCE,PDFreader-01 final prompt fallback section; PDFreader-06 explicit TODO,Local-time name and collision suffix; real SAF manual signoff still required
+Edit compatible imported Highlight/Text annotations,OPEN_IMPLEMENTATION,Original preserve/edit scope; PDFreader-06; native readers require SGCH metadata,Implement bounded compatible subset; no blind conversion/sidecar
+Preserve existing opacity on edits,OPEN_NOW_FIXED_IN_M4a_SOURCE,PDFreader-01 palette/preservation contract; NativeHighlightEdits.replace forced.80,Now read/preserve native opacity; new highlights remain.80
+Same-page cross-column continuation,IMPLEMENTED_ACCEPTED_SUPPORTED_SUBSET,Later request; M3y-R1 private TestFile proof,Do not claim arbitrary tables/RTL/multipage reading order
+Zoomed edges at viewport centre,IMPLEMENTED_ACCEPTED_M3z,Current conversation + margin proof/workflows,Manual feel can be checked in normal use; no repeated baseline build
+Docear/Obsidian interoperability,EARLY_FIXTURE_PASSED_FINAL_REGRESSION_OPEN,PDFreader-03: user confirmed both; plugin commit693fbbc4932365b8693707d1d1f95ea1a6bb76d0,Do not call it never tested; check final saved production PDFs once
+Discard/revert,NONDESTRUCTIVE_EQUIVALENT_AVAILABLE,Original Discard definition; later accepted disk-first independent versions,Reopen disk version via copies/version workflow; no new recovery deletion added
+Automatic/manual Contents reset,POLICY_DETAIL_NOT_A_NEW_CORE_FEATURE,PDFreader-02 assistant model; later accepted manual Contents workflow,Do not confuse optional reset UI with user-requested additional comments; comments are separate notes
+Signed/encrypted/restricted/malformed PDFs,SAFE_REFUSAL_ALLOWED_FINAL_MATRIX_OPEN,Original prompt explicitly permits safe unsupported refusal,Do not promise editing signed/encrypted files or bypass protection
+"Teclast/API29, accessibility, resources",FINAL_VERIFICATION_OPEN,PDFreader-02 targets; later scope limits,Not evidence of missing core editor; current proven device API30
+Icon/signing/notices/licensing/release documentation,RELEASE_REVIEW_OPEN,PDFreader-02 cleanup and original deliverables; current debug manifest,Personal working APK is not a certified/public-release package
+OCR/freehand/stylus/cross-page/continuous/cloud/accounts/search UI,NOT_FIRST_RELEASE_SCOPE,Original non-goals; no independent accepted search/bookmark UI request found,Preserve existing PDF links/bookmarks; do not invent feature work

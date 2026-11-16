@@ -56,4 +56,5 @@
     <instrumentation android:name="org.sg.pdfcolorhighlighter.NativePaletteInstrumentation" android:targetPackage="${applicationId}" android:label="Native palette proof" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.ColumnContinuationInstrumentation" android:targetPackage="${applicationId}" android:label="Cross-column native selection and persistence" />
     <instrumentation android:name="org.sg.pdfcolorhighlighter.ViewportMarginInstrumentation" android:targetPackage="${applicationId}" android:label="Zoomed page edges at viewport centre and canvas clipping" />
+    <instrumentation android:name="org.sg.pdfcolorhighlighter.AuthorizedFallbackInstrumentation" android:targetPackage="${applicationId}" android:label="Synthetic fallback integrity and preferences" />
 </manifest>

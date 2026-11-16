@@ -56,6 +56,25 @@ class SmokePdfSession(context: Context) {
     private var documentProperties: DocumentProperties? = null
     private val editRoot=java.io.File(app.noBackupFilesDir,"reader-highlight-checkpoints-v1")
     private val sourceSaves=SourceSaveJournal(java.io.File(app.noBackupFilesDir,"source-save-journal-branches-v2"))
+    private val fallbackStore=org.sg.pdfcolorhighlighter.data.FallbackFolderStore(java.io.File(app.filesDir,"fallback-folder-v1.bin"))
+    private var fallbackFault=false
+    private fun fallbackTarget(tree:String):FallbackTarget = SafFallbackTarget(app,Uri.parse(tree))
+    fun readFallback(callback:(Result<Boolean>)->Unit){worker.execute{
+        val result=runCatching{val uri=fallbackStore.read();if(uri!=null)check(SafFallbackTarget(app,Uri.parse(uri)).authorized());uri!=null}
+        fallbackFault=result.isFailure;main.post{if(!closed.get())callback(result)}
+    }}
+    fun configureFallback(tree:Uri?,flags:Int,callback:(Result<Boolean>)->Unit){worker.execute{
+        val result=runCatching{
+            check(!closed.get())
+            if(tree!=null){val rw=android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                require(tree.scheme=="content" && DocumentsContract.isTreeUri(tree))
+                require((flags and rw)==rw && (flags and android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)!=0)
+                app.contentResolver.takePersistableUriPermission(tree,rw);check(SafFallbackTarget(app,tree).authorized())
+            }
+            fallbackStore.write(tree?.toString());tree!=null
+        };fallbackFault=result.isFailure;main.post{if(!closed.get())callback(result)}
+    }}
+
     private val branches=RecoveryBranches(java.io.File(app.noBackupFilesDir,"reader-highlight-branches-v2"),editRoot)
     private var branchRoot:java.io.File?=null
     private var recoveryListing=RecoveryListing(emptyList(),0)
@@ -432,11 +451,13 @@ class SmokePdfSession(context: Context) {
         if(closed.get())return
         cancelRefinement();val request=generation.get()
         worker.execute{
-            val result=runCatching{
+            var fallbackEligible=false
+            var result=runCatching{
                 check(!closed.get() && request==generation.get() && sourceUri?.toString()==expectedUri)
                 check(localEditNotice==org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE)
                 check((!sourceDetached && !sourceSaveBlocked) || replacementHash!=null)
                 val uri=checkNotNull(sourceUri);require(uri.scheme=="content"){"SAF content URI required"}
+                check(checkNotNull(document).hasPermission(Document.PERMISSION_COPY));check(localHighlights!=null);fallbackEligible=true
                 check(app.checkUriPermission(uri,android.os.Process.myPid(),android.os.Process.myUid(),android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)==android.content.pm.PackageManager.PERMISSION_GRANTED){"Write permission required"}
                 if(DocumentsContract.isDocumentUri(app,uri))app.contentResolver.query(uri,arrayOf(DocumentsContract.Document.COLUMN_FLAGS),null,null,null)?.use{c->
                     if(c.moveToFirst())require((c.getInt(0) and DocumentsContract.Document.FLAG_SUPPORTS_WRITE)!=0){"Provider is read-only"}}
@@ -452,6 +473,21 @@ class SmokePdfSession(context: Context) {
                         documentName=runCatching{app.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use{c->if(c.moveToFirst())c.getString(0)else null}}.getOrNull() ?: documentName
                         documentProperties=documentProperties?.copy(displayName=documentName,sourceModifiedMillis=null)
                     }
+            }
+            if(result.isFailure && fallbackEligible && result.exceptionOrNull() !is SourceSaveConflict){
+                val original=checkNotNull(result.exceptionOrNull())
+                val config=runCatching{check(!fallbackFault);fallbackStore.read()}
+                if(config.isFailure)result=Result.failure(SourceFallbackFailure(false,original))
+                else config.getOrNull()?.let{tree->
+                    val copied=runCatching{
+                        check(!closed.get() && request==generation.get() && sourceUri?.toString()==expectedUri)
+                        check(localEditNotice==org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE)
+                        check(checkNotNull(document).hasPermission(Document.PERMISSION_COPY))
+                        val stamp=java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm-ss",java.util.Locale.ROOT).format(java.util.Date())
+                        AutomaticFallback.copy(checkNotNull(localHighlights).fileForSave(),expectedUri,documentName,stamp,fallbackTarget(tree))
+                    }
+                    result=Result.failure(SourceFallbackFailure(copied.isSuccess,original))
+                }
             }
             if(result.isFailure){sourceSaveBlocked=true;documentProperties=documentProperties?.copy(sourceModifiedMillis=null)}
             main.post{if(!closed.get() && request==generation.get())callback(result)}

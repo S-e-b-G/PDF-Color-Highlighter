@@ -2,7 +2,8 @@
 package org.sg.pdfcolorhighlighter.domain
 
 /** Copied app-managed native state only; never a native object. */
-data class ManagedHighlight(val edit:HighlightEdit,val contents:String,val mode:TextMode) {
+data class ManagedHighlight(val edit:HighlightEdit,val contents:String,val mode:TextMode,val opacity:Float=.80f) {
+    init{require(opacity.isFinite() && opacity in 0f..1f)}
     fun resized(span:SelectionSpan)=copy(edit=edit.copy(quotation=span.quotation,quads=span.quads,appearance=NativeHighlightAppearance.forSpan(span)),
         contents=if(mode==TextMode.AUTOMATIC)span.quotation else contents)
 }

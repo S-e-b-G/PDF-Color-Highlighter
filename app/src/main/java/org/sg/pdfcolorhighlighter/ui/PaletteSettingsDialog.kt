@@ -17,8 +17,10 @@ import org.sg.pdfcolorhighlighter.R
 import org.sg.pdfcolorhighlighter.domain.AnnotationPalette
 
 @Composable
-fun PaletteSettingsDialog(draft:List<String>,busy:Boolean,warning:Boolean,onDraft:(Int,String)->Unit,
-    reset:(Int)->Unit,resetAll:()->Unit,apply:()->Unit,close:()->Unit){
+fun PaletteSettingsDialog(draft:List<String>,paletteBusy:Boolean,warning:Boolean,onDraft:(Int,String)->Unit,
+    reset:(Int)->Unit,resetAll:()->Unit,apply:()->Unit,close:()->Unit,
+    fallbackEnabled:Boolean,fallbackBusy:Boolean,fallbackWarning:Boolean,chooseFallback:()->Unit,disableFallback:()->Unit){
+    val busy=paletteBusy || fallbackBusy
     val parsed=draft.map{AnnotationPalette.parse(it)}
     val labels=listOf(R.string.reader_slot_1,R.string.reader_slot_2,R.string.reader_slot_3,
         R.string.reader_slot_4,R.string.reader_slot_5,R.string.reader_slot_6)
@@ -39,6 +41,13 @@ fun PaletteSettingsDialog(draft:List<String>,busy:Boolean,warning:Boolean,onDraf
                 }
             }
             TextButton(onClick=resetAll,enabled=!busy){Text(stringResource(R.string.palette_reset_all))}
+            HorizontalDivider()
+            Text(stringResource(R.string.fallback_title),style=MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.fallback_explanation))
+            Text(stringResource(if(fallbackEnabled)R.string.fallback_enabled else R.string.fallback_disabled))
+            if(fallbackWarning)Text(stringResource(R.string.fallback_warning),color=MaterialTheme.colorScheme.error)
+            TextButton(onClick=chooseFallback,enabled=!busy){Text(stringResource(R.string.fallback_authorize))}
+            TextButton(onClick=disableFallback,enabled=!busy && fallbackEnabled){Text(stringResource(R.string.fallback_disable))}
             if(busy)LinearProgressIndicator(Modifier.fillMaxWidth())
         }},
         confirmButton={TextButton(onClick=apply,enabled=!busy && AnnotationPalette.draft(draft)!=null){Text(stringResource(R.string.palette_apply))}},

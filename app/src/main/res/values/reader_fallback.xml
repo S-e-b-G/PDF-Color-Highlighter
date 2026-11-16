@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fallback_title">Copie PDF de secours</string>
+    <string name="fallback_explanation">Facultatif : après un échec de sauvegarde de l’original, créer automatiquement une copie horodatée dans le dossier que vous autorisez. Une annulation ou un conflit de source ne déclenche pas de copie. Le secours ne valide pas l’original et ne quitte pas le document. Choisir ou désactiver le dossier est immédiat, indépendamment de la palette. L’application ne gère pas de synchronisation réseau ; un fournisseur distant peut synchroniser ces copies. Aucun fichier existant ne doit être remplacé ; les copies ne sont pas supprimées automatiquement.</string>
+    <string name="fallback_authorize">Autoriser un dossier et activer…</string>
+    <string name="fallback_disable">Désactiver le secours externe</string>
+    <string name="fallback_enabled">Secours externe activé pour le dossier autorisé.</string>
+    <string name="fallback_disabled">Secours externe désactivé ; récupération locale conservée.</string>
+    <string name="fallback_warning">Configuration ou autorisation non confirmée. Le secours externe est bloqué pour cette session ; réautorisez le dossier ou désactivez cette option.</string>
+    <string name="fallback_copy_verified">Original non enregistré. Une copie PDF horodatée a été créée, relue et vérifiée dans le dossier autorisé. Le document reste ouvert et les modifications locales restent non enregistrées dans l’original.</string>
+    <string name="fallback_copy_failed">Original non enregistré et secours externe non confirmé. La copie locale est conservée. Vérifiez le dossier ou utilisez Enregistrer sous ; un fichier externe partiel peut subsister.</string>
+</resources>

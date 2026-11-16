@@ -32,6 +32,17 @@ class MainActivity : ComponentActivity() {
         }else reader.finishDocumentPicker(null)
     }
 
+
+    private val fallbackPicker=registerForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
+        val data=result.data;reader.finishFallbackFolder(if(result.resultCode==RESULT_OK)data?.data else null,data?.flags ?: 0)
+    }
+    private fun chooseFallbackFolder(){
+        if(!reader.beginFallbackFolder())return
+        try{fallbackPicker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply{
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+        })}catch(_:Exception){reader.finishFallbackFolder(null,0)}
+    }
+
     private val exportPicker=registerForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")){uri->
         reader.finishExportPicker(uri)
     }
@@ -127,7 +138,8 @@ class MainActivity : ComponentActivity() {
             if(reader.settingsOpen){
                 org.sg.pdfcolorhighlighter.ui.PaletteSettingsDialog(reader.paletteDraft,reader.paletteBusy,reader.paletteWarning,
                     {i,value->reader.updatePaletteDraft(i,value)},{reader.resetPaletteSlot(it)},{reader.resetPalette()},
-                    {reader.applyPalette()},{reader.closeSettings()})
+                    {reader.applyPalette()},{reader.closeSettings()},
+                    reader.fallbackEnabled,reader.fallbackBusy,reader.fallbackWarning,{chooseFallbackFolder()},{reader.disableFallback()})
             }
             ReaderScreen(
                 highlightEditorRequest=reader.highlightEditorRequest,highlightEditorCloseSerial=reader.highlightEditorCloseSerial,

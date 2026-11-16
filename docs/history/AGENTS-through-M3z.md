@@ -1,0 +1,427 @@
+# Project workflow
+
+## Active state and precedence — 2026-11-14, M3z / M3z-R1 repair
+
+This active section and the binding rules below supersede historical milestone status,
+read-only restrictions, old UI dimensions/style values and old test totals later in this file.
+Historical safety, ownership, privacy and persistence rules remain binding unless explicitly
+superseded by a documented accepted change. Never implement from an obsolete milestone alone.
+
+- Source increment: M3z, bounded extra Hand panning while zoomed. The app version is NOT
+  M3z-R1: R1 is an automation/documentation repair, not a new runtime app increment.
+- Last confirmed installed/accepted working baseline before this repair: M3y-R1,
+  826 JVM / 28 native / 82 workflows, user evidence. Data preserved by install-r.
+- Observed M3z FULL run: 846 JVM, zero failures/errors/skips; all29 native suites PASS;
+  85/86 workflows PASS. The Help scrolling workflow failed during create() fixture setup
+  with a durable-edit timeout, BEFORE Help traversal. All4 new margin workflows passed.
+  The installer correctly refused replacement. Do NOT call M3z accepted from these results.
+- M3z-R1 synchronizes synthetic create gestures with the actual current rendered page,
+  snapshot, tool and window and records structural diagnostics. It does not waive/retry
+  away a failed edit, raise acceptance timeouts, or establish that an app defect is absent.
+  Runtime app sources/verified M3z backup and the original failed report stay unchanged.
+- Required gate remains FULL846 JVM /29 native /86 distinct workflows, all PASS with no
+  errors/skips/blocks/known gaps, AFTER the focused real Help workflow passes. Focused
+  acceptance alone never authorizes a working install. Keep strengthened private TestFile
+  cross-column tests, margin tests, Save-switch and Help tests; do not remove failures.
+- Repair-time status is written to .validation/M3z-R1-status.json. Determine CURRENT
+  acceptance/installation from its referenced full summary.json and M3z-installation.json:
+  matching source version, complete all-PASS FULL gate and workingInstalled=true are required.
+  This file records the pre-repair evidence honestly; do not infer a later pass from its
+  presence or from a generated APK. A failed focused/full run leaves the older working app.
+- Author has not executed PowerShell/Kotlin/Gradle/Android for this repair. Static/reference
+  checks are not a compile or device pass. Runtime results belong to the actual host/device.
+
+### Current implemented scope
+
+- Native app-managed Highlights and Text notes, Contents editing, recolor/delete, handles,
+  Undo/Redo, verified Source Save / Save As, durable local independent versions, disk-first
+  opening and exit/switch warnings are implemented within their accepted scope. Do not
+  revert to the old read-only UI or claim arbitrary imported-annotation editing is complete.
+- M3v: persistent editable6-slot palette; explicit off-palette managed annotation behavior.
+  M3w: selected-highlight quotation editor supports deliberate second tap and outside-submit.
+  M3x: offline French Help next to Settings; preserve underlying document/tool/save state.
+- M3y-R1: conservative same-page LTR two-column continuation. Use copied real glyphs,
+  body-scale geometry and a bounded column corridor; allow headings in their own column,
+  ignore only wholly external margin notices, keep footers out of body components. Preserve
+  Unicode/copy/RTL/ambiguity guards. Actual private TestFile intervals are mandatory regression.
+- M3z source: while zoomed, Hand can bring all4 edges to the PDF-viewport centre, with grey
+  outside and bounded page visibility; Fit resets. Small-page centering, navigation,
+  normalized restore, rotation and finite recent-location anchors remain protected. Panning
+  is not a PDF edit and must not change dirty state or detach notes/highlights from text.
+- User decisions B/C are SATISFIED by accepted durable local recovery and exit/switch
+  warnings. Do not reintroduce an external autosave timer or automatic save-on-leaving task.
+- Authorized timestamped external fallback and compatible imported-annotation editing remain
+  separate implementation work. Real provider/cloud/SD authorization, final production-PDF
+  downstream interoperability, other-device/Android10, accessibility/resource stress and
+  final documentation/licensing/production packaging acceptance remain explicit open work.
+  Clone-only same-UID tests and pixel probes do not prove these real-world guarantees.
+
+### Mandatory handoff/update procedure
+
+- EVERY new app increment, repair or automation/docs successor MUST update root AGENTS.md
+  in the delivered package, using a preflight canonical hash, verified exact-byte backup and
+  post-write hash verification. Preserve unrelated project instructions and historical evidence.
+- Also maintain docs/STATUS.md and requirements.csv when their scope changes. Never silently
+  overwrite locally edited documentation: stop on a hash mismatch and request a narrow diff.
+- Record source/applied version, expected gate, observed gate, installed version and pending
+  manual/open requirements separately. Preserve failed evidence; never pre-mark acceptance.
+  Read the latest verified receipts, and refresh observed acceptance in the next handoff.
+- Do not reapply an application installer after a failed gate. Use the appropriate guarded
+  validator/repair. Preserve immutable parent packages, app/source backups and private fixtures.
+- Include a truthful commit-message suggestion; never run Git commit/push or remote writes
+  automatically. Do not indiscriminately stage SG-INFOS, private PDFs, recovery/app data,
+  local paths/configuration, signing material, validation packages/backups/reports or fixture assets.
+- Keep code/comments/docs/communication English and runtime UI French. Keep versionName and
+  reader_increment synchronized for RUNTIME app increments; automation-only repair need not bump.
+
+## Binding project rules
+- Communication, code, comments and documents: English. Runtime UI: French resources.
+- Current source, accepted scope and installation evidence are defined by the active section above, not historical M3a notes.
+- Android 10 minimum: API 29. Validate Lenovo Android 11 and Teclast Android 10 separately.
+- One MuPDF engine, pinned at 1.28.5. Engine changes, second engines and paid dependencies require approval.
+- Serialize native operations; never dispose a native document while a queued operation is using it.
+- Do not transmit documents, add INTERNET permission, or log quotation/comment/password content.
+- Highlight Contents are editable quotation text. Additional comments use separate Text notes.
+- Manual Contents must survive geometry edits. Never silently resynchronize corrected text.
+- Tablets: one primary toolbar row in both orientations; all 12 color tools directly visible.
+- Do not hide colors, scroll the primary toolbar, shrink touch targets, or move primary actions without approval.
+- Keep the accepted native editor/save/history/recovery controls available within their verified scope; retain all mutation, identity, permission and persistence gates.
+- Complete files, small increments, real tests; no fabricated output or empty feature handlers.
+- Do not commit private PDFs, local paths, signing keys, or unrelated changes.
+- Update docs/STATUS.md and requirements.csv at each increment; distinguish host results from user/device results and do not claim Teclast acceptance without evidence.
+
+
+## Historical milestone record — not current status
+
+Older milestone paragraphs below are retained as evidence. Their status/totals/UI values
+do not override the active section or current validated source.
+
+## Current addendum — M2b.2
+Supersedes older milestone/toolbar status, not safety/licensing constraints.
+- M1.1 fixture interoperability passed; M2b.1 host/device checks passed by user report.
+- M2b.2 supplied source has not been compiled/run by the author.
+- Top: six highlights / Save Undo Redo SaveAs / six notes, 48dp slots.
+- Bottom: Open name / FitPage Previous page-total Next FitWidth / Hand Settings.
+- Preserve native/Compose clipping, JNI search/bounds workarounds and private-text encoding.
+- Small-page horizontal pan is explicit/bounded; rotation preserves it; Fit recenters.
+- Page validation and press feedback must not activate unavailable tools or delay commands.
+- Production editing/save/history/settings, recents/retained session and sharper rendering are pending.
+
+
+## M2b.4 addendum
+Toolbar feedback is now 1000ms, superseding prior 2000ms notes. Page navigation retains fit-relative zoom and proportional horizontal placement, starts at top, and persists these viewport hints through rotation. Editing and native-source safety rules remain unchanged.
+
+
+## M2c.1 addendum
+Filename opens cached read-only properties; native metadata stays on the serialized worker. PDF dates and source-provider mtime are distinct, and missing values are not fabricated. M2b.4 navigation/feedback/clipping remain intact. Recents/restart location and retained native session are still pending.
+
+
+## M2c.2 continuity
+M2c.1 accepted by user; M2c.2 source supplied but not compiled/executed by author.
+Expected JVM total 94. Follow docs/M2c-2-ACCEPTANCE.md and await device results.
+ReaderViewModel retains the read-only native session; never retain Activity/View.
+Recents/location use serialized bounded AtomicFile metadata, not PDF recovery.
+Preserve all M1.1 JNI/encoding/manual-Contents policy, toolbar layout, clipping,
+gesture geometry, 1000ms feedback and properties behavior.
+Ordinary launch shows recents; reopening restores Y; page navigation starts at top.
+Do not delete PDFs/recovery data or revoke grants on list eviction/removal.
+Next after acceptance: durable working/save foundation; sharper rendering separately.
+Editing/history/save/autosave/recovery/settings remain unavailable.
+
+
+## M2c.3 continuity
+M2c.2 accepted: user reports 94 JVM tests, both instrumentation checks and all
+manual tests OK. M2c.3 source delivered, author Android/Kotlin execution pending.
+Expected JVM total 114. Use docs/M2c-3-ACCEPTANCE.md and await device acceptance.
+Native source now uses a synced/verified immutable baseline in noBackupFilesDir,
+not cache. Exact source-byte identity is persisted; no original PDF writes.
+Retention is ONLY for clearly marked unedited baselines. Never apply it to edits,
+journals or future working files; preserve unknown/extra-file material and live
+sessions. Fingerprints do not imply automatic conflict handling or edit recovery.
+Keep MuPDF APIs/JNI workarounds, quotation policy, toolbar/geometry/gestures,
+properties and M2c.2 recents/retained lifecycle unchanged.
+
+
+## M2c.4 continuity
+M2c.3 accepted: 114 tests and three instrumentation PASS labels, user report.
+M2c.4 expected 136 JVM tests; author Kotlin/Android execution pending. Follow the
+M2c-4 acceptance guide. Native logical dimensions own geometry, not bitmap pixels;
+same-page refinement must not reset gestures or saved anchors. Keep one outstanding
+request, serialize native work and disposal, separate refinement/navigation tokens,
+reject stale tickets, check bitmap bounds before allocation, never immediately recycle
+published images. No unbounded cache, engine/build/settings changes or PDF writes.
+Keep all M1.1 interoperability/manual-Contents and M2c.3 workspace safeguards intact.
+
+
+## M3a continuity
+M3a was accepted by the user on 2026-10-21. The user reported 161 JVM tests with zero
+failures/errors/skips, five instrumentation PASS labels, and successful reader checks on
+the Lenovo Android 11 tablet. A separate host command in this workspace completed
+`:app:assembleDebug`, `:app:testDebugUnitTest`, and `:app:lintDebug`; Gradle marked the
+assemble/test tasks UP-TO-DATE and executed Lint. The existing JUnit XML totals 161 tests
+with zero failures/errors/skips. Lint reports 22 warnings and 3 hints.
+
+The reader UI remains read-only. The M3a native adapter returns copied glyph data only;
+honor copy permission and serialized ownership, destroy StructuredText, and never retain
+native objects in UI state. Selection is conservative LTR same-block/run with actual
+quads; it does not infer cross-column/paragraph or complex-cluster text and does not
+invent quotations from blank space. The proof is not wired to production touch. Keep
+manual highlight Contents unchanged and separate from Text notes. No PDF writes,
+production annotations, editing/history/save/recovery completion, or M3b work is claimed.
+
+
+## M3b continuity
+M3a accepted: 161 JVM tests and five instrumentation PASS labels, user report. M3b source
+expected 182 tests; author runtime execution pending. Read docs/M3b-ACCEPTANCE.md.
+Six left colors now control explicit read-only previews, not real highlights. Preserve
+all tool slots/order/48dp targets. Snapshot extraction stays on native owner worker,
+pure selection uses latest-only background queue. Reject stale page/tool/cancel results.
+Map native origin and overlay actual quads using the same placement as pixels. Never
+write PDFs or mark recovery/save/history complete. Page/background/rotation discard
+preview/tool state. Preserve M3a Unicode/column/manual-Contents and M2c.3/4 safeguards.
+
+
+## M3b.1 continuity
+M3b automated checks passed (182 tests, six native labels), but manual multiline and
+margin endpoints FAILED. M3b is not fully accepted. M3b.1 expected 206 tests and seven
+native labels; author runtime execution pending. Read docs/M3b-1-ACCEPTANCE.md.
+Selection endpoints can resolve to actual glyphs within text-line bands on the sheet;
+raw hit stays strict. Native block IDs are not hard selection boundaries; geometric
+path/column/ambiguity/gap guards govern continuation. No new UI, rendering, annotation,
+PDF write, history/save/recovery claims. Require failed-passage regression acceptance.
+
+
+## M3c continuity
+New source is diagnostics/version, NOT a paragraph/cross-column selection fix. Known
+same-paragraph false refusals and paragraph/reading-order limitations remain explicit.
+Expected 216 tests from source baseline 206+10; author runtime execution pending. Read
+M3c-ACCEPTANCE.md. Reports contain only structural DTO metadata, not text/identity/bytes;
+never automatically export/log/transmit/copy them. Preserve user consent and review.
+Update APK versionName AND reader_increment resource for future app increments. Keep
+fixed status height, permanent tool layout, all existing selection/render/persistence
+safety rules and source guards. Do not advance PDF mutations without durability safeguards.
+
+
+## M3c.1 continuity
+M3c passed user host/native checks (216 tests, seven suites). M3c.1 source expected244
+JVM tests and eight native suites, author execution pending. Read M3c-1-ACCEPTANCE.md.
+Physical-row coalescing must preserve all real glyphs/quads, same-column guards and
+Unicode/manual-Contents policy. Inferred spaces are metadata, never fake glyphs/geometry;
+word and character selection must respect them. Keep two raw supporting rows, bounded
+normalization, idempotence and no cascading supports. Native cleanup precedes pure
+normalization. No PDF writes, read-order-column continuation or semantic paragraph
+claims. Retest original user layout; keep APK/status increment synchronized.
+
+
+## M3d continuity
+M3c.1 passed user host/native checks (244 tests/eight suites) and physical-row manual case.
+M3d source expected268 tests/nine suites; author runtime checks pending. See M3d acceptance.
+Cache only copied immutable data; weak/bounded hit index must preserve exact first-hit order.
+Interim feedback is valid in-order MOVE only, same gesture epoch and VM snapshot/tool/page;
+never revive canceled/page-old/final-old results or suppress final release accuracy.
+PreviewPaintBand is UI-only, NOT a native GlyphQuad or PDF annotation format. Never use
+paint rectangles to replace native selection geometry/export QuadPoints. Preserve gutters,
+row separation, native ownership, physical row word metadata and manual Contents policy.
+No real PDF mutations, completed save/recovery, automatic column hop or speed guarantee.
+Keep APK versionName and reader_increment synchronized. No automatic Git operations.
+
+
+## M3e continuity
+Expected 298 JVM tests/ten native suites; author runtime verification pending. User M3d
+manual feedback positive, but no full post-fix automated log supplied. Verify M3d receipt/
+source/bare-return fix before applying. See M3e-ACCEPTANCE.md.
+Handle adjustment is character/cluster-safe with exact fixed logical endpoint; do not
+re-hit-test the opposite point and drop zero-area punctuation. Retain shared range/flow
+core and explicit queue intent, epoch/snapshot/release gates. Handle tap no-op; slop/grab
+offset/cancel/pinch/rotation behavior must pass. UI punctuation height is paint-only and
+context-bounded. No letters/quads/PDF edits fabricated. No permanent toolbar changes,
+column-reading-order/auto-scroll/accessibility/editor/history/save/recovery completion.
+
+
+## M3f continuity
+M3e accepted: 298 tests/ten suites/manual checks, user report. M3f source expected 328
+JVM tests/eleven suites; author runtime verification pending. See M3f-ACCEPTANCE.md.
+Retain only completed copied range for its exact current snapshot; pinch/lifecycle cancel
+drafts to it. Same-document pages keep color but discard range/snapshot; new PDF starts
+navigation. Hand/tool exit/VM cleanup clears checkpoint. No process-death selection promise.
+Start handle above, clipped/hidden safely at top. Availability-first status/effective view
+mode avoid fake selection on empty/restricted pages. Quote policy preserves recognized
+items/paragraphs, not every physical wrap or unknown semantic intent. Never run it over
+manual Contents. Preserve all native ownership/epoch/cached-geometry/workspace safeguards.
+
+## M3f.1 continuity
+M3f user reports 328 JVM tests/eleven reader checks and continuity tests passed;
+accent and bullet-row issues remain open. M3f.1 expects 348 tests, not run here.
+Use per-glyph unicodeReliable provenance; never guess Unicode from CID/GID.
+Validate the final expanded range; preserve bidi/layout/complex-cluster guards.
+Use one inferred-boundary policy. Never remove actual whitespace or native glyphs.
+NFC applies only to automatic quotations, never manually corrected Contents.
+Diagnostics expose category counts, not actual text/code points.
+Retest the exact failing passage before claiming the reported issue resolved.
+
+## M3f.2 continuity
+M3f.1 manual accent/multi-item failures remain open. New geometry-checked spacing-accent
+clusters apply only to automatic quotations and selection endpoints; retain raw glyphs/
+quads/order/visualText and all native/column/queue safety rules. Do not guess unknown
+bullets or silently drop controls. Diagnostics now deliberately disclose only bounded
+exceptional-symbol IDs/offsets and relative geometry, never ordinary text or native IDs;
+keep the explicit review notice and no automatic transmission. Expected 372 tests/eleven
+reader suites, not executed here. Exact screenshot/PDF acceptance required.
+
+## M3f.3 continuity
+M3f.2 privacy-test fix accepted: 372 JVM tests/eleven reader suites, user build/Lint/install.
+M3f.3 expected402 tests/twelve suites; author runtime unavailable. Inspect acceptance guide.
+Dotless-i conversion is limited to unique overlapping accent clusters. Keep explicit spaces,
+NBSP, true word gaps and manual Contents. Suppress only proven synthetic accent gaps or
+inferred metadata with touching actual base bounds. Retain raw sourceCodePoint/synthetic
+flags/quads. Only reviewed reliable U+000F in exact AdvP4C4E74 may map to BLACK CIRCLE.
+Walker Font/Image wrappers own kept references in pinned JNI: destroy in callbacks and
+retain no native object/font name in DTOs. Preserve limits/copy/native-worker ownership.
+Do not commit the user PDF or its embedded fonts. No CI/Git side effects or PDF mutations.
+
+## M3f.4 continuity
+Preserve accepted M3f.3 accents and selection continuity. Device evidence is leading U+FFFD,
+not a remaining generic layout problem. Only exact reviewed font, reliable provenance and
+native-line prefix permit generic bullet normalization; no global replacement deletion.
+U+000F mapping remains unchanged; loss of filled/hollow identity uses generic bullet, never
+pretend exact glyph recovery. Keep source scalar/quads/native ownership/column safeguards.
+Expected414 JVM tests and twelve suites; execute native explicit-replacement fixture before
+claiming runtime acceptance. No user PDF/font inclusion, CI/Git action or original PDF writes.
+
+## M3f.5 continuity
+Never silently omit same-baseline year fragments. New bounded InlineReferenceRows follows
+TextRowCoalescer: only supported numeric identifier + detached parenthesized year with
+unique same-baseline/block/run and immediate spanning-body evidence. Preserve actual
+objects/quads/counts, add logical space metadata only, no fake glyphs. No cascading merges
+or general table/column hop. Keep existing selector/flow thresholds/accent/bullet/retention
+native ownership and manual Contents policy. Preserve the repaired debug INCOSE assertion.
+Expected438 tests/thirteen reader suites, not executed by author. See acceptance guide.
+
+## M3g policy continuity (supersedes conservative next-line selection notes)
+User explicitly requests flexible large same-column selection, not repeated character/layout
+exceptions. Use physical-row intervals and the explicit endpoint column. Do not reinstate
+native-ID/paragraph-gap/font-height vetoes. Include nearby compact/styled inline fragments
+without requiring particular glyph values. Preserve real glyphs/quads, endpoint/cluster,
+copy/unknown-text, native ownership, worker epoch and preview-retention safety. Disjoint
+columns still need a reading-order choice.25k preview/100k extraction resource limits are
+explicit, not permission to truncate. No native mutation/renderer/toolbar/dependency/Git changes.
+Expected466 tests/fourteen suites; author cannot run platform tools here. See acceptance guide.
+
+## M3g.1 writing-direction continuity
+M3g actual466 tests/fourteen suites passed, but its physical-row grouping could pull a tall
+rotated watermark into a body range and trigger unsupported-text refusal. Store geometric
+horizontal direction independently of reliability. Only horizontal rows enter incidental
+horizontal flow; keep rotated rows in snapshots/diagnostics and reject explicitly rotated
+endpoints. Do not skip unreadable/RTL horizontal body text or reinstate paragraph/font/ID
+vetoes. No character/name/position exception or native ownership change. Expected478/fifteen,
+not author runtime. Test supplied paragraph and previously accepted passages.
+
+## M3h checkpoint foundation
+Accepted M3g.1 user478 JVM/build/Lint plus15 device suites/manual OK. Freeze selection.
+New DurablePdfRevisionStore is a separate app-private non-cache editing namespace; never
+reuse read-only retention. Published PDFs immutable; operate on a separate native candidate,
+close all objects before callbacks return, no callback reentry. Two head slots preserve
+last committed data; expected token/idempotent operation ID, checksums and corruption
+rejection matter. Keep unknown/orphan/pinned material; prune only after readers close.
+No power-loss guarantee or implicit rollback of a live mutated native reader. This does
+not activate editor/history/save/recovery UI. Expected498 tests/16 suites, not author runtime.
+Validate has a hash-bound DeviceOnly resume; do not ask users to rebuild after USB drops.
+
+## M3i local editing scope
+User M3h498 JVM/16 suites/no-regression accepted. New explicit preview Valider creates
+native Highlights in a separate local checkpoint generation; NEVER writes original URI.
+Native worker owns candidates/reader swaps/history. Undo/Redo affects newly created current-
+open-session Highlights only, uses exact NM/page identity and durable commits. Keep manual
+Contents protocol ready but do not claim its editing UI. Source URI+byte fingerprint gates
+recovery; other/unverified generations preserve data and block edits. No standalone source-
+unavailable recovery UI or external Save/SaveAs yet. Clearly label local-only state; no dirty
+flag inferred from PDF-byte hash/revision number. Preserve selection and all48dp tool slots.
+Expected518/17 suites, not author runtime. No user/private PDF or font bundled.
+
+## M3j external export scope
+M3i user518/17 accepted. Save As uses fresh ACTION_CREATE_DOCUMENT only; copy immutable
+checkpoint on native worker, require copy permission and verified recovery state, refuse
+source URI/nonempty target, close output then bounded SHA256+length read-back. No deletes,
+source writes, export rebind or dirty-state reset. UI blocked while request pending/running;
+rotation retains request, process-death orphan result ignored. Failed provider target may be
+partial; retain local edits and retry new Save As. Save/overwrite and conflict resolution
+are deferred, not silently mapped to Save As. Expected534/18; author runtime unavailable.
+
+## M3k automatic commit and managed editing
+M3j user534/18/export checks accepted. Commit only accepted final release, never interim,
+stale/cancel/pinch. Tap managed annotation selects SAME native ID/handles/color; different
+slot recolors, checked slot deletes. New text gesture creates; adjusted handle replaces.
+Third-party/unrecognized/locked annotation editing is deferred, not guessed. Preserve manual
+Contents and existing dictionary fields. Undo/Redo restores checksummed full PDFs; pin all
+required history snapshots before maintenance, session-only16/64MiB with latest always kept.
+No original writes; M3j export code stays intact. Expected560/19,author runtime unavailable.
+
+## M3l appearance/Contents continuity
+M3k corrected user560/19/manual main workflow passed; reopen "IJ" not accepted. Native row
+appearance is now distinct from exact logical glyph quads. Persist/validate both private
+logical metadata and intended standard appearance; never derive handles from display bands.
+New/explicitly updated highlights get smooth native bands; no silent bulk migration. Uniformiser
+is an undoable selected-annotation action. Suppress completed native duplicate preview fill.
+Manual Contents editor preserves corrections on boundary changes; additional notes stay separate.
+Maintenance runs after result delivery; measure commit/render/cleanup timings, do not claim
+instant deletion or disable durability checks. Expected590/20,author runtime unavailable.
+
+
+## M3m continuation
+Use actual supplied M3l source. Only annotation-only same-page body text/count/metadata is
+reused;960px edit frame then refine, native coordinates/epochs still authoritative. No
+optimistic durable-save acknowledgement or removed hash/sync/validation. Save confirms the
+CURRENT opened URI, requests write grant, checks source SHA, publishes verified before/after
+backups+immutable checksummed owner intent before provider output, rechecks and reads back.
+Saved-byte link retains ORIGINAL owner namespace and later UNSAVED edits. No generic atomic
+provider CAS/cloud/power-loss guarantee. Never blind-rollback, guess URIs, silently Save As,
+or select an older/mixed/corrupt recovery head. Unique recovery is explicit/detached with
+source Save disabled; Save As works. Backups retained, retention/browser future. Manual Save
+blocks editing. Expected630/21, author runtime absent. Disposable-source acceptance required.
+
+## M3n continuity
+Baseline actual M3m217-file export; expected654 JVM/22 native suites, runtime pending.
+Separate page identity from edit/frame serial. Same-page edits/refinement keep live geometry;
+never re-fit on raster quality. Fixed status height and overlay export messages avoid PDF
+layout jumps. Canvas lens follows active endpoint, not finger, and clears on gesture/lifecycle
+cancellation; no native/IO per move. Keep per-completed-edit durability.
+Unsaved navigation has Save/Keep local/Cancel. Hash content, not revision count. Never discard
+local checkpoints on any dialog choice. Save failure/cancel never executes pending navigation.
+Recovered Save obtains a fresh readable/editable external snapshot and an explicit confirmation
+bound to its SHA; retain existing provider permission/protection/backup/readback constraints.
+No automatic reapproval, merge, blind rollback, URI guessing or process-death write replay.
+No-op recovered Save may need an owner-binding intent even without output. Backups preserved.
+PowerShell uses source/payload SHA preflight, XML XPath/GetAttribute and no String.Replace.
+Actual author platform execution unavailable: do not claim runtime passes from static checks.
+
+
+## M3o.1 continuity
+Reader feature increment, not automation-only. Back has Save+exit / keep local+exit / Cancel; failed/cancelled Save must never signal exit. Exit event is consumed once, retained through rotation, not replayed after process death. Copy checkpoints remain per completed edit.
+Edit frames retain displayed raster edge (minimum1600); same-page identity stays stable. Larger session Undo:1000 actions,1GiB full-snapshot budget; not unlimited or cross-restart Undo. Native managed opacity65%, preview multiply166/255; third-party annotations remain untouched. Slight skew appearances projected into row coordinates then restored, exact editing quads/Contents remain unchanged. Top Hand follows pink; six color buttons40dp keep group width stable.
+Disk-first independent recovery-version storage is deliberately NOT implemented in this increment. Existing M3n source/recovery guards retained. No recovery data deletion, automatic appearance rewrite on open, new SDK or dependency.
+Full automation40 cases (three additional exit branches); focused two-case run is insufficient for acceptance. Production APK installation only after isolated full checks with zero failures/blocks. Author has no platform runtime: do not call static checks a compile/device pass.
+
+
+## M3p
+Disk-first reader, explicit recoveries, fresh durable v2 branch on every disk/copy opening. Never auto-adopt or edit/prune legacy namespaces. Catalog metadata-only discovery is not proof of PDF integrity: explicit resolve/open must fully hash and native-validate. Failed/unreadable disk may offer saved snapshots explicitly. Current disk remains editable irrespective old copies. Explicit recovered Save uses existing inspected replacement/recheck/backup/readback guards, separate v2 journal; legacy save API preserved. Source-saved marker is advisory only; no global storage cap or downgrade compatibility claimed. Existing M3o.1 sharpness/Back/opacity/history/geometry behavior and A1.3.1 readiness retained. Full gate698 JVM/22 native/47 ALL PASS; zero known gaps. See docs/M3p-ACCEPTANCE.md.
+
+
+## M3q — appearance regression and explicit page repair
+Real saved PDF exposed whole-span fallback from isolated anomalous glyph quads plus thin inline fragment. Never change exact logical quads/endpoints/quotation for appearance. New dominant near-horizontal orientation with isolated neighbor-bounded anomaly handling; substantial rotated runs preserved. Tiny positive inline fragments borrow body band only with containment/next-body checks. Explicit Uniformiser page is one durable checkpoint/Undo for app-owned changes only; do not repair on open or autosave source. Manual Contents/mode/third-party entries retained. Numeric fixture only, no original PDF/text/watermark bundled. Full710 JVM/23 native/48 workflow gate; actual PDF visual verification still required. Keep M3p versioned recovery and A1.3.1 readiness unchanged.
+
+
+## M3r
+Explicit whole-document appearance review before mutation. Native worker collects app-owned items, copies pure-data plan, binds to content SHA and opaque review ID. Cancel scan/review adds no Undo command; confirmation is one checkpoint/Undo across all pages. Scan cancellation uses epoch; no process-death approval replay. Keep logical quads, Contents/mode, quotation/slot/id, foreign annotations and provider source unchanged until explicit Save.5000 managed-item review cap. M3q page repair remains. Full supplied TestFile regression is isolated-profile only: private asset copied into clone from .validation/private-fixtures, no real PDF/text/page images in reports. Working APK checked for private asset path and exact original PDF digest before install. Private fixture/ZIP must not be committed publicly. Full724 JVM/24 native(including1 private)/50 synthetic workflow gate.
+
+
+## M3s continuity
+Native Text notes use NativeNoteEdits and the existing LocalHighlightWorkspace transaction,
+checkpoint/history/save/recovery system. Never introduce a parallel note sidecar. Do not loosen
+highlight geometry/stale-state/hash/save guards. Notes' unconfirmed drafts are live-session only.
+Acceptance: 754 JVM / 26 native / 58 workflow PASS, isolated package only until the gate passes.
+Keep private reference PDF out of production APKs, source archives and reports.
+
+
+## M3t continuity
+ExternalSavePresentation is presentation only. Keep dirty/exit/recovery decisions unchanged.
+Expected full gate770 JVM/26 native/62 workflows. Parent M3s package is read-only.

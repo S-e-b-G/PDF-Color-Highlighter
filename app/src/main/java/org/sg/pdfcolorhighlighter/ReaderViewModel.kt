@@ -40,13 +40,42 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     var paletteWarning by mutableStateOf(false)
         private set
     private var paletteLoaded=false
-    val canOpenSettings:Boolean get()=ready && paletteLoaded && !loading && !editBusy && !paletteBusy && !noteEditorOpen &&
+
+    var fallbackEnabled by mutableStateOf(false)
+        private set
+    var fallbackBusy by mutableStateOf(false)
+        private set
+    var fallbackWarning by mutableStateOf(false)
+        private set
+    private var fallbackLoaded=false
+    private var fallbackPickerPending=false
+    fun beginFallbackFolder():Boolean {
+        if(!settingsOpen || paletteBusy || fallbackBusy || editBusy)return false
+        fallbackPickerPending=true;fallbackBusy=true;return true
+    }
+    fun finishFallbackFolder(tree:android.net.Uri?,flags:Int){
+        if(!fallbackPickerPending)return
+        fallbackPickerPending=false
+        if(tree==null){fallbackBusy=false;return}
+        session.configureFallback(tree,flags){result->if(!cleared){fallbackBusy=false
+            result.fold(onSuccess={fallbackEnabled=it;fallbackWarning=false},onFailure={fallbackEnabled=false;fallbackWarning=true})
+        }}
+    }
+    fun disableFallback(){
+        if(!settingsOpen || paletteBusy || fallbackBusy || editBusy)return
+        fallbackBusy=true
+        session.configureFallback(null,0){result->if(!cleared){fallbackBusy=false
+            result.fold(onSuccess={fallbackEnabled=it;fallbackWarning=false},onFailure={fallbackEnabled=false;fallbackWarning=true})
+        }}
+    }
+
+    val canOpenSettings:Boolean get()=ready && paletteLoaded && fallbackLoaded && !fallbackBusy && !loading && !editBusy && !paletteBusy && !noteEditorOpen &&
         !navigationPrompt && !exitPrompt && !recoveryPrompt && replacementChallenge==null && !documentRepairBusy && documentRepairReview==null
     fun openSettings(){
         if(!canOpenSettings)return
         stopPreview();paletteDraft=palette.colors.map{AnnotationPalette.hex(it)};settingsOpen=true
     }
-    fun closeSettings(){if(!paletteBusy)settingsOpen=false}
+    fun closeSettings(){if(!paletteBusy && !fallbackBusy)settingsOpen=false}
     fun updatePaletteDraft(slot:Int,text:String){
         if(!settingsOpen || paletteBusy || slot !in 0..5)return
         paletteDraft=paletteDraft.mapIndexed{i,s->if(i==slot)text.take(16)else s}
@@ -54,7 +83,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     fun resetPaletteSlot(slot:Int){updatePaletteDraft(slot,AnnotationPalette.hex(AnnotationPalette.DEFAULT[slot]))}
     fun resetPalette(){if(settingsOpen && !paletteBusy)paletteDraft=AnnotationPalette.DEFAULT.colors.map{AnnotationPalette.hex(it)}}
     fun applyPalette(){
-        if(!settingsOpen || paletteBusy)return
+        if(!settingsOpen || paletteBusy || fallbackBusy)return
         val next=AnnotationPalette.draft(paletteDraft) ?: return
         if(next==palette && !paletteWarning){settingsOpen=false;return}
         paletteBusy=true
@@ -250,7 +279,12 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 if(exitAfterSave){exitAfterSave=false;signalExit()}else if(saveThenOpen)executePendingOpen()
             },onFailure={error->
                 lastExternalWriteFailed=true;saveBlocked=true;cancelDocumentOpen()
-                exportMessage=if(error is SourceSaveConflict)R.string.reader_source_save_conflict else R.string.reader_source_save_failed
+                exportMessage=when{
+                    error is SourceSaveConflict->R.string.reader_source_save_conflict
+                    error is SourceFallbackFailure && error.copyVerified->R.string.fallback_copy_verified
+                    error is SourceFallbackFailure->R.string.fallback_copy_failed
+                    else->R.string.reader_source_save_failed
+                }
             })
             scheduleRefinement()
         }},challenge?.sha256)
@@ -567,6 +601,9 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         private set
 
     init {
+        session.readFallback{result->if(!cleared){
+            result.fold(onSuccess={fallbackEnabled=it},onFailure={fallbackWarning=true});fallbackLoaded=true
+        }}
         io.execute {
             val paletteResult=runCatching{paletteStore.read()}
             val result = runCatching { store.read() }

@@ -57,7 +57,7 @@ object NativeHighlightEdits {
         val contents=annotation.contents ?: ""
         val automatic=mode==TextMode.AUTOMATIC.name && contents==synced
         return ManagedHighlight(HighlightEdit(name,page,slot,quotation,quads,if(encoded==null)emptyList()else painted,AnnotationPalette.storedColor(actual,slot)),contents,
-            if(automatic)TextMode.AUTOMATIC else TextMode.MANUAL)
+            if(automatic)TextMode.AUTOMATIC else TextMode.MANUAL,annotation.opacity)
     }
     fun list(pdf:PDFDocument,index:Int):List<ManagedHighlight> {
         val page=pdf.loadPage(index) as PDFPage
@@ -94,7 +94,7 @@ object NativeHighlightEdits {
                     annotation.setQuadPoints((after.edit.appearance.ifEmpty{NativeHighlightAppearance.forQuads(after.edit.quads)}).map{q->Quad(q.ul.x,q.ul.y,q.ur.x,q.ur.y,q.ll.x,q.ll.y,q.lr.x,q.lr.y)}.toTypedArray())
                     val c=after.edit.color
                     annotation.setColor(floatArrayOf(((c shr 16) and 255)/255f,((c shr 8) and 255)/255f,(c and 255)/255f))
-                    annotation.setOpacity(.80f)
+                    annotation.setOpacity(after.opacity)
                     annotation.setContents(after.contents)
                     val obj=annotation.`object`
                     try{
@@ -156,4 +156,3 @@ object NativeHighlightEdits {
         }finally{page.destroy()}
     }
 }
-
