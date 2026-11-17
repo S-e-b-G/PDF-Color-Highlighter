@@ -250,12 +250,12 @@ class SmokePdfSession(context: Context) {
                     doc.hasPermission(Document.PERMISSION_ANNOTATE) &&
                     localEditNotice==org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE
             }catch(_:Exception){false}
-            val highlights=if(editable && doc is com.artifex.mupdf.fitz.PDFDocument)NativeHighlightEdits.list(doc,index)else emptyList()
+            val highlights=if(editable && doc is com.artifex.mupdf.fitz.PDFDocument)NativeHighlightEdits.editable(doc,index)else emptyList()
             if(editPreview)android.util.Log.i("PdfEditDetail","beforeCountMs=${countStarted-renderStarted} countMs=${rasterStarted-countStarted} rasterMs=${rasterFinished-rasterStarted} listMs=${android.os.SystemClock.elapsedRealtime()-rasterFinished} edge=$edge")
             return SmokeFrame(bitmap,index,count,documentName,chars,properties,width,height,sourceDetached,sourceSaveBlocked,
                 highlights,
                 editable,editing?.sequence ?: 0L,editing?.canUndo ?: false,editing?.canRedo ?: false,localEditNotice,editing?.contentHash,expectedSourceHash,recoveryListing,
-                if(editable && doc is com.artifex.mupdf.fitz.PDFDocument)NativeNoteEdits.list(doc,index)else emptyList(),
+                if(editable && doc is com.artifex.mupdf.fitz.PDFDocument)NativeNoteEdits.editable(doc,index)else emptyList(),
                 org.sg.pdfcolorhighlighter.domain.TextBounds(bounds.x0,bounds.y0,bounds.x1,bounds.y1))
             }catch(error:Throwable){bitmap.recycle();throw error}
         } finally { page.destroy() }

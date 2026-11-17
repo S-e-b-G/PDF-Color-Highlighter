@@ -142,7 +142,7 @@ class MainActivity : ComponentActivity() {
                     reader.fallbackEnabled,reader.fallbackBusy,reader.fallbackWarning,{chooseFallbackFolder()},{reader.disableFallback()})
             }
             ReaderScreen(
-                highlightEditorRequest=reader.highlightEditorRequest,highlightEditorCloseSerial=reader.highlightEditorCloseSerial,
+                highlightEditorRequest=reader.highlightEditorRequest,highlightEditorCloseSerial=reader.highlightEditorCloseSerial,highlightCanSmooth=reader.selectedHighlight?.imported==null,
                 annotationPalette=reader.palette,selectedHighlightColor=reader.selectedHighlight?.edit?.color,
                 canOpenSettings=reader.canOpenSettings,onSettings={reader.openSettings()},
                 onDeleteHighlight={reader.deleteSelectedHighlight()},

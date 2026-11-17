@@ -3,14 +3,15 @@ package org.sg.pdfcolorhighlighter.domain
 
 import java.util.UUID
 
-/** Copied app-owned native Text state, never a native handle or a sidecar. */
-data class ManagedNote(val id:String,val page:Int,val slot:Int,val bounds:TextBounds,val contents:String,val rgb:Int?=null) {
+/** Copied selectable native Text state; imported provenance is explicit, never a native handle or sidecar. */
+data class ManagedNote(val id:String,val page:Int,val slot:Int,val bounds:TextBounds,val contents:String,val rgb:Int?=null,val imported:ImportedAnnotationRef?=null) {
     val color:Int get()=rgb ?: AnnotationPalette.DEFAULT[slot]
     init {
         require(rgb==null || rgb in 0..0xffffff)
         require(Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").matches(id))
         require(page>=0 && slot in 0..5 && bounds.width>0f && bounds.height>0f)
-        require(NotePolicy.validText(contents))
+        require(NotePolicy.validText(contents) || imported!=null && contents.isEmpty())
+        if(imported!=null)require(id==imported.id(page,"Text"))
     }
 }
 object NotePolicy {

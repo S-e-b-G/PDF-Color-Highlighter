@@ -53,7 +53,7 @@ private val slotNames = listOf(R.string.reader_slot_1, R.string.reader_slot_2, R
 /** M2b.2: centered page-navigation group, page-jump dialog and fading press feedback. */
 @Composable
 fun ReaderScreen(
-    highlightEditorRequest:Long,highlightEditorCloseSerial:Long,
+    highlightEditorRequest:Long,highlightEditorCloseSerial:Long,highlightCanSmooth:Boolean=true,
     annotationPalette:AnnotationPalette,selectedHighlightColor:Int?,canOpenSettings:Boolean,onSettings:()->Unit,onDeleteHighlight:()->Unit,
     externalSaveState:()->ExternalSaveState,unsavedContent:Boolean,
     noteSlot:Int?,canUseNotes:Boolean,noteBounds:TextBounds?,selectedNote:ManagedNote?,
@@ -122,12 +122,12 @@ fun ReaderScreen(
                     val tablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
                     when {
                         maxWidth >= 768.dp -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            PreviewColorTools(palette,activeHighlight, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null || selectedNote!=null || highlightId!=null)
+                            PreviewColorTools(palette,activeHighlight, previewEnabled || highlightId!=null && !loading && !editBusy, onChoosePreviewSlot,onHand,noteSlot!=null || selectedNote!=null || highlightId!=null)
                             Spacer(Modifier.weight(1f)); Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true},unsavedContent); Spacer(Modifier.weight(1f))
                             NoteColorTools(palette,activeNote,canUseNotes,onChooseNoteSlot)
                         }
                         !tablet -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row { PreviewColorTools(palette,activeHighlight, previewEnabled, onChoosePreviewSlot,onHand,noteSlot!=null || selectedNote!=null || highlightId!=null) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true},unsavedContent) }; Row { NoteColorTools(palette,activeNote,canUseNotes,onChooseNoteSlot) }
+                            Row { PreviewColorTools(palette,activeHighlight, previewEnabled || highlightId!=null && !loading && !editBusy, onChoosePreviewSlot,onHand,noteSlot!=null || selectedNote!=null || highlightId!=null) }; Row { Actions(!loading && localCanUndo,!loading && localCanRedo,onUndoLocal,onRedoLocal,canExport,onSaveAs,canSave,{if(needsReplacement)onSave()else saveConfirm=true},unsavedContent) }; Row { NoteColorTools(palette,activeNote,canUseNotes,onChooseNoteSlot) }
                         }
                         else -> Text(stringResource(R.string.reader_width_blocked),
                             Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall)
@@ -203,7 +203,7 @@ fun ReaderScreen(
                             }
                         }
                     }
-                    if (previewCommitted && previewSpan!=null) {
+                    if (highlightId!=null || previewCommitted && previewSpan!=null) {
                         Surface(Modifier.align(Alignment.TopEnd).padding(8.dp).zIndex(1f),
                             shape=RoundedCornerShape(8.dp),shadowElevation=2.dp) {
                             Row(verticalAlignment=Alignment.CenterVertically){
@@ -214,7 +214,7 @@ fun ReaderScreen(
                                     quotationOpen=true
                                 },enabled=!loading) { Text(stringResource(R.string.selection_preview_quotation)) }
                                 if(highlightContents!=null && activeHighlight==null)TextButton(onClick=onDeleteHighlight,enabled=!loading && !editBusy){Text(stringResource(R.string.palette_delete_highlight))}
-                                if(highlightContents!=null)TextButton(onClick=onSmoothHighlight,enabled=!loading){Text(stringResource(R.string.reader_smooth_highlight))}
+                                if(highlightContents!=null && highlightCanSmooth)TextButton(onClick=onSmoothHighlight,enabled=!loading){Text(stringResource(R.string.reader_smooth_highlight))}
                                 if(localEditError!=null)TextButton(onClick=onCommitHighlight,enabled=canCommitHighlight && !loading){Text(stringResource(R.string.reader_edit_retry))}
                             }
                         }

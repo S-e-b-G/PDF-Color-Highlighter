@@ -59,6 +59,12 @@ object NativeHighlightEdits {
         return ManagedHighlight(HighlightEdit(name,page,slot,quotation,quads,if(encoded==null)emptyList()else painted,AnnotationPalette.storedColor(actual,slot)),contents,
             if(automatic)TextMode.AUTOMATIC else TextMode.MANUAL,annotation.opacity)
     }
+    fun editable(pdf:PDFDocument,index:Int):List<ManagedHighlight> {
+        val all=list(pdf,index)+ImportedAnnotationEdits.highlights(pdf,index)
+        if(all.sumOf{it.edit.quads.size.toLong()}>100000L)return emptyList()
+        val counts=all.groupingBy{it.edit.id}.eachCount()
+        return all.filter{counts[it.edit.id]==1}
+    }
     fun list(pdf:PDFDocument,index:Int):List<ManagedHighlight> {
         val page=pdf.loadPage(index) as PDFPage
         try{val annotations=page.annotations ?: emptyArray()
@@ -80,6 +86,7 @@ object NativeHighlightEdits {
     }
     /** Modify in place: preserve unrelated entries/flags; apply current app-owned highlight opacity. */
     fun replace(pdf:PDFDocument,before:ManagedHighlight,after:ManagedHighlight?) {
+        if(before.imported!=null){ImportedAnnotationEdits.replaceHighlight(pdf,before,after);return}
         require(pdf.hasPermission(Document.PERMISSION_COPY))
         require(after==null || after.edit.id==before.edit.id && after.edit.page==before.edit.page)
         val page=pdf.loadPage(before.edit.page) as PDFPage

@@ -5,7 +5,7 @@ import com.artifex.mupdf.fitz.*
 import org.sg.pdfcolorhighlighter.domain.*
 import kotlin.math.abs
 
-/** Candidate/owner worker only. Imported, duplicate, locked or unrecognized notes are not edited. */
+/** Candidate/owner worker only. Owned and explicitly compatible imported notes; unsafe objects stay protected. */
 object NativeNoteEdits {
     private fun string(a:PDFAnnotation,key:String):String? {
         val obj=a.`object`
@@ -28,6 +28,12 @@ object NativeNoteEdits {
         val actual=(kotlin.math.round(rgb[0]*255).toInt() shl 16) or (kotlin.math.round(rgb[1]*255).toInt() shl 8) or kotlin.math.round(rgb[2]*255).toInt()
         val r=a.bounds
         return ManagedNote(id(a),page,slot,TextBounds(r.x0,r.y0,r.x1,r.y1),a.contents ?: "",AnnotationPalette.storedColor(actual,slot))
+    }
+    fun editable(pdf:PDFDocument,index:Int):List<ManagedNote> {
+        val all=list(pdf,index)+ImportedAnnotationEdits.notes(pdf,index)
+        if(all.sumOf{it.contents.length.toLong()}>4000000L)return emptyList()
+        val counts=all.groupingBy{it.id}.eachCount()
+        return all.filter{counts[it.id]==1}
     }
     fun list(pdf:PDFDocument,index:Int):List<ManagedNote> {
         val page=pdf.loadPage(index) as PDFPage
@@ -74,6 +80,7 @@ object NativeNoteEdits {
         }finally{page.destroy()}
     }
     fun replace(pdf:PDFDocument,before:ManagedNote,after:ManagedNote?) {
+        if(before.imported!=null){ImportedAnnotationEdits.replaceNote(pdf,before,after);return}
         require(pdf.hasPermission(Document.PERMISSION_ANNOTATE))
         require(after==null || after.id==before.id && after.page==before.page && after.bounds==before.bounds)
         val page=pdf.loadPage(before.page) as PDFPage

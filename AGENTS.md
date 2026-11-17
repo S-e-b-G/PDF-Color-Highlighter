@@ -1,3 +1,62 @@
+# M4b-R2 — consolidated runner repair; acceptance pending
+
+M4b is already applied. Do not reapply its functional batch. M4a remains the last
+reported accepted/installed app (874 JVM /30 native /90 workflows).
+R2 fixes imported debug PASS:/FAIL:, production/native inventory30+1 and runner JVM886.
+Synthetic imported input is seeded before first opening instead of replacing an active PDF.
+All94 workflow case blocks/assertions are retained. No production behavior/dependency change.
+Host-only preparation runs actual discovery, isolated assemble, JVM and Lint before ADB.
+It is not Android acceptance. Focused4 then full886/31/94 must pass before working install-r.
+Preserve original stages/receipts/reports and verified backups. Resume through exact
+before/after guards; do not bypass hashes, reapply M4b, uninstall or clear app data.
+Author static/reference checks are not executed PowerShell/Kotlin/Gradle/Android results.
+
+# M4b-R1 — launcher dependency repair; platform acceptance pending
+
+Observed2026-11-17: original M4b Start failed during temporary package materialization while
+reading nonexistent Apply-M4a.ps1, before Apply/Gradle/ADB. It incorrectly assumed that a
+runtime version implied matching inherited installer filenames. M4a remains last accepted app.
+
+R1 supplies its own manifest-driven Apply template and resolves the actual checksum-indexed
+M4a FULL874/30/90 validator by content/contract, not guessed versioned filename. It preserves
+that validator's full checks. Missing/ambiguous/tampered/older validators stop before source
+writes. Original M4b package and M4a QA parent are immutable; abandoned temp folders preserved.
+Kotlin/XML/resources/native suites/UI fragments/assertions are unchanged. Only launcher and
+AGENTS/STATUS/requirements bookkeeping change. Expected886 JVM/31 native/94 workflows, with
+all4 imported focused cases PASS first; only the named focused JVM/native NOT_RUN is allowed.
+No previously failed attempt is counted as acceptance. No timeouts/retries/assertion waivers,
+source-guard bypass, SDK/dependency/Git changes, uninstall or app-data clearing. Actual host
+PowerShell parser and isolated launcher-contract tests precede any project application.
+Author Python/reference/lexical/ZIP checks are not PowerShell/Kotlin/Android execution.
+
+# M4b — compatible imported annotation editing; acceptance pending
+
+M4a accepted/installed2026-11-16 on Lenovo/API30 after874 JVM/30 native/90 workflows ALL PASS;
+working data preserved. Retain full report20261116-212310-27c892667a1f4521b29b5d57736a089f.
+R5 checked continuation corrected the focused host NOT_RUN classification. No previous pass
+counts as new M4b acceptance. Initial Docear/Obsidian fixture proof already passed; final
+current-output regression remains distinct. No autosave timer or automatic leaving-save.
+
+M4b source supports simple standard RGB Highlight/Text annotations with unique, nonblank
+native NM names. No identity guessing, rewrite/adoption on open, annotation sidecar or native
+handle in UI. Preserve original NM, Contents, RGB, opacity and unrelated dictionary entries;
+validate exact copied before-state and native style signature on the existing owner worker.
+Locked/hidden/duplicate/unnamed/rich-text/reply/linked-popup objects remain protected. This is
+NOT unrestricted editing of every imported annotation. Explicitly unsupported means unmodified.
+Handles require proof against real glyphs and bounded reading order; Contents/recolor/delete
+remain available if there is no safe span. Imported text stays MANUAL through geometry changes.
+Whole-page/document Uniformiser remains owned-only. New app highlights80%; existing alpha kept.
+
+Expected886 JVM (+12)/31 native (+1)/94 workflows (+4), all PASS before working install-r.
+Run all4 imported UI workflows first; only the exact named JVM/native stage may be NOT_RUN in
+focused mode. Focused PASS alone is never acceptance. Retain874/30/90 inherited coverage,
+private TestFile, R1 create/R4 pan/R5 tap guards and MEGA exclusions. No weakened assertions,
+retry taps, blind delays, SDK/engine/dependency/Git changes, uninstall or clearing working data.
+Author static/reference checks are not Kotlin/PowerShell/Android execution. M4a remains the
+installed baseline until actual matching M4b FULL and workingInstalled receipt prove newer.
+
+## Preserved M4a instructions/evidence
+
 # Project workflow — authoritative current state
 
 Updated2026-11-15. Historical append-only instructions are archived in

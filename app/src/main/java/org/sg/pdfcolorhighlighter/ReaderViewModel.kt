@@ -452,9 +452,10 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         val item=hits.single()
         val openEditor=HighlightCommentPolicy.openOnTap(selectedHighlight?.edit?.id,item.edit.id)
         val span=ManagedHighlightSelection.span(snapshot,item)
-        if(span==null){localEditError=R.string.reader_highlight_unresolved;return true}
-        selectionQueue.cancel();selectedHighlight=item;previewSlot=item.edit.slot
-        previewSpan=span;previewCommitted=true;previewRejection=null;previewRetention.commit(snapshot,span)
+        if(span==null && item.imported==null){localEditError=R.string.reader_highlight_unresolved;return true}
+        selectionQueue.cancel();selectedHighlight=item;previewSlot=if(span!=null)item.edit.slot else null
+        previewSpan=span;previewCommitted=true;previewRejection=null
+        if(span!=null)previewRetention.commit(snapshot,span)else previewRetention.clear()
         localEditError=null
         if(openEditor)highlightEditorRequest++
         return true
@@ -470,11 +471,11 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    val canSmoothPage:Boolean get()=!cleared && !loading && !editBusy && editAllowed && pageHighlights.isNotEmpty()
+    val canSmoothPage:Boolean get()=!cleared && !loading && !editBusy && editAllowed && pageHighlights.any{it.imported==null}
     fun smoothPage(){
         if(!canSmoothPage)return
         val uri=activeUri ?: return
-        val changes=pageHighlights.mapNotNull{before->
+        val changes=pageHighlights.filter{it.imported==null}.mapNotNull{before->
             val paint=NativeHighlightAppearance.forQuads(before.edit.quads)
             val after=before.copy(edit=before.edit.copy(appearance=paint))
             if(NativeAppearanceEquivalence.same(before.edit.appearance,paint))null else before to after
@@ -515,6 +516,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
     fun smoothHighlight(){
         val before=selectedHighlight ?: return
+        if(before.imported!=null)return
         val span=previewSpan ?: return
         val paint=NativeHighlightAppearance.forSpan(span)
         if(NativeAppearanceEquivalence.same(before.edit.appearance,paint))return
@@ -525,7 +527,10 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private fun changeHighlight(before:ManagedHighlight,after:ManagedHighlight?,closeEditor:Boolean=false){
         if(loading || editBusy || !editAllowed)return
         val uri=activeUri ?: return
-        val styled=after?.let{item->previewSpan?.let{span->item.copy(edit=item.edit.copy(appearance=NativeHighlightAppearance.forSpan(span)))} ?: item}
+        val styled=after?.let{item->
+            if(before.imported!=null && item.edit.quads==before.edit.quads)item.copy(edit=item.edit.copy(appearance=before.edit.appearance))
+            else previewSpan?.let{span->item.copy(edit=item.edit.copy(appearance=NativeHighlightAppearance.forSpan(span)))} ?: item
+        }
         if(before==styled)return
         startEditFeedback()
         editBusy=true;localEditError=null;stopRefinement();selectionQueue.cancel();pendingViewport=viewportState
@@ -842,8 +847,8 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         val id=reselectHighlightId;reselectHighlightId=null
         val item=pageHighlights.singleOrNull{it.edit.id==id} ?: return
         val span=ManagedHighlightSelection.span(snapshot,item)
-        if(span!=null){selectedHighlight=item;previewSlot=item.edit.slot;previewSpan=span
-            previewCommitted=true;previewRetention.commit(snapshot,span)}
+        if(span!=null || item.imported!=null){selectedHighlight=item;previewSlot=if(span!=null)item.edit.slot else null;previewSpan=span
+            previewCommitted=true;if(span!=null)previewRetention.commit(snapshot,span)else previewRetention.clear()}
         else{selectedHighlight=null;localEditError=R.string.reader_highlight_unresolved}
     }
     private fun loadPageText() {
@@ -861,14 +866,18 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
     fun choosePreviewSlot(slot: Int) {
         require(slot in 0..5)
-        val snapshot=textSnapshot ?: return
-        if (loading || editBusy || settingsOpen || noteEditorOpen || snapshot.status!=PageTextStatus.READY) return
-        noteSlot=null;selectedNote=null
+        if (loading || editBusy || settingsOpen || noteEditorOpen) return
         val selected=selectedHighlight
         if(selected!=null){
+            noteSlot=null;selectedNote=null
             if(selected.edit.color==palette[slot])changeHighlight(selected,null)
             else changeHighlight(selected,selected.copy(edit=selected.edit.copy(slot=slot,rgb=AnnotationPalette.storedColor(palette[slot],slot))))
-        }else if(previewSlot==slot)stopPreview() else previewSlot=slot
+            return
+        }
+        val snapshot=textSnapshot ?: return
+        if(snapshot.status!=PageTextStatus.READY)return
+        noteSlot=null;selectedNote=null
+        if(previewSlot==slot)stopPreview() else previewSlot=slot
     }
     fun cancelPreviewSelection() {
         selectionQueue.cancel()

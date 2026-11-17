@@ -72,3 +72,7 @@
 "QA-M4a-R3","Resolve existing domain fingerprint helper in native fallback proof","M4a-R3","SOURCE_REPAIR_FULL_GATE_PENDING","Import-only debug fix; all assertions and production runtime unchanged; expected874 JVM30 native90 workflows; previous compile failed before tests"
 "QA-M4a-R4","Real margin pan gestures cross touch slop and measure final swipe","M4a-R4","AUTOMATION_REPAIR_FULL_GATE_PENDING","20 gestures8 MOVE24ms2px unchanged; no state injection; observedR3 JVM874 native30 workflow88of90; full gate still87430/90"
 "QA-M4a-R5","Bind comment tap to current drawn view and one unique highlight target","M4a-R5","FOCUSED_AND_FULL_ACCEPTANCE_PENDING","One physical tap unchanged oracle20s shared deadline; focused whole comment workflow before full874/30/90; R4 all margin/fallback passed"
+"IMPORTED-EDIT-M4B","Compatible named simple standard Highlight/Text editing without ownership rewrite","M4b","SOURCE_DELIVERED_ACCEPTANCE_PENDING","Unique NM; manual Contents RGB opacity preserved; glyph-proven handles; existing history/save;886 JVM31 native94 workflows"
+
+"M4B-R1-LAUNCHER","Self-contained Apply plus indexed validator discovery","M4b","PREPARED_ACCEPTANCE_PENDING","Runtime payload unchanged; exact886/31/94 full gate retained"
+"M4B-R2-INTEGRATION","Repair native protocol inventory JVM gate and imported fixture setup; host build before device","M4b-R2","SOURCE_REPAIR_ACCEPTANCE_PENDING","Fresh host compile/JVM/Lint then focused4 and full886/31/94; last accepted working app M4a; no bypass/data clear"

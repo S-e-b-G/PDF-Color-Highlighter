@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 package org.sg.pdfcolorhighlighter.domain
 
-/** Copied app-managed native state only; never a native object. */
-data class ManagedHighlight(val edit:HighlightEdit,val contents:String,val mode:TextMode,val opacity:Float=.80f) {
-    init{require(opacity.isFinite() && opacity in 0f..1f)}
+/** Copied selectable native state; imported provenance is explicit, never a native object. */
+data class ManagedHighlight(val edit:HighlightEdit,val contents:String,val mode:TextMode,val opacity:Float=.80f,val imported:ImportedAnnotationRef?=null) {
+    init{require(opacity.isFinite() && opacity in 0f..1f);require(edit.imported==(imported!=null));if(imported!=null)require(mode==TextMode.MANUAL && edit.id==imported.id(edit.page,"Highlight"))}
     fun resized(span:SelectionSpan)=copy(edit=edit.copy(quotation=span.quotation,quads=span.quads,appearance=NativeHighlightAppearance.forSpan(span)),
         contents=if(mode==TextMode.AUTOMATIC)span.quotation else contents)
 }
@@ -11,6 +11,7 @@ object ManagedHighlightSelection {
     /** Never guess which overlapping annotation the user intended. */
     fun hits(items:List<ManagedHighlight>,point:TextPoint)=items.filter{item->item.edit.quads.any{it.contains(point)}}
     fun span(snapshot:PageTextSnapshot,item:ManagedHighlight):SelectionSpan? {
+        if(item.imported!=null)return ImportedHighlightGeometry.span(snapshot,item.edit.quads)
 
 
         fun bucket(q:GlyphQuad):Pair<Int,Int>{val b=q.bounds;return kotlin.math.floor((b.left+b.right)/2).toInt() to kotlin.math.floor((b.top+b.bottom)/2).toInt()}

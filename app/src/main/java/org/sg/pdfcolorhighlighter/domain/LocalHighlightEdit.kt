@@ -5,12 +5,12 @@ import java.security.MessageDigest
 import java.util.UUID
 
 enum class LocalEditNotice { NONE, OTHER_SOURCE_VERSION, RECOVERY_UNVERIFIED }
-data class HighlightEdit(val id:String,val page:Int,val slot:Int,val quotation:String,val quads:List<GlyphQuad>,val appearance:List<GlyphQuad> = emptyList(),val rgb:Int?=null) {
+data class HighlightEdit(val id:String,val page:Int,val slot:Int,val quotation:String,val quads:List<GlyphQuad>,val appearance:List<GlyphQuad> = emptyList(),val rgb:Int?=null,val imported:Boolean=false) {
     val color:Int get()=rgb ?: AnnotationPalette.DEFAULT[slot]
     init {
         require(rgb==null || rgb in 0..0xffffff)
         require(Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").matches(id))
-        require(page>=0 && slot in 0..5 && quotation.isNotBlank() && quotation.length<=100000)
+        require(page>=0 && slot in 0..5 && (quotation.isNotBlank() || imported && quotation.isEmpty()) && quotation.length<=100000)
         require(quads.size in 1..25000 && quads.all{it.area>=.000001})
         require(appearance.size<=25000 && appearance.all{it.area>=.000001})
     }
