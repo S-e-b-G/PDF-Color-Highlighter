@@ -86,7 +86,18 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        val incomingPdf = intent.takeIf {
+            savedInstanceState == null && it.action == Intent.ACTION_VIEW &&
+                it.type == "application/pdf" && it.data?.scheme == "content"
+        }?.data
+
         setContent {
+            LaunchedEffect(reader.ready, incomingPdf) {
+                if (reader.ready && incomingPdf != null) {
+                    reader.persistPickedGrant(incomingPdf, intent.flags)
+                    reader.openDocument(incomingPdf.toString())
+                }
+            }
             BackHandler { reader.requestExit() }
             if(reader.noteEditorOpen){
                 org.sg.pdfcolorhighlighter.ui.NoteContentsDialog(
