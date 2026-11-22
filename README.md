@@ -70,3 +70,10 @@ not part of the source baseline.
 `LICENSE.md` is an internal development declaration, not a complete release notice.
 The full resolved third-party license/notices and source-obligation audit is still pending;
 do not treat this repository as a redistribution-ready release.
+
+## Reprendre le projet après une pause
+
+- Baseline validée : M4b avec réparation R2, Lenovo TB-J706F (API 30), 886 tests JVM, 31 suites natives et 94 workflows réussis. Conserver les rapports FULL et M4b-installation.json. Ne pas confondre cette validation avec celle de modifications ultérieures.
+- Pour un nouvel assistant : joindre un export récent des sources, ce README, AGENTS.md, docs/STATUS.md, requirements.csv, ainsi que le dernier résumé FULL et le reçu d’installation. Pour réparer l’automatisation, fournir aussi le paquet généré réellement référencé par .validation/M4b-generated.json. Exclure PDF privés, clés et données de récupération.
+- APK debug de travail : `app/build/outputs/apk/debug/app-debug.apk` sous la racine du projet. Vérifier que l’APK correspond au rapport de validation souhaité : le fichier est remplacé par les builds suivants. Ne pas prendre l’APK isolé `.autotest`. Le niveau minimum déclaré est API 29 ; le Teclast M40 reste à tester. Une mise à jour d’une installation existante doit conserver la même signature ; ne pas désinstaller pour contourner un refus.
+- Obsidian : extraction réelle signalée OK. Docear : non retesté avec cette sortie, à vérifier séparément si utilisé.

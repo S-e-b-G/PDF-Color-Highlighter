@@ -41,8 +41,8 @@ object VerifiedDocumentExport {
     fun suggestedName(name:String?,stamp:String):String {
         val leaf=(name ?: "document").substringAfterLast('/').substringAfterLast('\\')
             .replace(Regex("[\\p{Cntrl}<>:\"/\\\\|?*]"),"_").trim().take(120)
-        val stem=leaf.removeSuffix(".pdf").removeSuffix(".PDF").ifBlank{"document"}
-        require(Regex("[0-9]{8}-[0-9]{6}-[0-9]{3}").matches(stamp))
-        return "$stem-annotated-$stamp.pdf"
+        val stem=leaf.replace(Regex("(?i)\\.pdf$"), "").ifBlank{"document"}
+        require(Regex("[0-9]{8}").matches(stamp))
+        return "$stem-$stamp.pdf"
     }
 }

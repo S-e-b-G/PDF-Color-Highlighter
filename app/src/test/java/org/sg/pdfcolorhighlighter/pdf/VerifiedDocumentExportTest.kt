@@ -29,6 +29,6 @@ class VerifiedDocumentExportTest {
     @Test fun corruptSameSizeRejected(){fixture{f->val bad=f.readBytes();bad[0]=(bad[0].toInt() xor 1).toByte();fails{VerifiedDocumentExport.copy(f,{ByteArrayOutputStream()},{ByteArrayInputStream(bad)})}}}
     @Test fun truncatedReadBackRejected(){fixture{f->fails{VerifiedDocumentExport.copy(f,{ByteArrayOutputStream()},{ByteArrayInputStream(byteArrayOf(1))})}}}
     @Test fun trailingBytesRejected(){fixture{f->fails{VerifiedDocumentExport.copy(f,{ByteArrayOutputStream()},{ByteArrayInputStream(f.readBytes()+byteArrayOf(1))})}}}
-    @Test fun nameIsBoundedAndSafe(){val n=VerifiedDocumentExport.suggestedName("dir/report.pdf","20261101-214300-001");assertEquals("report-annotated-20261101-214300-001.pdf",n);assertFalse(VerifiedDocumentExport.suggestedName("bad:name?.pdf","20261101-214300-001").contains(':'))}
-    @Test fun fallbackAndStampValidation(){assertEquals("document-annotated-20261101-214300-001.pdf",VerifiedDocumentExport.suggestedName(null,"20261101-214300-001"));fails{VerifiedDocumentExport.suggestedName("x","bad")}}
+    @Test fun nameIsBoundedAndSafe(){val n=VerifiedDocumentExport.suggestedName("dir/report.pdf","20261101");assertEquals("report-20261101.pdf",n);assertFalse(VerifiedDocumentExport.suggestedName("bad:name?.pdf","20261101").contains(':'))}
+    @Test fun fallbackAndStampValidation(){assertEquals("document-20261101.pdf",VerifiedDocumentExport.suggestedName(null,"20261101"));fails{VerifiedDocumentExport.suggestedName("x","bad")}}
 }

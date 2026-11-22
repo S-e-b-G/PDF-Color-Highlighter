@@ -328,7 +328,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         activeUri!=null && localEditNotice==LocalEditNotice.NONE
     fun beginExport():String? {
         if(!canExport)return null
-        val stamp=java.text.SimpleDateFormat("yyyyMMdd-HHmmss-SSS",java.util.Locale.ROOT).format(java.util.Date())
+        val stamp=java.text.SimpleDateFormat("yyyyMMdd",java.util.Locale.ROOT).format(java.util.Date())
         val name=VerifiedDocumentExport.suggestedName(documentName,stamp)
         exportPendingUri=activeUri;exportMessage=R.string.reader_export_choose;editBusy=true
         stopRefinement();cancelPreviewSelection();checkpoint()

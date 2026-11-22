@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Lecteur PDF — test technique</string>
+    <string name="app_name">Surligneur PDF Couleur</string>
     <string name="smoke_title">Lecteur PDF — navigation M2a</string>
     <string name="smoke_notice">Lecture seule : pincez pour zoomer, glissez pour déplacer la page. Le surlignage et l’enregistrement ne sont pas encore disponibles.</string>
     <string name="open">Ouvrir</string>
