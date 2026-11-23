@@ -49,9 +49,17 @@ class MainActivity : ComponentActivity() {
     private val exportPicker=registerForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")){uri->
         reader.finishExportPicker(uri)
     }
-    private fun saveAs(){
+    private val existingExportPicker=registerForActivityResult(ActivityResultContracts.StartActivityForResult()){result->
+        reader.finishExistingExportPicker(if(result.resultCode==RESULT_OK)result.data?.data else null)
+    }
+    private fun saveAs(replace:Boolean){
         val name=reader.beginExport() ?: return
-        try{exportPicker.launch(name)}catch(_:Exception){reader.finishExportPicker(null)}
+        try{
+            if(replace)existingExportPicker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT).apply{
+                addCategory(Intent.CATEGORY_OPENABLE);type="application/pdf"
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }) else exportPicker.launch(name)
+        }catch(_:Exception){reader.finishExportPicker(null)}
     }
 
 
@@ -102,6 +110,19 @@ class MainActivity : ComponentActivity() {
                 }
             }
             BackHandler { reader.requestExit() }
+            var saveAsChoice by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            if(saveAsChoice)AlertDialog(onDismissRequest={saveAsChoice=false},
+                title={Text(getString(R.string.reader_export_mode_title))},
+                text={Text(getString(R.string.reader_export_mode_body))},
+                confirmButton={TextButton(onClick={saveAsChoice=false;saveAs(false)}){Text(getString(R.string.reader_export_new_copy))}},
+                dismissButton={TextButton(onClick={saveAsChoice=false;saveAs(true)}){Text(getString(R.string.reader_export_existing))}})
+            reader.exportReplacement?.let{challenge->
+                AlertDialog(onDismissRequest={reader.cancelExportReplacement()},
+                    title={Text(getString(R.string.reader_export_existing))},
+                    text={Text(getString(R.string.reader_export_replace_confirm,challenge.name))},
+                    confirmButton={TextButton(onClick={reader.confirmExportReplacement()}){Text(getString(R.string.reader_export_replace_action))}},
+                    dismissButton={TextButton(onClick={reader.cancelExportReplacement()}){Text(getString(R.string.reader_contents_cancel))}})
+            }
             if(reader.noteEditorOpen){
                 org.sg.pdfcolorhighlighter.ui.NoteContentsDialog(
                     reader.noteDraft,{reader.updateNoteDraft(it)},reader.editBusy,
@@ -184,7 +205,7 @@ class MainActivity : ComponentActivity() {
                 canSave=reader.canSave,onSave={saveOriginal()},needsReplacement=reader.needsReplacement,
                 canRecover=reader.canRecover,onRecover={reader.recoverLocal()},sourceDetached=reader.sourceDetached,
                 onFrameDrawn={reader.recordFrameDrawn(it)},
-                canExport=reader.canExport,onSaveAs={saveAs()},
+                canExport=reader.canExport,onSaveAs={saveAsChoice=true},
                 exportMessage=reader.exportMessage?.let{getString(it)},
                 bitmap = reader.bitmap, resizePreviewBitmap=reader.resizePreviewBitmap,
                 documentName = reader.documentName,

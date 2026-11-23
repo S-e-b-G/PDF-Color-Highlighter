@@ -5,4 +5,12 @@
     <string name="reader_export_ok">Copie exportée et relue à l’identique. Le document ouvert reste la copie locale ; cet export ne modifie pas la source ouverte.</string>
     <string name="reader_export_cancelled">Export annulé. La copie locale est conservée.</string>
     <string name="reader_export_failed">Export non confirmé. La destination peut être vide ou partielle : ne vous y fiez pas. La copie locale est conservée ; réessayez Enregistrer sous.</string>
+    <string name="reader_export_mode_title">Enregistrer sous</string>
+    <string name="reader_export_mode_body">Créez un nouveau PDF ou choisissez le PDF existant à remplacer.</string>
+    <string name="reader_export_new_copy">Nouvelle copie</string>
+    <string name="reader_export_existing">Remplacer un PDF existant</string>
+    <string name="reader_export_replace_confirm">Remplacer « %1$s » par la copie locale actuelle ? Le PDF source ouvert ne sera pas modifié.</string>
+    <string name="reader_export_replace_action">Remplacer</string>
+    <string name="reader_export_replace_refused">Destination non admissible. Choisissez un autre PDF vérifiable et accessible en écriture chez le même fournisseur, ou créez une nouvelle copie.</string>
+    <string name="reader_export_replace_failed">Remplacement non confirmé. La destination a pu changer ou être écrite partiellement. Vérifiez-la avant de réessayer ; la copie locale est conservée.</string>
 </resources>

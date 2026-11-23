@@ -347,6 +347,28 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         stopRefinement();cancelPreviewSelection();checkpoint()
         return name
     }
+    var exportReplacement by mutableStateOf<SmokePdfSession.ExportReplacement?>(null)
+        private set
+    fun finishExistingExportPicker(target:android.net.Uri?){
+        val expected=exportPendingUri ?: return
+        if(target==null){finishExportPicker(null);return}
+        session.inspectExportReplacement(target,expected){result->if(!cleared){
+            result.onSuccess{exportReplacement=it}
+                .onFailure{exportPendingUri=null;editBusy=false;exportMessage=R.string.reader_export_replace_refused;scheduleRefinement()}
+        }}
+    }
+    fun cancelExportReplacement(){exportReplacement=null;finishExportPicker(null)}
+    fun confirmExportReplacement(){
+        val challenge=exportReplacement ?: return
+        val expected=exportPendingUri ?: return
+        exportReplacement=null;exportPendingUri=null;exportMessage=R.string.reader_export_busy
+        session.replaceExport(challenge,expected){result->if(!cleared){
+            editBusy=false;scheduleRefinement()
+            result.fold(onSuccess={externallySavedHash=it.sha256;exportedContentHash=it.sha256;lastExternalWriteFailed=false},
+                onFailure={lastExternalWriteFailed=true})
+            exportMessage=if(result.isSuccess)R.string.reader_export_ok else R.string.reader_export_replace_failed
+        }}
+    }
     fun finishExportPicker(target:android.net.Uri?) {
         // A result surviving process death has no retained request: never export a different PDF.
         val expected=exportPendingUri ?: return

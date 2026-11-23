@@ -417,6 +417,61 @@ class SmokePdfSession(context: Context) {
 
 
     /** Called only for a fresh ACTION_CREATE_DOCUMENT result; does not change the open source. */
+    private val exportReplacements=SourceSaveJournal(java.io.File(app.noBackupFilesDir,"save-as-replacement-journal-v1"))
+    data class ExportReplacement(val target:Uri,val name:String,val sha256:String,val revision:Long)
+    private fun checkExportDestination(source:Uri,target:Uri){
+        val resolver=app.contentResolver
+        require(source.scheme=="content" && target.scheme=="content" && target!=source)
+        // Do not overwrite across providers: aliases cannot be ruled out there.
+        require(source.authority==target.authority && DocumentsContract.isDocumentUri(app,source) && DocumentsContract.isDocumentUri(app,target))
+        require(DocumentsContract.getDocumentId(source)!=DocumentsContract.getDocumentId(target))
+        val canonicalSource=resolver.canonicalize(source)
+        val canonicalTarget=resolver.canonicalize(target)
+        require(canonicalTarget!=source && canonicalSource!=target && (canonicalSource==null || canonicalSource!=canonicalTarget))
+        require(app.checkUriPermission(target,android.os.Process.myPid(),android.os.Process.myUid(),
+            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)==android.content.pm.PackageManager.PERMISSION_GRANTED)
+    }
+    private fun readExportTarget(target:Uri)=app.contentResolver.openInputStream(target) ?: error("Cannot read destination")
+    fun inspectExportReplacement(target:Uri,expected:String,callback:(Result<ExportReplacement>)->Unit){
+        val request=generation.get()
+        worker.execute{
+            val result=runCatching{
+                val source=checkNotNull(sourceUri)
+                check(!closed.get() && generation.get()==request && source.toString()==expected)
+                checkExportDestination(source,target)
+                val name=app.contentResolver.query(target,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use{c->
+                    if(c.moveToFirst())c.getString(0) else null}
+                require(!name.isNullOrBlank())
+                val candidate=workspaceStore.create(target.toString(),name){readExportTarget(target)}
+                try{
+                    NativePdfEditTransaction.validateEditable(candidate.inputFile)
+                    ExportReplacement(target,name,candidate.baseline.fingerprint.sha256,checkNotNull(localHighlights).sequence)
+                }finally{workspaceStore.discardCandidate(candidate)}
+            }
+            main.post{if(!closed.get() && generation.get()==request)callback(result)}
+        }
+    }
+    fun replaceExport(challenge:ExportReplacement,expected:String,callback:(Result<VerifiedDocumentExport.Receipt>)->Unit){
+        val request=generation.get()
+        worker.execute{
+            val result=runCatching{
+                val source=checkNotNull(sourceUri)
+                check(!closed.get() && generation.get()==request && source.toString()==expected)
+                checkExportDestination(source,challenge.target)
+                check(localEditNotice==org.sg.pdfcolorhighlighter.domain.LocalEditNotice.NONE)
+                check(checkNotNull(document).hasPermission(Document.PERMISSION_COPY))
+                val editing=checkNotNull(localHighlights);check(editing.sequence==challenge.revision)
+                val local=if(editing.sequence>0L || sourceDetached)editing.currentFile() else checkNotNull(workspace).inputFile
+                VerifiedDocumentExport.replace(exportReplacements,challenge.target.toString(),challenge.sha256,local,
+                    {readExportTarget(challenge.target)}, {
+                        check(!closed.get() && generation.get()==request)
+                        checkExportDestination(source,challenge.target)
+                        app.contentResolver.openOutputStream(challenge.target,"wt") ?: error("No replacement output")
+                    }, {NativePdfEditTransaction.validateEditable(it)})
+            }
+            main.post{if(!closed.get() && generation.get()==request)callback(result)}
+        }
+    }
     fun exportNewDocument(target:Uri,expectedUri:String,callback:(Result<VerifiedDocumentExport.Receipt>)->Unit){
         if(closed.get()){callback(Result.failure(IllegalStateException("Session closed")));return}
         val request=generation.get()

@@ -224,3 +224,7 @@ Keep recovery trash on the native owner worker. Revalidate the exact listed ID a
 ## M4c.4 — Highlight resize preview
 
 The owner worker may render an independent unsaved PDF handle with only the selected highlight omitted. Never save the temporary PDF or touch durable history for preview. Reject late results after cancellation or page/revision changes. Keep the full isolated runner and release-request template.
+
+## M4c.5 — Confirmed Save As replacement
+
+M4c.4 is accepted and installed on Lenovo (886 JVM, 31 native, 94 UI). M4c.5 is pending a matching FULL pass. Save As replacement uses a separate destination journal, approved digest and revision, rechecked URI identity, and read-back without rebinding the source. Never replay approval or claim provider atomicity. Keep the existing FULL gate. Suggested commit: Add confirmed Save As replacement with verified destination backup.

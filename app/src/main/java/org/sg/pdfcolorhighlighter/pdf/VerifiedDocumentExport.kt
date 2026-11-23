@@ -38,6 +38,10 @@ object VerifiedDocumentExport {
         check(readBack==expected){"Export read-back mismatch"}
         return expected
     }
+    /** Dedicated destination journal: never binds the open source to the output. */
+    fun replace(journal:SourceSaveJournal,destination:String,approvedHash:String,local:File,
+                read:()->InputStream,write:()->OutputStream,validate:(File)->Unit):Receipt =
+        journal.saveBranch(destination,approvedHash,approvedHash,local,read,write,validate)
     fun suggestedName(name:String?,stamp:String):String {
         val leaf=(name ?: "document").substringAfterLast('/').substringAfterLast('\\')
             .replace(Regex("[\\p{Cntrl}<>:\"/\\\\|?*]"),"_").trim().take(120)

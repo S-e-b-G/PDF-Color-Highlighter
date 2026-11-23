@@ -161,3 +161,7 @@ AGENTS documentation has a verified before-backup; unrelated source mismatches s
 ## M4c.2 — PDF-XChange threads (acceptance pending)
 
 Preserve rich text and reply links on recolor. Confirm deletion of a parent and its supported direct replies; reject protected or cross-page dependents. Keep the release request template in README.md in each future release.
+
+## M4c.5 — Confirmed Save As replacement
+
+M4c.4 accepted and installed on Lenovo after FULL 886 JVM / 31 native / 94 UI, report 20261123-132152-4b9b009c49a94d51b70509daaf37fed4. M4c.5 is source delivery only; FULL gate with extended VerifiedExportInstrumentation and working install pending. Real SAF picker/provider behavior remains a separate field check.

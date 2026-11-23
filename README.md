@@ -101,3 +101,9 @@ Future release requests must retain the workflow template above.
 Drag either handle of a selected highlight to preview the proposed span in place of its old span. Other annotations remain visible. Cancelling the gesture restores the original span without saving. Until the temporary raster is ready, the original page stays visible without a second highlight painted over it.
 
 Working APK: `app\build\outputs\apk\debug\app-debug.apk`. Use this APK on compatible devices, not the isolated `.autotest` APK. A later build can overwrite it. Retain the release-request template above.
+
+## M4c.5 — Confirmed Save As replacement
+
+Choose **Enregistrer sous → Remplacer un PDF existant** and confirm the named destination. Replacement requires a distinct, writable PDF from the same Android document provider. The app checks the approved destination bytes again before writing, keeps a private verified backup and verifies the resulting bytes. The opened source, local edit history and dirty state are not rebound or cleared. Cancel does not write. Android document providers do not offer an atomic compare-and-swap here: avoid concurrent external edits; a failed write may leave a partial destination.
+
+Working APK: `app\build\outputs\apk\debug\app-debug.apk`. Use this APK, not the isolated `.autotest` APK, on other compatible devices. A later build can overwrite it. Keep the release-request template above.

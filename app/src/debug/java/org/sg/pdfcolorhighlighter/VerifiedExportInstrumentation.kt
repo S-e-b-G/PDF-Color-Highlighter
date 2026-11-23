@@ -43,7 +43,23 @@ class VerifiedExportInstrumentation:Instrumentation(){
             val workspace=LocalHighlightWorkspace(editRoot,"content://synthetic/highlights",source,hash)
             check(workspace.recoverExisting()==null)
             val a=edit(source,"Local highlight one.",0);val b=edit(source,"Local highlight two.",1)
+            // A → new B → edit A locally → replace B → reopen B. A itself never gets a write stream.
+            val destination=File(root,"B.pdf")
+            val originalB=VerifiedDocumentExport.copy(source,{destination.outputStream()},{destination.inputStream()})
             workspace.add(a);check(count(workspace.currentFile())==1 && workspace.canUndo && !workspace.canRedo)
+            val replaceJournal=SourceSaveJournal(File(root,"replacement-journal"));var writes=0
+            val destinationId="content://synthetic/destination-B"
+            fun replace(approved:String)=VerifiedDocumentExport.replace(replaceJournal,destinationId,approved,workspace.currentFile(),
+                {destination.inputStream()},{writes++;destination.outputStream()},{NativePdfEditTransaction.validateEditable(it)})
+            check(runCatching{replace("0".repeat(64))}.exceptionOrNull() is SourceSaveConflict)
+            check(writes==0 && destination.readBytes().contentEquals(bytes))
+            val replacement=replace(originalB.sha256)
+            check(writes==1 && replacement.sha256==CheckpointFingerprint.of(destination) && count(destination)==1)
+            check(destination.readBytes().contentEquals(workspace.currentFile().readBytes()))
+            check(source.readBytes().contentEquals(bytes) && count(source)==0)
+            val backup=File(root,"replacement-journal").walkTopDown().single{it.isFile && it.name=="before.pdf"}
+            check(backup.readBytes().contentEquals(bytes))
+            check(SourceSaveJournal(File(root,"source-journal")).ownerFor(destinationId,replacement.sha256)==null)
             workspace.add(b);check(count(workspace.currentFile())==2)
             workspace.undo();check(count(workspace.currentFile())==1 && workspace.canRedo)
             workspace.redo();check(count(workspace.currentFile())==2)
