@@ -507,6 +507,29 @@ class SmokePdfSession(context: Context) {
         }
     }
 
+    /** Raster only: an independent in-memory PDF handle is never saved. */
+    fun renderWithoutHighlight(item:org.sg.pdfcolorhighlighter.domain.ManagedHighlight,revision:Long,edge:Int,callback:(Bitmap?)->Unit){
+        val request=generation.get()
+        worker.execute{
+            var result:Bitmap?=null
+            try{
+                if(!closed.get() && generation.get()==request){
+                    val editing=checkNotNull(localHighlights)
+                    check(editing.sequence==revision)
+                    val source=if(revision>0L || sourceDetached)editing.currentFile() else checkNotNull(workspace).inputFile
+                    val clone=Document.openDocument(source.absolutePath)
+                    try{
+                        val pdf=clone as com.artifex.mupdf.fitz.PDFDocument
+                        NativeHighlightEdits.replace(pdf,item,null)
+                        val previewPage=pdf.loadPage(item.edit.page)
+                        try{result=AndroidDrawDevice.drawPageFit(previewPage,edge,edge)}finally{previewPage.destroy()}
+                    }finally{clone.destroy()}
+                }
+            }catch(_:Exception){}catch(_:OutOfMemoryError){}
+            main.post{if(closed.get() || generation.get()!=request)result?.recycle() else callback(result)}
+        }
+    }
+
     private fun syncLocalReader(){
         val editing=localHighlights ?: return
         if(editing.sequence==displayedLocalRevision)return

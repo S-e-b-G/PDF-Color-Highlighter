@@ -186,7 +186,7 @@ class MainActivity : ComponentActivity() {
                 onFrameDrawn={reader.recordFrameDrawn(it)},
                 canExport=reader.canExport,onSaveAs={saveAs()},
                 exportMessage=reader.exportMessage?.let{getString(it)},
-                bitmap = reader.bitmap,
+                bitmap = reader.bitmap, resizePreviewBitmap=reader.resizePreviewBitmap,
                 documentName = reader.documentName,
                 documentProperties = reader.properties,
                 page = reader.page,

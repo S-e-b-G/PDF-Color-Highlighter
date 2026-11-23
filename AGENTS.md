@@ -220,3 +220,7 @@ Preserve rich text and reply links on recolor. Confirm deletion of a parent and 
 ## M4c.3 — Recovery-copy trash
 
 Keep recovery trash on the native owner worker. Revalidate the exact listed ID and hash, exclude the active branch, and move only that private store atomically. Never recurse or write to the source URI. Keep the full isolated runner and release-request template.
+
+## M4c.4 — Highlight resize preview
+
+The owner worker may render an independent unsaved PDF handle with only the selected highlight omitted. Never save the temporary PDF or touch durable history for preview. Reject late results after cancellation or page/revision changes. Keep the full isolated runner and release-request template.

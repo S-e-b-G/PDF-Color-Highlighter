@@ -854,6 +854,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun clearEditSelection(){
+        resetResizePreview()
         selectionQueue.cancel();selectedHighlight=null;previewRetention.clear()
         previewSpan=null;previewCommitted=false;previewRejection=null
     }
@@ -893,7 +894,15 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         noteSlot=null;selectedNote=null
         if(previewSlot==slot)stopPreview() else previewSlot=slot
     }
+    var resizePreviewBitmap by mutableStateOf<Bitmap?>(null)
+        private set
+    private var resizePreviewToken=0L
+    private var resizePreviewRequested=false
+    private fun resetResizePreview(){
+        resizePreviewToken++;resizePreviewRequested=false;resizePreviewBitmap=null
+    }
     fun cancelPreviewSelection() {
+        resetResizePreview()
         selectionQueue.cancel()
         previewSpan=previewRetention.restore(textSnapshot)
         previewCommitted=previewSpan!=null;previewRejection=null
@@ -905,6 +914,20 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         offerPreview(first,last,finished,true,null)
     }
     fun previewAdjustedSelection(moving:TextPoint,fixed:TextAddress,finished:Boolean) {
+        if(finished)resetResizePreview()
+        else if(!loading && !editBusy && !resizePreviewRequested){
+            val selected=selectedHighlight
+            val base=bitmap
+            if(selected!=null && base!=null){
+                resizePreviewRequested=true
+                val token=++resizePreviewToken;val revision=localRevision;val pageAtRequest=page
+                session.renderWithoutHighlight(selected,revision,maxOf(base.width,base.height)){raster->
+                    if(!cleared && resizePreviewToken==token && selectedHighlight==selected &&
+                        page==pageAtRequest && localRevision==revision && !loading && !editBusy)resizePreviewBitmap=raster
+                    else raster?.recycle()
+                }
+            }
+        }
         offerPreview(moving,moving,finished,false,fixed)
     }
     private fun offerPreview(first:TextPoint,last:TextPoint,finished:Boolean,words:Boolean,fixed:TextAddress?) {
@@ -930,17 +953,17 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                                     previewSpan=selection.span;previewCommitted=request.finished;previewRejection=null
                                     if(request.finished){previewRetention.commit(request.snapshot,selection.span);completedAccepted=true}
                                 } else {
-                                    if(request.finished)previewRetention.clear()
-                                    previewSpan=null;previewCommitted=false;previewRejection=SelectionRejection.TOO_COMPLEX
+                                    if(request.finished && !(request.fixedAddress!=null && selectedHighlight!=null))previewRetention.clear()
+                                    previewSpan=if(request.finished && request.fixedAddress!=null && selectedHighlight!=null)previewRetention.restore(textSnapshot) else null;previewCommitted=previewSpan!=null;previewRejection=SelectionRejection.TOO_COMPLEX
                                 }
                             }
                             is TextSelectionAttempt.Rejected -> {
-                                if(request.finished)previewRetention.clear()
-                                previewSpan=null;previewCommitted=false;previewRejection=selection.reason
+                                if(request.finished && !(request.fixedAddress!=null && selectedHighlight!=null))previewRetention.clear()
+                                previewSpan=if(request.finished && request.fixedAddress!=null && selectedHighlight!=null)previewRetention.restore(textSnapshot) else null;previewCommitted=previewSpan!=null;previewRejection=selection.reason
                             }
                         }
                     },onFailure={
-                        if(request.finished)previewRetention.clear()
+                        if(request.finished && !(request.fixedAddress!=null && selectedHighlight!=null))previewRetention.clear()
                         cancelPreviewSelection();previewRejection=SelectionRejection.TOO_COMPLEX
                     })
                 }

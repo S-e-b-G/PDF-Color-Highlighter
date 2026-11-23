@@ -95,3 +95,9 @@ Open the recovery-copy list and choose **Corbeille** next to the copy you want t
 Working APK: `app\build\outputs\apk\debug\app-debug.apk`. It is not the isolated `.autotest` APK. A later build can overwrite the working APK.
 
 Future release requests must retain the workflow template above.
+
+## M4c.4 — Highlight resize preview
+
+Drag either handle of a selected highlight to preview the proposed span in place of its old span. Other annotations remain visible. Cancelling the gesture restores the original span without saving. Until the temporary raster is ready, the original page stays visible without a second highlight painted over it.
+
+Working APK: `app\build\outputs\apk\debug\app-debug.apk`. Use this APK on compatible devices, not the isolated `.autotest` APK. A later build can overwrite it. Retain the release-request template above.

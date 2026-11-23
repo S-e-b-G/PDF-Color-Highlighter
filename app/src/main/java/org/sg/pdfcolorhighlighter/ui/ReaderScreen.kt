@@ -60,7 +60,7 @@ fun ReaderScreen(
     onChooseNoteSlot:(Int)->Unit,onNoteTap:(TextPoint)->Boolean,onEditNote:()->Unit,onDeleteNote:()->Unit,
     canSave:Boolean,onSave:()->Unit,needsReplacement:Boolean,canRecover:Boolean,onRecover:()->Unit,sourceDetached:Boolean,onFrameDrawn:(Long)->Unit,
     canExport:Boolean,onSaveAs:()->Unit,exportMessage:String?,
-    bitmap: Bitmap?, documentName: String?, documentProperties: org.sg.pdfcolorhighlighter.domain.DocumentProperties?, page: Int, pageCount: Int, loading: Boolean,
+    bitmap: Bitmap?, resizePreviewBitmap:Bitmap?=null, documentName: String?, documentProperties: org.sg.pdfcolorhighlighter.domain.DocumentProperties?, page: Int, pageCount: Int, loading: Boolean,
     errorText: String?, grantWarning: Boolean, viewportState: PageViewportState,
     onOpen: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit, onFit: () -> Unit,
     onFitWidth: () -> Unit, onJumpToPage: (Int) -> Unit, onHand: () -> Unit,
@@ -171,7 +171,8 @@ fun ReaderScreen(
                                 view.setPalette(annotationPalette.colors,selectedHighlightColor)
                                 view.setInteractionEnabled(!loading && !editBusy)
                                 view.show(bitmap, viewportState, pageWidth, pageHeight, frameSerial,pageIdentity)
-                                view.setNativeSelectionActive(highlightContents!=null && previewCommitted)
+                                view.setNativeSelectionActive(highlightId!=null,selectedHighlightColor)
+                                view.setResizePreviewBitmap(resizePreviewBitmap)
                                 view.setSelectionPreview(textSnapshot,if(previewEnabled)previewSlot else null,previewSpan,previewCommitted)
                             },
                             onRelease = { view ->

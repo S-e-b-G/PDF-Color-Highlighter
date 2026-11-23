@@ -11,7 +11,7 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 1
-        versionName = "M4c.3"
+        versionName = "M4c.4"
     }
     buildTypes {
         debug { applicationIdSuffix = ".debug" }

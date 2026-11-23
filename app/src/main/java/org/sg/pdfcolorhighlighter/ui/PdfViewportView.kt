@@ -39,7 +39,13 @@ class PdfViewportView(context: Context) : View(context) {
     private var selectionPinchCancelled=false
     private val selectionPaint=Paint(Paint.ANTI_ALIAS_FLAG)
     private var nativeSelectionActive=false
-    fun setNativeSelectionActive(value:Boolean){nativeSelectionActive=value;invalidate()}
+    private var resizePreviewBitmap:Bitmap?=null
+    fun setResizePreviewBitmap(bitmap:Bitmap?){
+        if(resizePreviewBitmap!==bitmap){resizePreviewBitmap=bitmap;invalidate()}
+    }
+    private fun resizeRaster():Bitmap?=resizePreviewBitmap.takeIf{nativeSelectionActive && activeHandle!=null && handleMoved && previewSpan!=null}
+    private var nativeSelectionColor:Int?=null
+    fun setNativeSelectionActive(value:Boolean,color:Int?=null){nativeSelectionActive=value;nativeSelectionColor=color;invalidate()}
     private var handlesEnabled=false
     private var activeHandle:SelectionHandleSide?=null
     private var handleBaseSpan:SelectionSpan?=null
@@ -249,11 +255,11 @@ class PdfViewportView(context: Context) : View(context) {
         return coordinateMap()?.toPage(TextPoint(x,y))
     }
     private fun drawSelectionPreview(canvas: Canvas) {
-        if(nativeSelectionActive && handlesEnabled && activeHandle==null)return
+        if(nativeSelectionActive && resizeRaster()==null)return
         val slot=previewSlot ?: return
         if(previewSpan==null) return
         val mapping=coordinateMap() ?: return
-        selectionPaint.color=previewColor(slot);selectionPaint.alpha=204
+        selectionPaint.color=if(nativeSelectionActive)nativeSelectionColor?.let{it or android.graphics.Color.BLACK} ?: previewColor(slot) else previewColor(slot);selectionPaint.alpha=204
         selectionPaint.blendMode=android.graphics.BlendMode.MULTIPLY
         for (band in previewBands) {
             val a=mapping.toView(TextPoint(band.left,band.top))
@@ -320,7 +326,7 @@ class PdfViewportView(context: Context) : View(context) {
     }
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val bitmap = image ?: return
+        val bitmap = resizeRaster() ?: image ?: return
         val saved = canvas.save()
         try {
             canvas.clipRect(0, 0, width, height)

@@ -74,6 +74,29 @@ class EditViewportLensInstrumentation:Instrumentation(){
                 val before=cancels;event(MotionEvent.ACTION_CANCEL,end.x+delta,end.y)
                 check(!view.endpointLensVisible()){"Lens survived cancellation"}
                 check(cancels>before){"Canceled handle drag was not cleared"}
+                val native=Bitmap.createBitmap(100,100,Bitmap.Config.ARGB_8888).also{owned.add(it);it.eraseColor(Color.WHITE)}
+                val omitted=Bitmap.createBitmap(100,100,Bitmap.Config.ARGB_8888).also{owned.add(it);it.eraseColor(Color.WHITE)}
+                fun mark(b:Bitmap,x:Int,y:Int,color:Int){for(i in x until x+10)for(j in y until y+10)b.setPixel(i,j,color)}
+                mark(native,0,0,Color.MAGENTA);mark(native,80,80,Color.GREEN);mark(omitted,80,80,Color.GREEN)
+                view.show(native,PageViewportState(),100f,100f,3L,56L)
+                view.setNativeSelectionActive(true,0x0000ff)
+                view.onPreviewCancel={view.setSelectionPreview(snapshot,1,original,true)}
+                for(handle in listOf(handles.start,handles.end)){
+                    view.setSelectionPreview(snapshot,1,original,true)
+                    view.setResizePreviewBitmap(omitted)
+                    val x=handle.center.x;val y=handle.center.y
+                    down=SystemClock.uptimeMillis();event(MotionEvent.ACTION_DOWN,x,y)
+                    val dx=if(handle==handles.start)-delta else delta
+                    event(MotionEvent.ACTION_MOVE,x+dx,y)
+                    check(view.endpointLensVisible())
+                    view.draw(android.graphics.Canvas(lensOutput))
+                    check(lensOutput.getPixel(12,12)==Color.WHITE){"Old selected highlight raster still visible"}
+                    check(lensOutput.getPixel(332,332)==Color.GREEN){"Other annotation was lost"}
+                    event(MotionEvent.ACTION_CANCEL,x+dx,y)
+                    view.draw(android.graphics.Canvas(lensOutput))
+                    check(lensOutput.getPixel(12,12)==Color.MAGENTA){"Cancel did not restore original raster"}
+                    check(lensOutput.getPixel(332,332)==Color.GREEN)
+                }
             }catch(error:Throwable){failure=error}
             finally{bitmap?.recycle();owned.forEach{it.recycle()}}
         }
