@@ -54,7 +54,7 @@ private val slotNames = listOf(R.string.reader_slot_1, R.string.reader_slot_2, R
 @Composable
 fun ReaderScreen(
     highlightEditorRequest:Long,highlightEditorCloseSerial:Long,highlightCanSmooth:Boolean=true,
-    annotationPalette:AnnotationPalette,selectedHighlightColor:Int?,canOpenSettings:Boolean,onSettings:()->Unit,onDeleteHighlight:()->Unit,
+    annotationPalette:AnnotationPalette,selectedHighlightColor:Int?,canOpenSettings:Boolean,onSettings:()->Unit,onDeleteHighlight:()->Unit,canDeleteSelection:Boolean,onDeleteSelection:()->Unit,
     externalSaveState:()->ExternalSaveState,unsavedContent:Boolean,
     noteSlot:Int?,canUseNotes:Boolean,noteBounds:TextBounds?,selectedNote:ManagedNote?,
     onChooseNoteSlot:(Int)->Unit,onNoteTap:(TextPoint)->Boolean,onEditNote:()->Unit,onDeleteNote:()->Unit,
@@ -257,7 +257,7 @@ fun ReaderScreen(
                 ReaderFooter(documentName, page, pageCount, loading, bitmap != null,
                     { openMenu = true }, onPrevious, onNext, onFit, onFitWidth, onHand,
                     onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = selectedNote==null && noteSlot==null && (previewSlot==null || !previewEnabled),
-                    onSettings=onSettings,canOpenSettings=canOpenSettings,onHelp={helpOpen=true},canOpenHelp=!loading && !editBusy)
+                    onSettings=onSettings,canOpenSettings=canOpenSettings,canDeleteSelection=canDeleteSelection,onDeleteSelection=onDeleteSelection,onHelp={helpOpen=true},canOpenHelp=!loading && !editBusy)
             }
         }
 
@@ -360,7 +360,7 @@ private fun ReaderFooter(
     documentName: String?, page: Int, pageCount: Int, loading: Boolean, hasPage: Boolean,
     onOpen: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit, onFit: () -> Unit,
     onFitWidth: () -> Unit, onHand: () -> Unit, onPageNumber: () -> Unit, onProperties: () -> Unit,
-    navigationActive: Boolean,onSettings:()->Unit,canOpenSettings:Boolean,onHelp:()->Unit,canOpenHelp:Boolean,
+    navigationActive: Boolean,onSettings:()->Unit,canOpenSettings:Boolean,canDeleteSelection:Boolean,onDeleteSelection:()->Unit,onHelp:()->Unit,canOpenHelp:Boolean,
 ) {
     val barColor = MaterialTheme.colorScheme.surface.copy(alpha = 1f)
     BoxWithConstraints(Modifier.fillMaxWidth().background(barColor).zIndex(1f)) {
@@ -376,6 +376,7 @@ private fun ReaderFooter(
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End) {
                     NavigationButton(loading, hasPage, onHand, navigationActive)
+                    PulseIcon(R.drawable.reader_delete, stringResource(R.string.reader_delete_selection),canDeleteSelection,onDeleteSelection)
                     PulseIcon(R.drawable.reader_settings, stringResource(R.string.reader_settings),canOpenSettings,onSettings)
                     PulseIcon(R.drawable.reader_help,stringResource(R.string.reader_help),canOpenHelp,onHelp)
                 }
@@ -385,6 +386,7 @@ private fun ReaderFooter(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Open(loading, onOpen); DocumentLabel(documentName, !loading && hasPage, onProperties)
                     NavigationButton(loading, hasPage, onHand, navigationActive)
+                    PulseIcon(R.drawable.reader_delete, stringResource(R.string.reader_delete_selection),canDeleteSelection,onDeleteSelection)
                     PulseIcon(R.drawable.reader_settings, stringResource(R.string.reader_settings),canOpenSettings,onSettings)
                     PulseIcon(R.drawable.reader_help,stringResource(R.string.reader_help),canOpenHelp,onHelp)
                 }

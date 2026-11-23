@@ -157,6 +157,9 @@ class MainActivity : ComponentActivity() {
                 annotationPalette=reader.palette,selectedHighlightColor=reader.selectedHighlight?.edit?.color,
                 canOpenSettings=reader.canOpenSettings,onSettings={reader.openSettings()},
                 onDeleteHighlight={reader.deleteSelectedHighlight()},
+                canDeleteSelection=reader.editAllowed && !reader.loading && !reader.editBusy &&
+                    !reader.noteEditorOpen && (reader.selectedHighlight!=null || reader.selectedNote!=null),
+                onDeleteSelection={if(reader.selectedNote!=null)reader.deleteNote() else reader.deleteSelectedHighlight()},
                 noteSlot=reader.noteSlot,canUseNotes=reader.canUseNotes,noteBounds=reader.nativePageBounds,
                 selectedNote=reader.selectedNote,onChooseNoteSlot={reader.chooseNoteSlot(it)},onNoteTap={reader.tapNote(it)},
                 onEditNote={reader.openNoteEditor()},onDeleteNote={reader.deleteNote()},

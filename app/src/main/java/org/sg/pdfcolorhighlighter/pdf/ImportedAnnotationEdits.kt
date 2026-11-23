@@ -13,9 +13,30 @@ object ImportedAnnotationEdits{
     private fun present(a:PDFAnnotation,key:String):Boolean{
         val obj=a.`object`;try{val v=obj.get(key);try{return !v.isNull}finally{if(!v.isNull)v.destroy()}}finally{obj.destroy()}
     }
+    // A direct backlink to this exact highlight is not a reply or shared popup.
+    private fun ownPopup(a:PDFAnnotation):Boolean{
+        val owner=a.`object`
+        try{
+            val popup=owner.get("Popup")
+            try{
+                if(!owner.isIndirect || !popup.isIndirect)return false
+                val subtype=popup.get("Subtype")
+                try{if(!subtype.isName || subtype.asName()!="Popup")return false}
+                finally{if(!subtype.isNull)subtype.destroy()}
+                for(key in listOf("IRT","RT","RC","Popup","A","AA")){
+                    val value=popup.get(key)
+                    if(!value.isNull){value.destroy();return false}
+                }
+                val parent=popup.get("Parent")
+                try{return parent.isIndirect && parent.asIndirect()==owner.asIndirect()}
+                finally{if(!parent.isNull)parent.destroy()}
+            }finally{if(!popup.isNull)popup.destroy()}
+        }finally{owner.destroy()}
+    }
     private fun eligible(a:PDFAnnotation):Boolean{
-        if(privateKeys.any{present(a,it)} || listOf("IRT","RT","RC","Popup","Parent").any{present(a,it)})return false
+        if(privateKeys.any{present(a,it)} || listOf("IRT","RT","RC","Parent").any{present(a,it)})return false
         if((a.flags and ((1 shl 0) or (1 shl 1) or (1 shl 5) or (1 shl 6) or (1 shl 7) or (1 shl 9)))!=0)return false
+        if(present(a,"Popup") && (a.type!=PDFAnnotation.TYPE_HIGHLIGHT || !ownPopup(a)))return false
         val n=string(a,"NM") ?: return false
         if(n.isBlank() || n.length>1024 || '\u0000' in n)return false
         val rgb=a.color
@@ -75,6 +96,7 @@ object ImportedAnnotationEdits{
         val p=pdf.loadPage(before.edit.page) as PDFPage;try{val all=p.annotations ?: emptyArray();try{
             val found=all.filter{string(it,"NM")==ref.name};require(found.size==1){"Imported highlight identity not unique"}
             val a=found.single();require(highlight(a,before.edit.page)==before){"Stale or unsupported imported highlight"}
+            // MuPDF removes both the annotation and its verified popup from the page.
             if(after==null)p.deleteAnnotation(a)else{
                 if(after.edit.quads!=before.edit.quads || after.edit.appearance!=before.edit.appearance){
                     a.setQuadPoints(after.edit.appearance.ifEmpty{after.edit.quads}.map{q->Quad(q.ul.x,q.ul.y,q.ur.x,q.ur.y,q.ll.x,q.ll.y,q.lr.x,q.lr.y)}.toTypedArray())
