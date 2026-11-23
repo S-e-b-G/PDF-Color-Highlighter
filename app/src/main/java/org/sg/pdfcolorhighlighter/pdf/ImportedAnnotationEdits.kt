@@ -33,8 +33,8 @@ object ImportedAnnotationEdits{
             }finally{if(!popup.isNull)popup.destroy()}
         }finally{owner.destroy()}
     }
-    private fun eligible(a:PDFAnnotation):Boolean{
-        if(privateKeys.any{present(a,it)} || listOf("IRT","RT","RC","Parent").any{present(a,it)})return false
+    private fun eligible(a:PDFAnnotation,allowRich:Boolean=false):Boolean{
+        if(privateKeys.any{present(a,it)} || listOf("IRT","RT","Parent").any{present(a,it)} || (!allowRich && present(a,"RC")))return false
         if((a.flags and ((1 shl 0) or (1 shl 1) or (1 shl 5) or (1 shl 6) or (1 shl 7) or (1 shl 9)))!=0)return false
         if(present(a,"Popup") && !ownPopup(a))return false
         val n=string(a,"NM") ?: return false
@@ -65,12 +65,26 @@ object ImportedAnnotationEdits{
         return ManagedHighlight(HighlightEdit(ref.id(page,"Highlight"),page,0,contents,paint,paint,
             AnnotationPalette.storedColor(color(a),0),true),contents,TextMode.MANUAL,a.opacity,ref)
     }
-    private fun note(a:PDFAnnotation,page:Int):ManagedNote?{
-        if(a.type!=PDFAnnotation.TYPE_TEXT || !eligible(a))return null
+    private fun objectNumber(a:PDFAnnotation):Int?{
+        val obj=a.`object`;try{return if(obj.isIndirect)obj.asIndirect() else null}finally{obj.destroy()}
+    }
+    private fun replyTo(a:PDFAnnotation):Int?{
+        val obj=a.`object`;try{val link=obj.get("IRT");try{return if(link.isIndirect)link.asIndirect() else null}finally{if(!link.isNull)link.destroy()}}finally{obj.destroy()}
+    }
+    private fun repliesTo(a:PDFAnnotation,all:Array<PDFAnnotation>):List<PDFAnnotation>{
+        val number=objectNumber(a) ?: return emptyList()
+        return all.filter{replyTo(it)==number}
+    }
+    private fun note(a:PDFAnnotation,page:Int,all:Array<PDFAnnotation>):ManagedNote?{
+        if(a.type!=PDFAnnotation.TYPE_TEXT || !eligible(a,allowRich=true))return null
+        val rich=present(a,"RC")
+        if(rich && string(a,"RC")==null)return null
+        val replies=repliesTo(a,all)
+        if(replies.size>32)return null
         val contents=a.contents ?: "";if(contents.length>100000 || '\u0000' in contents)return null
         val r=a.bounds;val ref=reference(a,emptyList())
         return ManagedNote(ref.id(page,"Text"),page,0,TextBounds(r.x0,r.y0,r.x1,r.y1),contents,
-            AnnotationPalette.storedColor(color(a),0),ref)
+            AnnotationPalette.storedColor(color(a),0),ref,rich || replies.isNotEmpty(),replies.size)
     }
     private fun names(all:Array<PDFAnnotation>)=all.map{runCatching{string(it,"NM")}.getOrNull()}.filterNotNull().groupingBy{it}.eachCount()
     fun highlights(pdf:PDFDocument,index:Int):List<ManagedHighlight>{
@@ -84,7 +98,7 @@ object ImportedAnnotationEdits{
     fun notes(pdf:PDFDocument,index:Int):List<ManagedNote>{
         val p=pdf.loadPage(index) as PDFPage;try{val all=p.annotations ?: emptyArray();try{
             if(all.size>4096)return emptyList();val counts=names(all)
-            val found=all.mapNotNull{a->runCatching{if(counts[string(a,"NM") ?: ""]!=1)null else note(a,index)}.getOrNull()}
+            val found=all.mapNotNull{a->runCatching{if(counts[string(a,"NM") ?: ""]!=1)null else note(a,index,all)}.getOrNull()}
             return found.takeIf{it.sumOf{x->x.contents.length.toLong()}<=4000000L}.orEmpty()
         }finally{all.forEach{it.destroy()}}}finally{p.destroy()}
     }
@@ -113,8 +127,29 @@ object ImportedAnnotationEdits{
         require(after==null || after.imported==ref && after.id==before.id && after.page==before.page && after.bounds==before.bounds)
         val p=pdf.loadPage(before.page) as PDFPage;try{val all=p.annotations ?: emptyArray();try{
             val found=all.filter{string(it,"NM")==ref.name};require(found.size==1){"Imported note identity not unique"}
-            val a=found.single();require(note(a,before.page)==before){"Stale or unsupported imported note"}
-            if(after==null)p.deleteAnnotation(a)else{
+            val a=found.single();require(note(a,before.page,all)==before){"Stale or unsupported imported note"}
+            if(after==null){
+                val replies=repliesTo(a,all)
+                val targets=listOf(a)+replies
+                val numbers=targets.mapNotNull(::objectNumber).toSet()
+                require(replies.all{r->
+                    r.type==PDFAnnotation.TYPE_TEXT && objectNumber(r)!=null &&
+                    r.flags and ((1 shl 0) or (1 shl 1) or (1 shl 5) or (1 shl 6) or (1 shl 7) or (1 shl 9))==0 &&
+                    !present(r,"RT") && !present(r,"Parent") && privateKeys.none{present(r,it)} &&
+                    (!present(r,"Popup") || ownPopup(r)) && repliesTo(r,all).isEmpty()
+                }){"Unsupported or protected reply"}
+                // Never leave a dependent annotation behind on another page.
+                require(pdf.countPages()<=2000){"Document too large to verify reply deletion"}
+                for(index in 0 until pdf.countPages()) if(index!=before.page){
+                    val other=pdf.loadPage(index) as PDFPage
+                    try{val anns=other.annotations ?: emptyArray();try{
+                        require(anns.none{replyTo(it) in numbers}){"Cross-page reply is protected"}
+                    }finally{anns.forEach{it.destroy()}}}finally{other.destroy()}
+                }
+                replies.forEach{p.deleteAnnotation(it)}
+                p.deleteAnnotation(a)
+            }else{
+                require(!before.preserveRichText || after.contents==before.contents){"Thread text is read-only"}
                 if(after.color!=before.color)rgb(a,after.color)
                 if(after.contents!=before.contents)a.setContents(after.contents)
                 a.update()

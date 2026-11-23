@@ -157,3 +157,7 @@ outside the active project before builds so Gradle cannot compile duplicate Kotl
 Never merge them into the app or disable guards for other files. User authorized removing
 these copies; R2 keeps local recoverable quarantine rather than permanently deleting them.
 AGENTS documentation has a verified before-backup; unrelated source mismatches still block.
+
+## M4c.2 — PDF-XChange threads (acceptance pending)
+
+Preserve rich text and reply links on recolor. Confirm deletion of a parent and its supported direct replies; reject protected or cross-page dependents. Keep the release request template in README.md in each future release.

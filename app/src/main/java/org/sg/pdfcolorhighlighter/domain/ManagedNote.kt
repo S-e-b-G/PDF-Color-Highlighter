@@ -4,7 +4,7 @@ package org.sg.pdfcolorhighlighter.domain
 import java.util.UUID
 
 /** Copied selectable native Text state; imported provenance is explicit, never a native handle or sidecar. */
-data class ManagedNote(val id:String,val page:Int,val slot:Int,val bounds:TextBounds,val contents:String,val rgb:Int?=null,val imported:ImportedAnnotationRef?=null) {
+data class ManagedNote(val id:String,val page:Int,val slot:Int,val bounds:TextBounds,val contents:String,val rgb:Int?=null,val imported:ImportedAnnotationRef?=null,val preserveRichText:Boolean=false,val replyCount:Int=0) {
     val color:Int get()=rgb ?: AnnotationPalette.DEFAULT[slot]
     init {
         require(rgb==null || rgb in 0..0xffffff)

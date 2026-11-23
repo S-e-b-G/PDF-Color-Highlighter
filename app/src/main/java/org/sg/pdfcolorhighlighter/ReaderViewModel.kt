@@ -397,6 +397,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     fun openNoteEditor(){
         if(!canUseNotes)return
         val note=selectedNote ?: return
+        if(note.preserveRichText)return
         noteDraft=note.contents;noteDraftId=note.id;noteDraftPoint=null;noteEditorOpen=true;localEditError=null
     }
     fun updateNoteDraft(value:String){if(noteEditorOpen && !editBusy)noteDraft=value}

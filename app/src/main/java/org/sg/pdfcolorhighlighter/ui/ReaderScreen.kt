@@ -89,7 +89,7 @@ fun ReaderScreen(
     val activeNote=if(selectedNote!=null)annotationPalette.match(selectedNote.color)else noteSlot
     var helpOpen by rememberSaveable { mutableStateOf(false) }
     var saveConfirm by rememberSaveable { mutableStateOf(false) }
-    var deleteNoteConfirm by rememberSaveable(selectedNote?.id) { mutableStateOf(false) }
+    var deleteNoteConfirm by remember(selectedNote) { mutableStateOf(false) }
     var exportDismissed by remember(exportMessage){mutableStateOf(false)}
     var quotationOpen by rememberSaveable { mutableStateOf(false) }
     var contentsDraft by rememberSaveable { mutableStateOf("") }
@@ -198,7 +198,7 @@ fun ReaderScreen(
                     if(selectedNote!=null){
                         Surface(Modifier.align(Alignment.TopEnd).padding(8.dp).zIndex(2f),shape=RoundedCornerShape(8.dp)){
                             Row{
-                                TextButton(onClick=onEditNote,enabled=canUseNotes){Text(stringResource(R.string.reader_note_edit))}
+                                TextButton(onClick=onEditNote,enabled=canUseNotes && !selectedNote.preserveRichText){Text(stringResource(R.string.reader_note_edit))}
                                 TextButton(onClick={deleteNoteConfirm=true},enabled=canUseNotes){Text(stringResource(R.string.reader_note_delete))}
                             }
                         }
@@ -257,14 +257,14 @@ fun ReaderScreen(
                 ReaderFooter(documentName, page, pageCount, loading, bitmap != null,
                     { openMenu = true }, onPrevious, onNext, onFit, onFitWidth, onHand,
                     onPageNumber = { pageDraft = (page + 1).toString(); jumpOpen = true }, onProperties = { propertiesOpen = true }, navigationActive = selectedNote==null && noteSlot==null && (previewSlot==null || !previewEnabled),
-                    onSettings=onSettings,canOpenSettings=canOpenSettings,canDeleteSelection=canDeleteSelection,onDeleteSelection=onDeleteSelection,onHelp={helpOpen=true},canOpenHelp=!loading && !editBusy)
+                    onSettings=onSettings,canOpenSettings=canOpenSettings,canDeleteSelection=canDeleteSelection,onDeleteSelection={if(selectedNote?.replyCount?.let{it>0}==true)deleteNoteConfirm=true else onDeleteSelection()},onHelp={helpOpen=true},canOpenHelp=!loading && !editBusy)
             }
         }
 
         if(helpOpen) ReaderHelpDialog { helpOpen=false }
         if(deleteNoteConfirm && selectedNote!=null){
             AlertDialog(onDismissRequest={deleteNoteConfirm=false},title={Text(stringResource(R.string.reader_note_delete_title))},
-                text={Text(stringResource(R.string.reader_note_delete_confirm))},
+                text={Text(if(selectedNote.replyCount>0)stringResource(R.string.reader_note_delete_thread_confirm,selectedNote.replyCount) else stringResource(R.string.reader_note_delete_confirm))},
                 confirmButton={TextButton(onClick={deleteNoteConfirm=false;onDeleteNote()},enabled=canUseNotes){Text(stringResource(R.string.reader_note_delete))}},
                 dismissButton={TextButton(onClick={deleteNoteConfirm=false}){Text(stringResource(R.string.reader_contents_cancel))}})
         }

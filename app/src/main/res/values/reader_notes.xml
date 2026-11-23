@@ -10,4 +10,5 @@
     <string name="reader_note_active">Note : touchez la page pour placer une note ; touchez une note pour la sélectionner.</string>
     <string name="reader_note_overlap">Plusieurs notes se superposent ; aucune modification effectuée.</string>
     <string name="reader_note_invalid">La note doit contenir de 1 à 100 000 caractères, sans caractère nul.</string>
+    <string name="reader_note_delete_thread_confirm">Supprimer cette note et ses réponses (%1$d) ?</string>
 </resources>

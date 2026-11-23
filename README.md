@@ -77,3 +77,13 @@ do not treat this repository as a redistribution-ready release.
 - Pour un nouvel assistant : joindre un export récent des sources, ce README, AGENTS.md, docs/STATUS.md, requirements.csv, ainsi que le dernier résumé FULL et le reçu d’installation. Pour réparer l’automatisation, fournir aussi le paquet généré réellement référencé par .validation/M4b-generated.json. Exclure PDF privés, clés et données de récupération.
 - APK debug de travail : `app/build/outputs/apk/debug/app-debug.apk` sous la racine du projet. Vérifier que l’APK correspond au rapport de validation souhaité : le fichier est remplacé par les builds suivants. Ne pas prendre l’APK isolé `.autotest`. Le niveau minimum déclaré est API 29 ; le Teclast M40 reste à tester. Une mise à jour d’une installation existante doit conserver la même signature ; ne pas désinstaller pour contourner un refus.
 - Obsidian : extraction réelle signalée OK. Docear : non retesté avec cette sortie, à vérifier séparément si utilisé.
+
+## M4c.2 — PDF-XChange notes
+
+Select a compatible parent note and choose a color. The note and replies retain their rich text and links. The thread text is read-only in this app. Deleting a parent with direct replies requires confirmation. Nested, protected and cross-page reply deletion is refused. Acceptance is pending until the isolated gate passes.
+
+Working APK for compatible devices: `app\build\outputs\apk\debug\app-debug.apk`. Do not use the isolated `.autotest` APK. A later build may overwrite the working APK.
+
+## How to request the next release
+
+> Start from the last accepted version and latest source export. Implement [requested changes]. Deliver one versioned ZIP and one paste-ready VSCode PowerShell block. Reuse the full isolated runner and add automated regression checks. Update AGENTS.md, README.md (with the relative working APK path) and in-app help for user-visible changes. Print the validation report location on pass and fail. Offer installation only after the full gate passes. Include a validate-only retry that does not reapply. If a required input is missing, name the exact file; do not substitute a partial patch.

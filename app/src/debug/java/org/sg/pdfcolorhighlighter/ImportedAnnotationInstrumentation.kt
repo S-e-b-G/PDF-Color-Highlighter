@@ -80,6 +80,37 @@ class ImportedAnnotationInstrumentation:Instrumentation(){
             pw.undo();check(notes(pw.currentFile()).single()==changed)
             pw.redo();check(notes(pw.currentFile()).isEmpty())
             check(CheckpointFingerprint.of(withPopup)==popupHash)
+            val threaded=File(root,"thread.pdf").apply{writeBytes(ImportedAnnotationFixture.bytes(notePopup=true,thread=true))}
+            val threadHash=CheckpointFingerprint.of(threaded)
+            val tw=LocalHighlightWorkspace(File(root,"thread-edits"),"content://synthetic/thread",threaded,threadHash)
+            val parent=notes(threaded).single();check(parent.replyCount==1 && parent.preserveRichText)
+            fun verifyThread(file:File)=pdf(file){doc->
+                val page=doc.loadPage(0) as PDFPage
+                try{val all=page.annotations ?: emptyArray();try{
+                    val texts=all.filter{it.type==PDFAnnotation.TYPE_TEXT}
+                    check(texts.size==2)
+                    val a=texts.single{it.contents==parent.contents}.`object`
+                    val r=texts.single{it.contents=="Reply"}.`object`
+                    try{
+                        val rc=a.get("RC");val rr=r.get("RC");val link=r.get("IRT")
+                        try{check(rc.asString()=="<body>Parent</body>" && rr.asString()=="<body>Reply</body>")
+                            check(link.isIndirect && link.asIndirect()==a.asIndirect())
+                        }finally{rc.destroy();rr.destroy();link.destroy()}
+                    }finally{a.destroy();r.destroy()}
+                }finally{all.forEach{it.destroy()}}}finally{page.destroy()}
+            }
+            tw.replaceNote(parent,parent.copy(slot=1,rgb=0x00ff00),op())
+            val recolored=notes(tw.currentFile()).single()
+            check(recolored.color==0x00ff00 && recolored.replyCount==1)
+            val savedThread=File(root,"thread-export.pdf")
+            VerifiedDocumentExport.copy(tw.fileForSave(),{savedThread.outputStream()},{savedThread.inputStream()})
+            verifyThread(savedThread)
+            tw.replaceNote(recolored,null,op())
+            pdf(tw.currentFile()){doc->val page=doc.loadPage(0) as PDFPage;try{
+                val all=page.annotations ?: emptyArray();try{check(all.none{it.type==PDFAnnotation.TYPE_TEXT})}finally{all.forEach{it.destroy()}}
+            }finally{page.destroy()}}
+            tw.undo();verifyThread(tw.currentFile())
+            check(CheckpointFingerprint.of(threaded)==threadHash)
             check(CheckpointFingerprint.of(input)==original)
         }catch(t:Throwable){failure=t}finally{root.deleteRecursively()}
         val error=failure
