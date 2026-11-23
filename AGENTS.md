@@ -1,3 +1,17 @@
+
+## M4c.1 — imported note popup; acceptance pending
+
+Allow compatible imported Text annotations with validated popup backlinks. Run the existing imported native suite and full isolated acceptance before working installation. Rich-text replies, recovery trash, resize preview and Save As replacement are not included.
+
+# M4b-R2 — baseline reported accepted; final sign-off open
+
+The 2026-11-23 README records Lenovo TB-J706F/API 30 acceptance: 886 JVM tests,
+31 native suites and 94 workflows. The FULL report and installation receipt were
+not included in this export; retain them with the matching working APK.
+The pending sections below are historical. Do not reapply M4b or reopen its runner
+repair solely because of those sections. No further feature is identified in the
+scope reconciliation. See docs/FINAL-SIGNOFF.md for the remaining field checks.
+
 # M4b-R2 — consolidated runner repair; acceptance pending
 
 M4b is already applied. Do not reapply its functional batch. M4a remains the last

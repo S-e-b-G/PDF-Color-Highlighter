@@ -1,4 +1,5 @@
 "id","requirement","milestone","status","acceptance"
+"M4C1-IMPORTED-POPUP","Enable compatible imported Text notes with verified popups","M4c.1","ACCEPTANCE_PENDING","Extended imported native suite and full isolated regression"
 "PLAT-01","Android 10+; minSdk 29","M0","IMPLEMENTED_PARTIAL_FINAL_ENVIRONMENT_OR_RELEASE_REVIEW_OPEN","M3z FULL846/29/86; current source/tests. Final applicable production-PDF/provider/device checks remain; historical plans archived in docs/history/requirements-through-M3z.csv"
 "TXT-01","Editable highlight Contents; independent additional notes","M1/M3","IMPLEMENTED_ACCEPTED_M3z_AUTOMATED_SUBSET","M3z FULL846/29/86; current source/tests. Final applicable production-PDF/provider/device checks remain; historical plans archived in docs/history/requirements-through-M3z.csv"
 "UI-01","One primary row on tablets in both orientations","M2","IMPLEMENTED_ACCEPTED_M3z_AUTOMATED_SUBSET","Current accepted direct12-color tablet layout; obsolete historical48dp-only values do not override accepted source"
@@ -75,4 +76,4 @@
 "IMPORTED-EDIT-M4B","Compatible named simple standard Highlight/Text editing without ownership rewrite","M4b","SOURCE_DELIVERED_ACCEPTANCE_PENDING","Unique NM; manual Contents RGB opacity preserved; glyph-proven handles; existing history/save;886 JVM31 native94 workflows"
 
 "M4B-R1-LAUNCHER","Self-contained Apply plus indexed validator discovery","M4b","PREPARED_ACCEPTANCE_PENDING","Runtime payload unchanged; exact886/31/94 full gate retained"
-"M4B-R2-INTEGRATION","Repair native protocol inventory JVM gate and imported fixture setup; host build before device","M4b-R2","SOURCE_REPAIR_ACCEPTANCE_PENDING","Fresh host compile/JVM/Lint then focused4 and full886/31/94; last accepted working app M4a; no bypass/data clear"
+"M4B-R2-INTEGRATION","Repair native protocol inventory JVM gate and imported fixture setup; host build before device","M4b-R2","ACCEPTED_LENOVO_REPORTED_IN_README","886 JVM; 31 native; 94 workflows; FULL report and receipt retained locally; Teclast and production sign-off separate"

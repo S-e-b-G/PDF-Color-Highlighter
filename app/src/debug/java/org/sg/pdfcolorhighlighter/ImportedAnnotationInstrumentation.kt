@@ -66,6 +66,20 @@ class ImportedAnnotationInstrumentation:Instrumentation(){
                 check(sample.readBytes().contentEquals(bytes))
             }
             current=highlights(w.currentFile()).single();w.replace(current,null,op());check(highlights(w.currentFile()).isEmpty());w.undo();check(highlights(w.currentFile()).size==1)
+            val withPopup=File(root,"popup.pdf").apply{writeBytes(ImportedAnnotationFixture.bytes(notePopup=true))}
+            val badPopup=File(root,"popup-invalid.pdf").apply{writeBytes(ImportedAnnotationFixture.bytes(notePopup=true,wrongPopupParent=true))}
+            check(notes(badPopup).isEmpty())
+            val popupHash=CheckpointFingerprint.of(withPopup)
+            val popupNote=notes(withPopup).single()
+            val pw=LocalHighlightWorkspace(File(root,"popup-edits"),"content://synthetic/popup-note",withPopup,popupHash)
+            pw.replaceNote(popupNote,popupNote.copy(slot=1,rgb=0x00ff00),op())
+            val changed=notes(pw.currentFile()).single()
+            check(changed.id==popupNote.id && changed.contents==popupNote.contents && changed.color==0x00ff00)
+            pw.replaceNote(changed,null,op())
+            check(notes(pw.currentFile()).isEmpty() && highlights(pw.currentFile()).size==1)
+            pw.undo();check(notes(pw.currentFile()).single()==changed)
+            pw.redo();check(notes(pw.currentFile()).isEmpty())
+            check(CheckpointFingerprint.of(withPopup)==popupHash)
             check(CheckpointFingerprint.of(input)==original)
         }catch(t:Throwable){failure=t}finally{root.deleteRecursively()}
         val error=failure

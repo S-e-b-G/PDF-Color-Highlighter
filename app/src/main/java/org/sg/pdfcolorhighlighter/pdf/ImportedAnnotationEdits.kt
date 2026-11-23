@@ -36,7 +36,7 @@ object ImportedAnnotationEdits{
     private fun eligible(a:PDFAnnotation):Boolean{
         if(privateKeys.any{present(a,it)} || listOf("IRT","RT","RC","Parent").any{present(a,it)})return false
         if((a.flags and ((1 shl 0) or (1 shl 1) or (1 shl 5) or (1 shl 6) or (1 shl 7) or (1 shl 9)))!=0)return false
-        if(present(a,"Popup") && (a.type!=PDFAnnotation.TYPE_HIGHLIGHT || !ownPopup(a)))return false
+        if(present(a,"Popup") && !ownPopup(a))return false
         val n=string(a,"NM") ?: return false
         if(n.isBlank() || n.length>1024 || '\u0000' in n)return false
         val rgb=a.color
