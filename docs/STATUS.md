@@ -164,4 +164,4 @@ Preserve rich text and reply links on recolor. Confirm deletion of a parent and 
 
 ## M4c.5 — Confirmed Save As replacement
 
-M4c.4 accepted and installed on Lenovo after FULL 886 JVM / 31 native / 94 UI, report 20261123-132152-4b9b009c49a94d51b70509daaf37fed4. M4c.5 is source delivery only; FULL gate with extended VerifiedExportInstrumentation and working install pending. Real SAF picker/provider behavior remains a separate field check.
+M4c.4 accepted and installed on Lenovo after FULL 886 JVM / 31 native / 94 UI, report 20261123-132152-4b9b009c49a94d51b70509daaf37fed4. M4c.5 passed FULL on Lenovo TB-J706F (Android API 30): 886 JVM, 31 native suites, 94 UI/API scenarios. The working APK built and installed successfully on 2026-11-23. Report: `.validation/autotest-reports/20261123-135356-27e9b8bae2a74c579ce0a4e55b6b37a5.zip`. Real SAF picker/provider behavior remains a separate field check.

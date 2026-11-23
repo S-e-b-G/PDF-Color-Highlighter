@@ -107,3 +107,7 @@ Working APK: `app\build\outputs\apk\debug\app-debug.apk`. Use this APK on compat
 Choose **Enregistrer sous → Remplacer un PDF existant** and confirm the named destination. Replacement requires a distinct, writable PDF from the same Android document provider. The app checks the approved destination bytes again before writing, keeps a private verified backup and verifies the resulting bytes. The opened source, local edit history and dirty state are not rebound or cleared. Cancel does not write. Android document providers do not offer an atomic compare-and-swap here: avoid concurrent external edits; a failed write may leave a partial destination.
 
 Working APK: `app\build\outputs\apk\debug\app-debug.apk`. Use this APK, not the isolated `.autotest` APK, on other compatible devices. A later build can overwrite it. Keep the release-request template above.
+
+## M4c.5 acceptance closeout
+
+M4c.5 passed FULL on Lenovo TB-J706F (Android API 30): 886 JVM, 31 native suites, 94 UI/API scenarios. The working APK built and installed successfully on 2026-11-23. Report: `.validation/autotest-reports/20261123-135356-27e9b8bae2a74c579ce0a4e55b6b37a5.zip`. See `docs/FINAL-SIGNOFF.md` for remaining field checks.
