@@ -98,6 +98,19 @@ class SmokePdfSession(context: Context) {
     private fun diskHash(uri:Uri):String?=runCatching{sourceSaves.sourceHash{
         app.contentResolver.openInputStream(uri) ?: error("No source input")
     }}.getOrNull()
+    fun trashRecovery(uri:Uri,choice:LocalRecoveryChoice,callback:(Result<RecoveryListing>)->Unit){
+        val request=generation.get()
+        worker.execute{
+            val result=runCatching{
+                check(!closed.get() && request==generation.get() && (sourceUri==null || sourceUri==uri))
+                val disk=diskHash(uri)
+                check(!closed.get() && request==generation.get())
+                branches.trash(uri.toString(),choice,disk,branchRoot)
+                branches.list(uri.toString(),disk,branchRoot,includeClean=disk==null)
+            }
+            main.post{if(!closed.get() && request==generation.get())callback(result)}
+        }
+    }
     fun listRecoveries(uri:Uri,callback:(Result<RecoveryListing>)->Unit){
         val request=generation.get()
         worker.execute{

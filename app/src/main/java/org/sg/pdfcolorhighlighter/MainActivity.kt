@@ -5,6 +5,9 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -117,20 +120,34 @@ class MainActivity : ComponentActivity() {
             }
 
             if(reader.recoveryPrompt){
-                AlertDialog(onDismissRequest={reader.dismissRecovery()},
+                var trash by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<org.sg.pdfcolorhighlighter.pdf.LocalRecoveryChoice?>(null) }
+                fun copyLabel(copy:org.sg.pdfcolorhighlighter.pdf.LocalRecoveryChoice):String{
+                    val date=java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,java.text.DateFormat.SHORT).format(java.util.Date(copy.modified))
+                    return "$date — ${copy.sha256.take(8)}"
+                }
+                val target=trash
+                if(target!=null){
+                    AlertDialog(onDismissRequest={trash=null},title={Text(getString(R.string.reader_copy_trash))},
+                        text={Text(getString(R.string.reader_copy_trash_confirm,copyLabel(target)))},
+                        confirmButton={TextButton(onClick={trash=null;reader.trashRecovery(target)}){Text(getString(R.string.reader_copy_trash))}},
+                        dismissButton={TextButton(onClick={trash=null}){Text(getString(R.string.reader_contents_cancel))}})
+                }else AlertDialog(onDismissRequest={reader.dismissRecovery()},
                     title={Text(getString(R.string.reader_copy_title))},
                     text={Column(Modifier.verticalScroll(rememberScrollState())){
                         Text(getString(if(reader.bitmap==null)R.string.reader_copy_unavailable else if(reader.sourceDetached)R.string.reader_copy_active_local else R.string.reader_copy_disk_first))
                         if(reader.recoveryRejected>0)Text(getString(R.string.reader_copy_unverified,reader.recoveryRejected))
+                        if(reader.recoveryTrashError)Text(getString(R.string.reader_copy_trash_failed))
                         reader.recoveryChoices.forEach{copy->
-                            val whenSaved=java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,java.text.DateFormat.SHORT).format(java.util.Date(copy.modified))
-                            TextButton(onClick={reader.chooseRecovery(copy)}){
-                                Text(getString(R.string.reader_copy_open)+" — "+whenSaved+" — "+copy.sha256.take(8))
+                            Row{
+                                TextButton(modifier=Modifier.weight(1f),enabled=!reader.editBusy,onClick={reader.chooseRecovery(copy)}){
+                                    Text(getString(R.string.reader_copy_open)+" — "+copyLabel(copy))
+                                }
+                                TextButton(enabled=!reader.editBusy,onClick={trash=copy}){Text(getString(R.string.reader_copy_trash))}
                             }
                         }
                     }},
-                    confirmButton={TextButton(onClick={reader.continueDisk()}){Text(getString(R.string.reader_copy_continue))}},
-                    dismissButton={TextButton(onClick={reader.dismissRecovery()}){Text(getString(R.string.reader_contents_cancel))}})
+                    confirmButton={TextButton(enabled=!reader.editBusy,onClick={reader.continueDisk()}){Text(getString(R.string.reader_copy_continue))}},
+                    dismissButton={TextButton(enabled=!reader.editBusy,onClick={reader.dismissRecovery()}){Text(getString(R.string.reader_contents_cancel))}})
             }
 
             if(reader.documentRepairBusy || reader.documentRepairReview!=null){

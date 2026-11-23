@@ -9,4 +9,7 @@
     <string name="reader_copy_unverified">%1$d espace(s) local(aux) non vérifiable(s) conservé(s) sans ouverture automatique.</string>
     <string name="reader_copy_listing_failed">Impossible de vérifier les copies locales. Aucune copie n’a été supprimée.</string>
     <string name="reader_copy_unavailable">La version demandée n’a pas pu être ouverte. Réessayez le fichier ou choisissez une copie locale ; son intégrité sera vérifiée avant ouverture.</string>
+    <string name="reader_copy_trash">🗑️</string>
+    <string name="reader_copy_trash_confirm">Mettre cette copie locale à la corbeille ? %1$s. Le PDF original ne sera pas modifié.</string>
+    <string name="reader_copy_trash_failed">Impossible de mettre cette copie à la corbeille. Rouvrez la liste et réessayez.</string>
 </resources>

@@ -216,3 +216,7 @@ installation remains M3z until a matching actual M4a FULL/install receipt establ
 ## M4c.2 — PDF-XChange threads (acceptance pending)
 
 Preserve rich text and reply links on recolor. Confirm deletion of a parent and its supported direct replies; reject protected or cross-page dependents. Keep the release request template in README.md in each future release.
+
+## M4c.3 — Recovery-copy trash
+
+Keep recovery trash on the native owner worker. Revalidate the exact listed ID and hash, exclude the active branch, and move only that private store atomically. Never recurse or write to the source URI. Keep the full isolated runner and release-request template.

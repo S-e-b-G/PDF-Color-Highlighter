@@ -21,7 +21,20 @@ class RecoveryBranchesTest{
     @Test fun freshNamespacesDiffer(){trial{_,c->assertNotEquals(c.fresh(uri),c.fresh(uri))}}
     @Test fun neverEditedDiskNotRecovery(){trial{r,c->store(r,c);assertTrue(c.list(uri).choices.isEmpty())}}
     @Test fun committedLocalListed(){trial{r,c->val(_,s,h)=store(r,c);val b=edit(r,s,h,"B");assertEquals(b.sha256,c.list(uri).choices.single().sha256)}}
-    @Test fun sameBaselineHeadsStayIndependent(){trial{r,c->val(_,s,h)=store(r,c);val(_,s2,h2)=store(r,c);val x=edit(r,s,h,"B");val y=edit(r,s2,h2,"D");assertEquals(setOf(x.sha256,y.sha256),c.list(uri).choices.map{it.sha256}.toSet())}}
+    @Test fun sameBaselineHeadsStayIndependent(){trial{r,c->val(_,s,h)=store(r,c);val(_,s2,h2)=store(r,c);val x=edit(r,s,h,"B");val y=edit(r,s2,h2,"D");assertEquals(setOf(x.sha256,y.sha256),c.list(uri).choices.map{it.sha256}.toSet())
+        val picked=c.list(uri).choices.single{it.sha256==x.sha256}
+        val sibling=c.list(uri).choices.single{it.sha256==y.sha256}
+        val original=raw(r,"original.pdf","A");val originalHash=CheckpointFingerprint.of(original)
+        val active=File(File(r,"v2"),LocalEditIdentity.uriKey(uri)).resolve(picked.id.split(':')[1])
+        assertTrue(runCatching{c.trash(uri,picked,originalHash,active)}.isFailure)
+        assertTrue(runCatching{c.trash(uri,picked.copy(sha256=y.sha256),originalHash,null)}.isFailure)
+        assertTrue(runCatching{c.trash(uri,picked,x.sha256,null)}.isFailure)
+        c.trash(uri,picked,originalHash,null)
+        assertTrue(active.listFiles().orEmpty().any{it.name.startsWith(".trash-")})
+        assertEquals(listOf(sibling),c.list(uri,originalHash).choices)
+        assertEquals(y.sha256,CheckpointFingerprint.of(c.resolve(uri,sibling.id,sibling.sha256)))
+        assertEquals(originalHash,CheckpointFingerprint.of(original))
+        assertTrue(runCatching{c.trash(uri,picked,originalHash,null)}.isFailure)}}
     @Test fun sameAsDiskNotOffered(){trial{r,c->val(_,s,h)=store(r,c);val x=edit(r,s,h,"B");assertTrue(c.list(uri,x.sha256).choices.isEmpty())}}
     @Test fun savedBranchNotOffered(){trial{r,c->val(p,s,h)=store(r,c);val x=edit(r,s,h,"B");c.saved(p,x.sha256);assertTrue(c.list(uri).choices.isEmpty())}}
     @Test fun editAfterSaveOffered(){trial{r,c->val(p,s,h)=store(r,c);val x=edit(r,s,h,"B");c.saved(p,x.sha256);val y=edit(r,s,x,"C");assertEquals(y.sha256,c.list(uri).choices.single().sha256)}}

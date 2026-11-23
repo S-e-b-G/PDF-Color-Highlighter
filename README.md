@@ -87,3 +87,11 @@ Working APK for compatible devices: `app\build\outputs\apk\debug\app-debug.apk`.
 ## How to request the next release
 
 > Start from the last accepted version and latest source export. Implement [requested changes]. Deliver one versioned ZIP and one paste-ready VSCode PowerShell block. Reuse the full isolated runner and add automated regression checks. Update AGENTS.md, README.md (with the relative working APK path) and in-app help for user-visible changes. Print the validation report location on pass and fail. Offer installation only after the full gate passes. Include a validate-only retry that does not reapply. If a required input is missing, name the exact file; do not substitute a partial patch.
+
+## M4c.3 — Recovery-copy trash
+
+Open the recovery-copy list and choose **Corbeille** next to the copy you want to remove. Confirm its date and short hash. This moves that private revision store out of the recovery list; the original PDF, active workspace and other copies are not moved. This release does not provide a restore button or reclaim disk space.
+
+Working APK: `app\build\outputs\apk\debug\app-debug.apk`. It is not the isolated `.autotest` APK. A later build can overwrite the working APK.
+
+Future release requests must retain the workflow template above.

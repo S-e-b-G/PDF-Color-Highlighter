@@ -290,7 +290,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         }},challenge?.sha256)
     }
 
-    fun dismissRecovery(){recoveryPrompt=false;recoveryInitial=false}
+    fun dismissRecovery(){if(editBusy)return;recoveryTrashError=false;recoveryPrompt=false;recoveryInitial=false}
     fun continueDisk(){
         val reload=!recoveryInitial || sourceDetached || bitmap==null
         recoveryPrompt=false;recoveryInitial=false
@@ -305,6 +305,19 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         val uri=activeUri ?: unavailableUri ?: return
         pendingDestination=uri;hasPendingDestination=true;pendingRecovery=choice;pendingVersionSwitch=true
         if(hasUnsavedContent)navigationPrompt=true else executePendingOpen()
+    }
+    var recoveryTrashError by mutableStateOf(false)
+        private set
+    fun trashRecovery(choice:LocalRecoveryChoice){
+        if(cleared || loading || editBusy || !recoveryPrompt || choice !in recoveryChoices)return
+        val uri=activeUri ?: unavailableUri ?: return
+        recoveryTrashError=false;editBusy=true;stopRefinement()
+        session.trashRecovery(uri.toUri(),choice){result->if(!cleared){
+            editBusy=false
+            result.onSuccess{recoveryChoices=it.choices;recoveryRejected=it.rejected}
+                .onFailure{recoveryTrashError=true}
+            scheduleRefinement()
+        }}
     }
     fun recoverLocal(){
         if(!canRecover)return

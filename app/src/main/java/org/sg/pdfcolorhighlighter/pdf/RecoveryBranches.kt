@@ -65,6 +65,15 @@ class RecoveryBranches(private val root:File,private val legacy:File){
         }
         return RecoveryListing(found.sortedWith(compareByDescending<LocalRecoveryChoice>{it.modified}.thenBy{it.id}).distinctBy{it.sha256},rejected)
     }
+    /** Move only the selected private revision store; never recursively delete. */
+    fun trash(uri:String,choice:LocalRecoveryChoice,disk:String?,active:File?){
+        require(list(uri,disk,active,includeClean=disk==null).choices.contains(choice)){"Recovery selection is stale or protected"}
+        val (_,dir,branch)=entries(uri).single{it.first==choice.id}
+        require(dir.absoluteFile==dir.canonicalFile && (branch==null || branch.canonicalFile!=active?.canonicalFile))
+        resolve(uri,choice.id,choice.sha256) // verify the actual PDF before moving its store
+        val target=File(dir.parentFile,".trash-"+UUID.randomUUID())
+        java.nio.file.Files.move(dir.toPath(),target.toPath(),java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+    }
     fun resolve(uri:String,id:String,expectedHash:String):File{
         require(hash.matches(expectedHash))
         val entry=entries(uri).singleOrNull{it.first==id} ?: error("Recovery namespace unavailable")
